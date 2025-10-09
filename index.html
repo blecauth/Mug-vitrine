@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canecas Personalizadas</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
+    body { background: #0d0d0d; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+
+    header { text-align: center; padding: 2rem 1rem 1rem; }
+    header h1 { font-size: 2.4rem; color: #fff; letter-spacing: 1px; }
+    header p { color: #aaa; margin-top: 0.5rem; }
+
+    /* Filtros */
+    .filtros {
+      display: flex;
+      gap: 0.8rem;
+      margin: 1.5rem auto 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .filtro-btn {
+      background: #1a1a1a;
+      border: none;
+      color: #ddd;
+      padding: 0.6rem 1rem;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+    }
+    .filtro-btn:hover,
+    .filtro-btn.active {
+      background: #25D366;
+      color: #fff;
+      transform: scale(1.05);
+    }
+
+    /* Galeria */
+    .galeria {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      width: 90%;
+      max-width: 1200px;
+      margin-bottom: 6rem;
+    }
+    .item {
+      background: #181818;
+      border-radius: 1rem;
+      overflow: hidden;
+      transform: scale(0.98);
+      opacity: 0;
+      animation: fadeIn 0.6s forwards;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .item:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.08);
+    }
+    .item img {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+    .item:hover img { transform: scale(1.1); }
+    .info {
+      padding: 1rem;
+      text-align: center;
+    }
+    .info h2 {
+      font-size: 1.1rem;
+      margin-bottom: 0.3rem;
+    }
+    .info p {
+      color: #bbb;
+      font-size: 0.9rem;
+    }
+
+    /* Animação */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Botão WhatsApp */
+    .whatsapp {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #25D366;
+      color: #fff;
+      padding: 15px 20px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: bold;
+      box-shadow: 0 0 20px rgba(37, 211, 102, 0.4);
+      transition: transform 0.2s ease;
+    }
+    .whatsapp:hover { transform: scale(1.1); }
+
+    footer {
+      padding: 2rem;
+      color: #777;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Canecas Personalizadas</h1>
+    <p>Escolha o estilo que combina com você ☕✨</p>
+  </header>
+
+  <div class="filtros">
+    <button class="filtro-btn active" data-categoria="todas">Todas</button>
+    <button class="filtro-btn" data-categoria="geek">Geek</button>
+    <button class="filtro-btn" data-categoria="floral">Floral</button>
+    <button class="filtro-btn" data-categoria="minimalista">Minimalista</button>
+    <button class="filtro-btn" data-categoria="personalizada">Com Nome</button>
+  </div>
+
+  <section class="galeria">
+    <div class="item" data-categoria="floral">
+      <img src="https://images.unsplash.com/photo-1586201375761-83865001e31b?w=800" alt="Caneca Floral">
+      <div class="info">
+        <h2>Caneca Floral</h2>
+        <p>R$ 39,90</p>
+      </div>
+    </div>
+
+    <div class="item" data-categoria="minimalista">
+      <img src="https://images.unsplash.com/photo-1615484478109-3e89f0c7a1d6?w=800" alt="Caneca Minimalista">
+      <div class="info">
+        <h2>Caneca Minimalista</h2>
+        <p>R$ 34,90</p>
+      </div>
+    </div>
+
+    <div class="item" data-categoria="geek">
+      <img src="https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=800" alt="Caneca Geek">
+      <div class="info">
+        <h2>Caneca Geek</h2>
+        <p>R$ 44,90</p>
+      </div>
+    </div>
+
+    <div class="item" data-categoria="personalizada">
+      <img src="https://images.unsplash.com/photo-1551963831-b3b1ca40c98e?w=800" alt="Caneca com Nome">
+      <div class="info">
+        <h2>Caneca com Nome</h2>
+        <p>R$ 39,90</p>
+      </div>
+    </div>
+
+    <div class="item" data-categoria="geek">
+      <img src="https://images.unsplash.com/photo-1618220056776-1d1a6e919fab?w=800" alt="Caneca Star Wars">
+      <div class="info">
+        <h2>Caneca Star Wars</h2>
+        <p>R$ 49,90</p>
+      </div>
+    </div>
+  </section>
+
+  <a href="https://wa.me/5599999999999?text=Olá!%20Gostaria%20de%20fazer%20um%20pedido%20de%20canecas%20personalizadas." class="whatsapp" target="_blank">
+    Pedir pelo WhatsApp
+  </a>
+
+  <footer>
+    © 2025 • Canecas Personalizadas — Todos os direitos reservados
+  </footer>
+
+  <script>
+    const filtroBtns = document.querySelectorAll('.filtro-btn');
+    const itens = document.querySelectorAll('.item');
+
+    filtroBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filtroBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const categoria = btn.dataset.categoria;
+
+        itens.forEach(item => {
+          if (categoria === 'todas' || item.dataset.categoria === categoria) {
+            item.style.display = 'block';
+            item.style.animation = 'fadeIn 0.6s forwards';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>
