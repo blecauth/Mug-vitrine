@@ -59,12 +59,12 @@
       transform: scale(1.03);
       box-shadow: 0 0 25px rgba(255, 255, 255, 0.08);
     }
-    .item img {
-      width: 100%;
-      height: 250px;
-      object-fit: cover;
-      transition: transform 0.4s ease;
-    }
+   .item img {
+  width: 100%;
+  height: auto;
+  max-height: 450px; /* limite de altura */
+  object-fit: contain;
+}
     .item:hover img { transform: scale(1.1); }
     .info {
       padding: 1rem;
@@ -126,15 +126,15 @@
 
   <section class="galeria">
     <div class="item" data-categoria="floral">
-      <img src="https://images.unsplash.com/photo-1586201375761-83865001e31b?w=800" alt="Caneca Floral">
+      <img src="https://i.imgur.com/DT9Jr4v.jpeg" alt="Caneca de Coração">
       <div class="info">
-        <h2>Caneca Floral</h2>
+        <h2>Caneca Coração</h2>
         <p>R$ 39,90</p>
       </div>
     </div>
 
     <div class="item" data-categoria="minimalista">
-      <img src="https://images.unsplash.com/photo-1615484478109-3e89f0c7a1d6?w=800" alt="Caneca Minimalista">
+      <img src="https://i.ibb.co/GStNtvz/caneca-magica-preta-fosca-tradicional-59-1-58a63c4e8d9cc12d44aebba2bc3e3a1a.jpg" alt="Caneca Minimalista">
       <div class="info">
         <h2>Caneca Minimalista</h2>
         <p>R$ 34,90</p>
