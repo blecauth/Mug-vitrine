@@ -6,7 +6,7 @@
   <title>Canecas Personalizadas</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
-    body { background: #0d0d0d; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    body { background: #0d0d0d; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
 
     header { text-align: center; padding: 2rem 1rem 1rem; }
     header h1 { font-size: 2.4rem; color: #fff; letter-spacing: 1px; }
@@ -59,53 +59,142 @@
       transform: scale(1.03);
       box-shadow: 0 0 25px rgba(255, 255, 255, 0.08);
     }
-   .item img {
-  width: 100%;
-  height: auto;
-  max-height: 450px; /* limite de altura */
-  object-fit: contain;
-}
+    .item img {
+      width: 100%;
+      height: auto;
+      max-height: 450px;
+      object-fit: contain;
+      transition: transform 0.4s ease;
+    }
     .item:hover img { transform: scale(1.1); }
-    .info {
-      padding: 1rem;
-      text-align: center;
+
+    .info { padding: 1rem; text-align: center; }
+    .info h2 { font-size: 1.1rem; margin-bottom: 0.3rem; }
+    .info p { color: #bbb; font-size: 0.9rem; margin-bottom: 0.8rem; }
+
+    /* Botão Ver Detalhes */
+    .open-modal-btn {
+      background: linear-gradient(90deg, #25D366, #1ebe5f);
+      color: #fff;
+      border: none;
+      padding: 0.7rem 1.4rem;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px rgba(37, 211, 102, 0.3);
     }
-    .info h2 {
-      font-size: 1.1rem;
-      margin-bottom: 0.3rem;
-    }
-    .info p {
-      color: #bbb;
-      font-size: 0.9rem;
+    .open-modal-btn:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 0 20px rgba(37, 211, 102, 0.6);
     }
 
-    /* Animação */
     @keyframes fadeIn {
       from { opacity: 0; transform: scale(0.9); }
       to { opacity: 1; transform: scale(1); }
     }
-
-    /* Botão WhatsApp */
-    .whatsapp {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: #25D366;
-      color: #fff;
-      padding: 15px 20px;
-      border-radius: 50px;
-      text-decoration: none;
-      font-weight: bold;
-      box-shadow: 0 0 20px rgba(37, 211, 102, 0.4);
-      transition: transform 0.2s ease;
-    }
-    .whatsapp:hover { transform: scale(1.1); }
 
     footer {
       padding: 2rem;
       color: #777;
       font-size: 0.9rem;
       text-align: center;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: rgba(0,0,0,0.85);
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    .modal.show {
+      display: flex;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      background-color: #181818;
+      margin: auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 900px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: scale(0.85);
+      transition: transform 0.4s ease;
+    }
+    .modal.show .modal-content { transform: scale(1); }
+
+    .close-button {
+      color: #aaa;
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+    .close-button:hover { color: #fff; }
+
+    .modal-body { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
+    .modal-image-container {
+      flex: 1; min-width: 300px;
+      display: flex; justify-content: center; align-items: center;
+      background-color: #0d0d0d; border-radius: 8px; overflow: hidden;
+    }
+    .modal-image-container img { max-width: 100%; object-fit: contain; transition: opacity 0.3s ease; }
+
+    .modal-details { flex: 1.5; min-width: 300px; display: flex; flex-direction: column; }
+    .modal-details h2 { font-size: 1.8rem; margin-bottom: 10px; color: #25D366; }
+    .modal-details p { font-size: 1rem; color: #bbb; margin-bottom: 5px; }
+    .modal-details h3 { font-size: 1.2rem; margin-top: 15px; margin-bottom: 10px; color: #ddd; }
+
+    .model-options {
+      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;
+    }
+    .model-option {
+      background: #0d0d0d; border: 1px solid #333; color: #ddd;
+      padding: 8px 15px; border-radius: 20px; cursor: pointer; transition: all 0.2s ease;
+    }
+    .model-option:hover, .model-option.selected {
+      background: #25D366; border-color: #25D366; color: #fff;
+      box-shadow: 0 0 8px rgba(37,211,102,0.6);
+    }
+
+    .modal-price {
+      font-size: 1.5rem; font-weight: bold; color: #25D366;
+      margin-top: auto; text-align: right;
+    }
+    .buy-button {
+      background: #007bff; color: #fff; border: none;
+      padding: 12px 25px; border-radius: 5px; font-size: 1.1rem;
+      cursor: pointer; transition: background 0.3s ease; margin-top: 15px; width: 100%;
+    }
+    .buy-button:hover { background: #0056b3; }
+
+    @media (max-width: 768px) {
+      .modal-body { flex-direction: column; }
+      .modal-image-container, .modal-details { width: 100%; }
+      .modal-price, .buy-button { text-align: center; }
     }
   </style>
 </head>
@@ -125,19 +214,42 @@
   </div>
 
   <section class="galeria">
+    <!-- Modal -->
+    <div id="productModal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <div class="modal-body">
+          <div class="modal-image-container">
+            <img id="modalProductImage" src="" alt="Produto">
+          </div>
+          <div class="modal-details">
+            <h2 id="modalProductName"></h2>
+            <div id="modalProductSpecs"></div>
+            <div class="options-container">
+              <h3>Modelos:</h3>
+              <div id="modalProductOptions" class="model-options"></div>
+            </div>
+            <p class="modal-price">Preço: <span id="modalCurrentPrice">R$ 0,00</span></p>
+            <button class="buy-button">Comprar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Produtos -->
     <div class="item" data-categoria="floral">
       <img src="https://i.imgur.com/DT9Jr4v.jpeg" alt="Caneca de Coração">
       <div class="info">
         <h2>Caneca Coração</h2>
         <p>R$ 39,90</p>
-      </div>
-    </div>
-
-    <div class="item" data-categoria="minimalista">
-      <img src="https://i.ibb.co/GStNtvz/caneca-magica-preta-fosca-tradicional-59-1-58a63c4e8d9cc12d44aebba2bc3e3a1a.jpg" alt="Caneca Minimalista">
-      <div class="info">
-        <h2>Caneca Minimalista</h2>
-        <p>R$ 34,90</p>
+        <button class="open-modal-btn"
+          data-name="Caneca Coração"
+          data-image="https://i.imgur.com/DT9Jr4v.jpeg"
+          data-specs="Material: Cerâmica; Capacidade: 325ml; Estampa: Coração"
+          data-options='[
+            {"model":"Branca","price":39.90,"image":"https://i.imgur.com/DT9Jr4v.jpeg"},
+            {"model":"Rosa","price":44.90,"image":"https://i.imgur.com/6ql1m2n.jpeg"}
+          ]'>Ver Detalhes</button>
       </div>
     </div>
 
@@ -146,55 +258,110 @@
       <div class="info">
         <h2>Caneca Geek</h2>
         <p>R$ 44,90</p>
-      </div>
-    </div>
-
-    <div class="item" data-categoria="personalizada">
-      <img src="https://images.unsplash.com/photo-1551963831-b3b1ca40c98e?w=800" alt="Caneca com Nome">
-      <div class="info">
-        <h2>Caneca com Nome</h2>
-        <p>R$ 39,90</p>
-      </div>
-    </div>
-
-    <div class="item" data-categoria="geek">
-      <img src="https://images.unsplash.com/photo-1618220056776-1d1a6e919fab?w=800" alt="Caneca Star Wars">
-      <div class="info">
-        <h2>Caneca Star Wars</h2>
-        <p>R$ 49,90</p>
+        <button class="open-modal-btn"
+          data-name="Caneca Geek"
+          data-image="https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=800"
+          data-specs="Material: Cerâmica; Capacidade: 325ml; Estampa: Personagens"
+          data-options='[
+            {"model":"Branca","price":44.90,"image":"https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=800"},
+            {"model":"Preta","price":49.90,"image":"https://images.unsplash.com/photo-1618220056776-1d1a6e919fab?w=800"}
+          ]'>Ver Detalhes</button>
       </div>
     </div>
   </section>
-
-  <a href="https://wa.me/5599999999999?text=Olá!%20Gostaria%20de%20fazer%20um%20pedido%20de%20canecas%20personalizadas." class="whatsapp" target="_blank">
-    Pedir pelo WhatsApp
-  </a>
 
   <footer>
     © 2025 • Canecas Personalizadas — Todos os direitos reservados
   </footer>
 
   <script>
+    const productModal = document.getElementById('productModal');
+    const closeButton = document.querySelector('.close-button');
+    const openModalBtns = document.querySelectorAll('.open-modal-btn');
+    const modalProductImage = document.getElementById('modalProductImage');
+    const modalProductName = document.getElementById('modalProductName');
+    const modalProductSpecs = document.getElementById('modalProductSpecs');
+    const modalProductOptions = document.getElementById('modalProductOptions');
+    const modalCurrentPrice = document.getElementById('modalCurrentPrice');
+    const buyButton = document.querySelector('.buy-button');
     const filtroBtns = document.querySelectorAll('.filtro-btn');
     const itens = document.querySelectorAll('.item');
+    let currentProduct = {};
 
+    function formatPrice(price) {
+      return `R$ ${price.toFixed(2).replace('.', ',')}`;
+    }
+
+    // Filtro funcional
     filtroBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         filtroBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const categoria = btn.dataset.categoria;
-
         itens.forEach(item => {
-          if (categoria === 'todas' || item.dataset.categoria === categoria) {
-            item.style.display = 'block';
-            item.style.animation = 'fadeIn 0.6s forwards';
-          } else {
-            item.style.display = 'none';
-          }
+          item.style.display = (categoria === 'todas' || item.dataset.categoria === categoria)
+            ? 'block' : 'none';
         });
       });
     });
-  </script>
 
+    // Abrir modal
+    openModalBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const { name, image, specs } = btn.dataset;
+        const options = JSON.parse(btn.dataset.options);
+        currentProduct = { name, image, specs, options };
+
+        modalProductImage.src = image;
+        modalProductName.textContent = name;
+        modalProductSpecs.innerHTML = specs.split('; ').map(s => `<p>${s}</p>`).join('');
+
+        modalProductOptions.innerHTML = '';
+        options.forEach((option, index) => {
+          const optBtn = document.createElement('button');
+          optBtn.classList.add('model-option');
+          optBtn.textContent = option.model;
+          optBtn.dataset.price = option.price;
+          optBtn.dataset.image = option.image;
+          optBtn.addEventListener('click', () => {
+            document.querySelectorAll('.model-option').forEach(o => o.classList.remove('selected'));
+            optBtn.classList.add('selected');
+            modalCurrentPrice.textContent = formatPrice(parseFloat(option.price));
+            // Trocar imagem
+            modalProductImage.style.opacity = 0;
+            setTimeout(() => {
+              modalProductImage.src = optBtn.dataset.image;
+              modalProductImage.style.opacity = 1;
+            }, 200);
+          });
+          modalProductOptions.appendChild(optBtn);
+          if (index === 0) optBtn.click();
+        });
+
+        // Exibir modal e travar rolagem
+        productModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => productModal.classList.add('show'), 10);
+      });
+    });
+
+    // Fechar modal
+    function closeModal() {
+      productModal.classList.remove('show');
+      document.body.style.overflow = 'auto';
+      setTimeout(() => productModal.style.display = 'none', 300);
+    }
+    closeButton.addEventListener('click', closeModal);
+    window.addEventListener('click', e => { if (e.target === productModal) closeModal(); });
+    window.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    // Comprar
+    buyButton.addEventListener('click', () => {
+      const selected = document.querySelector('.model-option.selected');
+      if (!selected) return alert('Por favor, selecione um modelo.');
+      const message = `Olá! Gostaria de comprar a caneca ${currentProduct.name} (Modelo: ${selected.textContent}, Preço: ${formatPrice(parseFloat(selected.dataset.price))}).`;
+      window.open(`https://wa.me/5599999999999?text=${encodeURIComponent(message)}`, '_blank');
+    });
+  </script>
 </body>
 </html>
