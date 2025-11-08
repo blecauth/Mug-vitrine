@@ -3,58 +3,95 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="src/styles.css"
   <title>Canecas Personalizadas</title>
+  <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
 
-  <header>
+  <!-- 🟢 MENU HAMBÚRGUER -->
+  <header class="menu-header">
+    <div class="menu-toggle" id="menuToggle">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="#inicio" class="menu-link">Início</a></li>
+        <li class="menu-categoria">
+          <span class="menu-link categoria-toggle">Categorias ▾</span>
+          <ul class="submenu" id="submenuCategorias">
+            <li><a href="#" class="menu-link">Brancas</a></li>
+            <li><a href="#" class="menu-link">Coloridas</a></li>
+            <li><a href="#" class="menu-link">Dia das Mães</a></li>
+            <li><a href="#" class="menu-link">Dia dos Pais</a></li>
+            <li><a href="#" class="menu-link">Dia dos Professores</a></li>
+            <li><a href="#" class="menu-link">Pets</a></li>
+            <li><a href="#" class="menu-link">Heróis</a></li>
+            <li><a href="#" class="menu-link">Animes</a></li>
+            <li><a href="#" class="menu-link">Com Foto</a></li>
+            <li><a href="#" class="menu-link">Futebol</a></li>
+          </ul>
+        </li>
+        <li><a href="#contatos" class="menu-link">Contatos</a></li>
+        <li><a href="#sobre" class="menu-link">Quem Somos</a></li>
+        <li><a href="login.html" class="menu-link">ADMIN</a></li>
+      </ul>
+    </nav>
+
+    <!-- 🔲 Overlay escuro -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+  </header>
+
+  <!-- 🔍 CABEÇALHO PRINCIPAL -->
+  <section class="header-main" id="inicio">
     <h1>Canecas Personalizadas</h1>
     <p>Escolha o estilo que combina com você ☕✨</p>
 
     <div class="busca-container">
       <input type="text" id="buscaId" placeholder="Buscar por ID ou nome...">
     </div>
-  </header>
+  </section>
 
+  <!-- 🖼️ GALERIA -->
   <section class="galeria">
     
-    
- <div class="item" data-categoria="floral">
-  <img src="https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg" alt="Caneca teste">
-  <div class="info">
-    <h2>Caneca teste</h2>
-    <p>ID: 0001</p>
-    <p>R$ 32,00</p>
-    <button class="open-modal-btn"
-      data-name="Caneca teste"
-      data-id="0001"
-      data-image="https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg"
-      data-specs="Gege"
-      data-options='[
-        {"model":"Branca","price":32.00,"image":"https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg"},
-        {"model":"Preta","price":25.00,"image":"https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"}
-      ]'>Ver Detalhes</button>
-  </div>
-</div>
-  
     <div class="item" data-categoria="floral">
-  <img src="https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" alt="Caneca teste">
-  <div class="info">
-    <h2>Caneca teste</h2>
-    <p>ID: Cn0001</p>
-    <p>R$ 40,00</p>
-    <button class="open-modal-btn"
-      data-name="Caneca teste"
-      data-id="Cn0001"
-      data-image="https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"
-      data-specs="Nznxn"
-      data-options='[
-        {"model":"Branca","price":40.00,"image":"https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"},
-        {"model":"Preta","price":42.00,"image":"https://i.ibb.co/N6c4DxfJ/IMG-20251021-WA0000.jpg"}
-      ]'>Ver Detalhes</button>
-  </div>
-</div>
+      <img src="https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg" alt="Caneca teste">
+      <div class="info">
+        <h2>Caneca teste</h2>
+        <p>ID: 0001</p>
+        <p>R$ 32,00</p>
+        <button class="open-modal-btn"
+          data-name="Caneca teste"
+          data-id="0001"
+          data-image="https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg"
+          data-specs="Gege"
+          data-options='[
+            {"model":"Branca","price":32.00,"image":"https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg"},
+            {"model":"Preta","price":25.00,"image":"https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"}
+          ]'>Ver Detalhes</button>
+      </div>
+    </div>
+
+    <div class="item" data-categoria="floral">
+      <img src="https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" alt="Caneca teste">
+      <div class="info">
+        <h2>Caneca teste</h2>
+        <p>ID: Cn0001</p>
+        <p>R$ 40,00</p>
+        <button class="open-modal-btn"
+          data-name="Caneca teste"
+          data-id="Cn0001"
+          data-image="https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"
+          data-specs="Nznxn"
+          data-options='[
+            {"model":"Branca","price":40.00,"image":"https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"},
+            {"model":"Preta","price":42.00,"image":"https://i.ibb.co/N6c4DxfJ/IMG-20251021-WA0000.jpg"}
+          ]'>Ver Detalhes</button>
+      </div>
+    </div>
     
     <div class="item" data-categoria="personalizada">
       <img src="https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" alt="Caneca Orgulho Negro">

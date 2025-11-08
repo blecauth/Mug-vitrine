@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Admin Canecas</title>
+  <link rel="stylesheet" href="src/styles.css">
+  <style>
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #0d0d0d;
+      padding: 2rem;
+    }
+    
+    .login-box {
+      background: #181818;
+      padding: 2.5rem;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 400px;
+      border: 1px solid #333;
+    }
+    
+    .login-title {
+      text-align: center;
+      color: #25D366;
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+    }
+    
+    .login-input {
+      width: 100%;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: #1a1a1a;
+      color: white;
+      font-size: 1rem;
+    }
+    
+    .login-input:focus {
+      border-color: #25D366;
+      outline: none;
+    }
+    
+    .login-btn {
+      width: 100%;
+      padding: 1rem;
+      background: #25D366;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    .login-btn:hover {
+      background: #1ebe5f;
+    }
+    
+    .error-msg {
+      color: #ff4444;
+      text-align: center;
+      margin-top: 1rem;
+      display: none;
+    }
+    
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #888;
+      text-decoration: none;
+    }
+    
+    .back-link:hover {
+      color: #25D366;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <h1 class="login-title">🔐 Área Admin</h1>
+      
+      <form id="loginForm">
+        <input type="text" class="login-input" id="username" placeholder="Usuário" required>
+        <input type="password" class="login-input" id="password" placeholder="Senha" required>
+        <button type="submit" class="login-btn">Entrar no Dashboard</button>
+      </form>
+      
+      <div class="error-msg" id="errorMsg">Usuário ou senha incorretos!</div>
+      
+      <a href="index.html" class="back-link">← Voltar ao Site Principal</a>
+    </div>
+  </div>
+
+  <script src="src/auth.js"></script>
+</body>
+</html>
