@@ -1,40 +1,50 @@
-// Sistema de autenticação seguro para Vercel
+// Sistema de autenticação seguro para Vercel - VERSÃO CORRIGIDA
 class AuthSystem {
     constructor() {
-        // 🔐 Credenciais via Environment Variables do Vercel
         this.adminCredentials = {
-            username: this.getEnvironmentVariable('ADMIN_USERNAME'),
-            password: this.getEnvironmentVariable('ADMIN_PASSWORD')
+            username: this.getAdminUsername(),
+            password: this.getAdminPassword()
         };
         
         this.tokenKey = 'admin_token_canecas';
         this.checkAuth();
-        
-        console.log('Sistema de auth inicializado'); // Debug
     }
 
-    // Obtém variáveis de ambiente de forma segura
-    getEnvironmentVariable(key) {
-        // No Vercel (produção)
-        if (typeof process !== 'undefined' && process.env && process.env[key]) {
-            return process.env[key];
+    // Obtém username de forma flexível
+    getAdminUsername() {
+        // 1. Tenta Environment Variable do Vercel
+        if (typeof process !== 'undefined' && process.env && process.env.ADMIN_USERNAME) {
+            return process.env.ADMIN_USERNAME;
         }
         
-        // Fallback para desenvolvimento local
-        const fallbacks = {
-            'ADMIN_USERNAME': 'admin',
-            'ADMIN_PASSWORD': 'dev_password_123'
-        };
+        // 2. Tenta via meta tag (fallback)
+        const metaUser = document.querySelector('meta[name="admin-username"]');
+        if (metaUser) return metaUser.getAttribute('content');
         
-        return fallbacks[key] || '';
+        // 3. Fallback para desenvolvimento
+        return 'admin';
     }
 
-    // Gera token seguro
+    // Obtém password de forma flexível
+    getAdminPassword() {
+        // 1. Tenta Environment Variable do Vercel
+        if (typeof process !== 'undefined' && process.env && process.env.ADMIN_PASSWORD) {
+            return process.env.ADMIN_PASSWORD;
+        }
+        
+        // 2. Tenta via meta tag (fallback)
+        const metaPass = document.querySelector('meta[name="admin-password"]');
+        if (metaPass) return metaPass.getAttribute('content');
+        
+        // 3. Fallback para desenvolvimento
+        return 'senha_temporaria';
+    }
+
+    // ... resto do código permanece igual
     generateToken() {
         return btoa(Date.now() + '|' + Math.random() + '|admin_canecas_' + this.adminCredentials.username);
     }
 
-    // Verifica se está autenticado
     isAuthenticated() {
         const token = localStorage.getItem(this.tokenKey);
         if (!token) return false;
@@ -43,46 +53,38 @@ class AuthSystem {
             const tokenData = atob(token).split('|');
             const tokenTime = parseInt(tokenData[0]);
             const now = Date.now();
-            return (now - tokenTime) < (24 * 60 * 60 * 1000); // 24 horas
+            return (now - tokenTime) < (24 * 60 * 60 * 1000);
         } catch {
             return false;
         }
     }
 
-    // Faz login
     login(username, password) {
-        console.log('Tentando login para usuário:', username);
+        console.log('Tentando login para:', username);
         
         if (username === this.adminCredentials.username && 
             password === this.adminCredentials.password) {
             const token = this.generateToken();
             localStorage.setItem(this.tokenKey, token);
-            console.log('Login bem-sucedido!');
             return true;
         }
-        
-        console.log('Login falhou - Credenciais incorretas');
         return false;
     }
 
-    // Faz logout
     logout() {
         localStorage.removeItem(this.tokenKey);
         window.location.href = 'login.html';
     }
 
-    // Verifica autenticação e redireciona se necessário
     checkAuth() {
         const currentPage = window.location.pathname;
         
         if (currentPage.includes('dashboard.html') && !this.isAuthenticated()) {
-            console.log('Não autenticado - Redirecionando para login');
             window.location.href = 'login.html';
             return;
         }
         
         if (currentPage.includes('login.html') && this.isAuthenticated()) {
-            console.log('Já autenticado - Redirecionando para dashboard');
             window.location.href = 'dashboard.html';
             return;
         }
@@ -108,8 +110,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = 'dashboard.html';
             } else {
                 errorMsg.style.display = 'block';
-                
-                // Esconde o erro após 3 segundos
                 setTimeout(() => {
                     errorMsg.style.display = 'none';
                 }, 3000);
@@ -118,12 +118,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Função global para logout
 function logout() {
     auth.logout();
 }
 
-// Verificação de segurança
 window.addEventListener('load', function() {
     auth.checkAuth();
 });
