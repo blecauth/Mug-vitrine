@@ -88,12 +88,25 @@
   <div class="login-container">
     <div class="login-box">
       <h1 class="login-title">🔐 Área Admin</h1>
-      
       <form id="loginForm">
-        <input type="text" class="login-input" id="username" placeholder="Usuário" required>
-        <input type="password" class="login-input" id="password" placeholder="Senha" required>
-        <button type="submit" class="login-btn">Entrar no Dashboard</button>
-      </form>
+    <input type="text" class="login-input" id="username" placeholder="Usuário" required>
+    <input type="password" class="login-input" id="password" placeholder="Senha" required>
+    
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" style="display: none; text-align: center; margin: 1rem 0;">
+        <div style="border: 3px solid #f3f3f3; border-top: 3px solid #25D366; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+        <p style="color: #25D366; margin-top: 0.5rem;">Verificando credenciais...</p>
+    </div>
+    
+    <button type="submit" class="login-btn">Entrar no Dashboard</button>
+</form>
+
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
       
       <div class="error-msg" id="errorMsg">Usuário ou senha incorretos!</div>
       
