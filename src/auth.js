@@ -1,92 +1,104 @@
-// Sistema de autenticação seguro para Vercel - VERSÃO CORRIGIDA
+// /src/auth.js - FRONTEND SEGURO
 class AuthSystem {
     constructor() {
-        this.adminCredentials = {
-            username: this.getAdminUsername(),
-            password: this.getAdminPassword()
-        };
-        
         this.tokenKey = 'admin_token_canecas';
+        this.apiUrl = '/api/auth'; // URL da API serverless
+        
+        console.log('🔐 Sistema de auth inicializado');
         this.checkAuth();
     }
 
-    // Obtém username de forma flexível
-    getAdminUsername() {
-        // 1. Tenta Environment Variable do Vercel
-        if (typeof process !== 'undefined' && process.env && process.env.ADMIN_USERNAME) {
-            return process.env.ADMIN_USERNAME;
-        }
-        
-        // 2. Tenta via meta tag (fallback)
-        const metaUser = document.querySelector('meta[name="admin-username"]');
-        if (metaUser) return metaUser.getAttribute('content');
-        
-        // 3. Fallback para desenvolvimento
-        return 'admin';
-    }
-
-    // Obtém password de forma flexível
-    getAdminPassword() {
-        // 1. Tenta Environment Variable do Vercel
-        if (typeof process !== 'undefined' && process.env && process.env.ADMIN_PASSWORD) {
-            return process.env.ADMIN_PASSWORD;
-        }
-        
-        // 2. Tenta via meta tag (fallback)
-        const metaPass = document.querySelector('meta[name="admin-password"]');
-        if (metaPass) return metaPass.getAttribute('content');
-        
-        // 3. Fallback para desenvolvimento
-        return 'senha_temporaria';
-    }
-
-    // ... resto do código permanece igual
-    generateToken() {
-        return btoa(Date.now() + '|' + Math.random() + '|admin_canecas_' + this.adminCredentials.username);
-    }
-
+    // Verifica se o token é válido
     isAuthenticated() {
         const token = localStorage.getItem(this.tokenKey);
         if (!token) return false;
-        
+
         try {
-            const tokenData = atob(token).split('|');
-            const tokenTime = parseInt(tokenData[0]);
+            // Decodifica o token
+            const tokenStr = atob(token);
+            const tokenData = JSON.parse(tokenStr);
+            
+            // Verifica expiração
             const now = Date.now();
-            return (now - tokenTime) < (24 * 60 * 60 * 1000);
-        } catch {
+            return now < tokenData.expires;
+        } catch (error) {
+            console.error('❌ Token inválido:', error);
+            this.logout();
             return false;
         }
     }
 
-    login(username, password) {
-        console.log('Tentando login para:', username);
+    // Faz login via API
+    async login(username, password) {
+        console.log('🔐 Tentando login via API...');
         
-        if (username === this.adminCredentials.username && 
-            password === this.adminCredentials.password) {
-            const token = this.generateToken();
-            localStorage.setItem(this.tokenKey, token);
-            return true;
+        try {
+            const response = await fetch(this.apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: username.trim(),
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success && data.token) {
+                console.log('✅ Login autorizado via API');
+                localStorage.setItem(this.tokenKey, data.token);
+                return true;
+            } else {
+                console.log('❌ Login recusado:', data.error);
+                return false;
+            }
+            
+        } catch (error) {
+            console.error('💥 Erro na comunicação com a API:', error);
+            return false;
         }
-        return false;
     }
 
+    // Faz logout
     logout() {
         localStorage.removeItem(this.tokenKey);
+        console.log('👋 Logout realizado');
         window.location.href = 'login.html';
     }
 
+    // Verifica autenticação e redireciona
     checkAuth() {
         const currentPage = window.location.pathname;
         
-        if (currentPage.includes('dashboard.html') && !this.isAuthenticated()) {
-            window.location.href = 'login.html';
+        if (currentPage.includes('dashboard.html')) {
+            if (!this.isAuthenticated()) {
+                console.log('🚫 Acesso negado - redirecionando para login');
+                window.location.href = 'login.html';
+            } else {
+                console.log('✅ Acesso autorizado ao dashboard');
+            }
             return;
         }
         
         if (currentPage.includes('login.html') && this.isAuthenticated()) {
+            console.log('✅ Usuário já autenticado - redirecionando para dashboard');
             window.location.href = 'dashboard.html';
             return;
+        }
+    }
+
+    // Obtém informações do usuário logado
+    getUserInfo() {
+        if (!this.isAuthenticated()) return null;
+        
+        try {
+            const token = localStorage.getItem(this.tokenKey);
+            const tokenStr = atob(token);
+            return JSON.parse(tokenStr);
+        } catch {
+            return null;
         }
     }
 }
@@ -94,34 +106,57 @@ class AuthSystem {
 // Inicializa sistema de auth
 const auth = new AuthSystem();
 
-// Função de login no form
+// Configura formulário de login
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     const errorMsg = document.getElementById('errorMsg');
+    const loadingSpinner = document.getElementById('loadingSpinner');
     
     if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
+        loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const username = document.getElementById('username').value.trim();
+            const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const submitBtn = document.querySelector('.login-btn');
             
-            if (auth.login(username, password)) {
-                window.location.href = 'dashboard.html';
-            } else {
-                errorMsg.style.display = 'block';
-                setTimeout(() => {
-                    errorMsg.style.display = 'none';
-                }, 3000);
+            // Mostra loading
+            if (loadingSpinner) loadingSpinner.style.display = 'block';
+            if (submitBtn) submitBtn.disabled = true;
+            if (errorMsg) errorMsg.style.display = 'none';
+            
+            try {
+                const success = await auth.login(username, password);
+                
+                if (success) {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    if (errorMsg) {
+                        errorMsg.textContent = 'Usuário ou senha incorretos';
+                        errorMsg.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Erro no login:', error);
+                if (errorMsg) {
+                    errorMsg.textContent = 'Erro de conexão. Tente novamente.';
+                    errorMsg.style.display = 'block';
+                }
+            } finally {
+                // Esconde loading
+                if (loadingSpinner) loadingSpinner.style.display = 'none';
+                if (submitBtn) submitBtn.disabled = false;
             }
         });
     }
 });
 
+// Função global para logout
 function logout() {
     auth.logout();
 }
 
+// Verificação de segurança
 window.addEventListener('load', function() {
     auth.checkAuth();
 });
