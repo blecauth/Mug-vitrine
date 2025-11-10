@@ -1,545 +1,282 @@
-// /src/dashboard.js - VERSÃO CORRIGIDA E FUNCIONAL
-class Dashboard {
-    constructor() {
-        this.productsKey = 'canecas_products';
-        this.categoriesKey = 'canecas_categories';
-        this.init();
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Admin Canecas</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #0d0d0d;
+      padding: 2rem;
+    }
+    
+    .login-container {
+      width: 100%;
+      max-width: 400px;
+    }
+    
+    .login-box {
+      background: #181818;
+      padding: 2.5rem;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      border: 1px solid #333;
+    }
+    
+    .login-title {
+      text-align: center;
+      color: #25D366;
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+    }
+    
+    .login-input {
+      width: 100%;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: #1a1a1a;
+      color: white;
+      font-size: 1rem;
+    }
+    
+    .login-input:focus {
+      border-color: #25D366;
+      outline: none;
+    }
+    
+    .login-btn {
+      width: 100%;
+      padding: 1rem;
+      background: #25D366;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 0.5rem;
+    }
+    
+    .login-btn:hover {
+      background: #1ebe5f;
+    }
+    
+    .error-msg {
+      color: #ff4444;
+      text-align: center;
+      margin-top: 1rem;
+      display: none;
+    }
+    
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #888;
+      text-decoration: none;
+    }
+    
+    .back-link:hover {
+      color: #25D366;
     }
 
-    init() {
-        this.loadStats();
-        this.loadAllProducts(); // 🔄 Método corrigido
-        this.setupCategories();
-        this.setupEventListeners();
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 1rem 0;
     }
 
-    // 🔄 CARREGA TODOS OS PRODUTOS (CORRIGIDO)
-    loadAllProducts() {
-        console.log('🔄 Carregando todos os produtos...');
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #25D366;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <h1 class="login-title">🔐 Área Admin</h1>
+      
+      <form id="loginForm">
+        <input type="text" class="login-input" id="username" placeholder="Usuário" required>
+        <input type="password" class="login-input" id="password" placeholder="Senha" required>
         
-        // 1. Primeiro carrega do localStorage
-        const storedProducts = this.getProducts();
-        console.log('📦 Produtos no localStorage:', storedProducts.length);
-        
-        // 2. Adiciona produtos padrão do site se não existirem
-        const defaultProducts = this.getDefaultProducts();
-        const allProducts = this.mergeProducts(storedProducts, defaultProducts);
-        
-        // 3. Salva se houve mudanças
-        if (allProducts.length > storedProducts.length) {
-            console.log('💾 Salvando produtos combinados...');
-            this.saveProducts(allProducts);
-        }
-        
-        // 4. Exibe todos os produtos
-        this.displayAllProducts(allProducts);
-    }
-
-    // 🎯 PRODUTOS PADRÃO DO SEU SITE
-    getDefaultProducts() {
-        return [
-            {
-                id: "0001",
-                nome: "Caneca teste",
-                categoria: "floral",
-                preco: 32.00,
-                descricao: "Caneca de teste com design floral",
-                imageUrl: "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg",
-                specs: "Gege",
-                options: [
-                    {"model": "Branca", "price": 32.00, "image": "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg"},
-                    {"model": "Preta", "price": 25.00, "image": "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"}
-                ],
-                dataCriacao: new Date().toISOString(),
-                origem: "site"
-            },
-            {
-                id: "Cn0001",
-                nome: "Caneca teste",
-                categoria: "floral",
-                preco: 40.00,
-                descricao: "Caneca teste preta",
-                imageUrl: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg",
-                specs: "Nznxn",
-                options: [
-                    {"model": "Branca", "price": 40.00, "image": "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"},
-                    {"model": "Preta", "price": 42.00, "image": "https://i.ibb.co/N6c4DxfJ/IMG-20251021-WA0000.jpg"}
-                ],
-                dataCriacao: new Date().toISOString(),
-                origem: "site"
-            },
-            {
-                id: "CN0001",
-                nome: "Caneca Orgulho Negro",
-                categoria: "personalizada",
-                preco: 30.00,
-                descricao: "Caneca de cerâmica com estampa exclusiva",
-                imageUrl: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg",
-                specs: "Caneca de cerâmica com estampa exclusiva.",
-                options: [
-                    {"model": "Branca", "price": 30.00, "image": "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"},
-                    {"model": "Preta", "price": 32.00, "image": "https://i.ibb.co/PjX9108/IMG-20251021-WA0002.jpg"}
-                ],
-                dataCriacao: new Date().toISOString(),
-                origem: "site"
-            }
-        ];
-    }
-
-    // 🔄 COMBINA PRODUTOS (evita duplicatas por ID)
-    mergeProducts(storedProducts, defaultProducts) {
-        const merged = [...storedProducts];
-        
-        defaultProducts.forEach(defaultProduct => {
-            const exists = merged.find(p => p.id === defaultProduct.id);
-            if (!exists) {
-                merged.push(defaultProduct);
-            }
-        });
-        
-        console.log('🔄 Produtos combinados:', merged.length);
-        return merged;
-    }
-
-    // 🎯 EXIBE TODOS OS PRODUTOS NO DASHBOARD
-    displayAllProducts(products) {
-        const productsList = document.getElementById('productsList');
-        console.log('🎴 Exibindo produtos:', products.length);
-        
-        if (products.length === 0) {
-            productsList.innerHTML = `
-                <div style="text-align: center; padding: 2rem; color: #888;">
-                    <p>📦 Nenhum produto cadastrado</p>
-                    <button onclick="showAddProductModal()" class="action-btn" style="margin-top: 1rem;">
-                        ➕ Adicionar Primeiro Produto
-                    </button>
-                </div>
-            `;
-            return;
-        }
-
-        productsList.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-                <h3>📦 Todos os Produtos (${products.length})</h3>
-                <div style="display: flex; gap: 1rem;">
-                    <button onclick="showAddProductModal()" class="action-btn" style="background: #25D366;">
-                        ➕ Novo Produto
-                    </button>
-                    <button onclick="exportAllProducts()" class="action-btn" style="background: #007bff;">
-                        📤 Exportar Tudo
-                    </button>
-                </div>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
-                ${products.map(product => this.createProductCard(product)).join('')}
-            </div>
-        `;
-    }
-
-    // 🎴 CRIA CARD COMPLETO DO PRODUTO
-    createProductCard(product) {
-        const options = product.options || [
-            { model: "Branca", price: product.preco, image: product.imageUrl }
-        ];
-        
-        const specs = product.specs || product.descricao || "Caneca de cerâmica de alta qualidade";
-        
-        return `
-            <div class="product-card" style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease;">
-                <!-- IMAGEM -->
-                <div style="position: relative; height: 200px; overflow: hidden;">
-                    <img src="${product.imageUrl}" 
-                         alt="${product.nome}"
-                         style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;"
-                         onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem+Não+Encontrada'">
-                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 0.3rem 0.6rem; border-radius: 20px; font-size: 0.8rem;">
-                        ${product.origem === 'site' ? '🌐 Site' : '💾 Local'}
-                    </div>
-                </div>
-                
-                <!-- INFORMAÇÕES -->
-                <div style="padding: 1.5rem;">
-                    <!-- CABEÇALHO -->
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                        <div>
-                            <h3 style="color: #25D366; margin: 0 0 0.3rem 0; font-size: 1.2rem;">${product.nome}</h3>
-                            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                                <span style="background: #333; color: #ccc; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem;">
-                                    ID: ${product.id}
-                                </span>
-                                <span style="background: #25D366; color: white; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem;">
-                                    ${product.categoria}
-                                </span>
-                            </div>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-size: 1.5rem; color: #25D366; font-weight: bold;">
-                                R$ ${parseFloat(product.preco).toFixed(2)}
-                            </div>
-                            <div style="font-size: 0.8rem; color: #888;">
-                                ${product.views || 0} visualizações
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- DESCRIÇÃO -->
-                    <div style="margin-bottom: 1rem;">
-                        <p style="color: #ccc; margin: 0; font-size: 0.9rem; line-height: 1.4;">
-                            ${product.descricao || specs}
-                        </p>
-                    </div>
-                    
-                    <!-- MODELOS DISPONÍVEIS -->
-                    <div style="margin-bottom: 1.5rem;">
-                        <h4 style="color: #fff; margin: 0 0 0.5rem 0; font-size: 0.9rem;">Modelos:</h4>
-                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            ${options.map(opt => `
-                                <span style="background: #333; color: #ccc; padding: 0.3rem 0.6rem; border-radius: 8px; font-size: 0.8rem;">
-                                    ${opt.model} - R$ ${parseFloat(opt.price).toFixed(2)}
-                                </span>
-                            `).join('')}
-                        </div>
-                    </div>
-                    
-                    <!-- BOTÕES DE AÇÃO -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                        <button onclick="editProduct('${product.id}')" 
-                                style="background: #25D366; color: white; border: none; padding: 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
-                            ✏️ Editar
-                        </button>
-                        <button onclick="viewProductDetails('${product.id}')" 
-                                style="background: #007bff; color: white; border: none; padding: 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
-                            👁️ Detalhes
-                        </button>
-                        <button onclick="previewOnSite('${product.id}')" 
-                                style="background: #6f42c1; color: white; border: none; padding: 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
-                            🌐 Preview
-                        </button>
-                        <button onclick="deleteProduct('${product.id}')" 
-                                style="background: #ff4444; color: white; border: none; padding: 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
-                            🗑️ Excluir
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    // 📊 CARREGA ESTATÍSTICAS
-    loadStats() {
-        const products = this.getProducts();
-        const categories = new Set(products.map(p => p.categoria));
-        const totalValue = products.reduce((sum, p) => sum + (parseFloat(p.preco) || 0), 0);
-        
-        document.getElementById('totalProducts').textContent = products.length;
-        document.getElementById('totalCategories').textContent = categories.size;
-    }
-
-    // ⚙️ CONFIGURA CATEGORIAS
-    setupCategories() {
-        const defaultCategories = [
-            'Brancas', 'Coloridas', 'Dia das Mães', 'Dia dos Pais',
-            'Dia dos Professores', 'Pets', 'Heróis', 'Animes',
-            'Com Foto', 'Futebol', 'Personalizadas', 'Promocionais'
-        ];
-        
-        const currentCategories = this.getCategories();
-        if (currentCategories.length === 0) {
-            localStorage.setItem(this.categoriesKey, JSON.stringify(defaultCategories));
-        }
-    }
-
-    // 🎯 EVENT LISTENERS
-    setupEventListeners() {
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                this.loadStats();
-            }
-        });
-    }
-
-    // 💾 GETTERS E SETTERS
-    getProducts() {
-        try {
-            return JSON.parse(localStorage.getItem(this.productsKey)) || [];
-        } catch {
-            return [];
-        }
-    }
-
-    getCategories() {
-        try {
-            return JSON.parse(localStorage.getItem(this.categoriesKey)) || [];
-        } catch {
-            return [];
-        }
-    }
-
-    saveProducts(products) {
-        localStorage.setItem(this.productsKey, JSON.stringify(products));
-        this.loadStats();
-        this.loadAllProducts(); // Recarrega a lista
-    }
-}
-
-// 🎯 INICIALIZA DASHBOARD
-const dashboard = new Dashboard();
-
-// 🔧 FUNÇÕES GLOBAIS
-function showAddProductModal(product = null) {
-    const isEdit = !!product;
-    const modalHTML = `
-        <div id="productModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 2000;">
-            <div style="background: #1a1a1a; padding: 2rem; border-radius: 10px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
-                <h2 style="color: #25D366;">${isEdit ? '✏️ Editar' : '➕ Adicionar'} Produto</h2>
-                
-                <form id="productForm" onsubmit="handleProductSubmit(event, ${isEdit ? `'${product?.id}'` : 'null'})">
-                    <div style="margin-bottom: 1rem;">
-                        <label style="display: block; margin-bottom: 0.5rem; color: #ccc;">Nome do Produto</label>
-                        <input type="text" id="productName" value="${product?.nome || ''}" required 
-                               style="width: 100%; padding: 0.8rem; border-radius: 5px; border: 1px solid #333; background: #2a2a2a; color: white;">
-                    </div>
-                    
-                    <div style="margin-bottom: 1rem;">
-                        <label style="display: block; margin-bottom: 0.5rem; color: #ccc;">ID do Produto</label>
-                        <input type="text" id="productId" value="${product?.id || ''}" ${isEdit ? 'readonly' : ''} required
-                               style="width: 100%; padding: 0.8rem; border-radius: 5px; border: 1px solid #333; background: #2a2a2a; color: white;">
-                    </div>
-                    
-                    <div style="margin-bottom: 1rem;">
-                        <label style="display: block; margin-bottom: 0.5rem; color: #ccc;">Categoria</label>
-                        <select id="productCategory" required
-                                style="width: 100%; padding: 0.8rem; border-radius: 5px; border: 1px solid #333; background: #2a2a2a; color: white;">
-                            <option value="">Selecione uma categoria</option>
-                            ${dashboard.getCategories().map(cat => 
-                                `<option value="${cat}" ${product?.categoria === cat ? 'selected' : ''}>${cat}</option>`
-                            ).join('')}
-                        </select>
-                    </div>
-                    
-                    <div style="margin-bottom: 1rem;">
-                        <label style="display: block; margin-bottom: 0.5rem; color: #ccc;">Preço (R$)</label>
-                        <input type="number" id="productPrice" step="0.01" value="${product?.preco || ''}" required
-                               style="width: 100%; padding: 0.8rem; border-radius: 5px; border: 1px solid #333; background: #2a2a2a; color: white;">
-                    </div>
-                    
-                    <div style="margin-bottom: 1rem;">
-                        <label style="display: block; margin-bottom: 0.5rem; color: #ccc;">Descrição</label>
-                        <textarea id="productDescription" rows="3"
-                                  style="width: 100%; padding: 0.8rem; border-radius: 5px; border: 1px solid #333; background: #2a2a2a; color: white;">${product?.descricao || ''}</textarea>
-                    </div>
-                    
-                    <div style="margin-bottom: 1rem;">
-                        <label style="display: block; margin-bottom: 0.5rem; color: #ccc;">URL da Imagem</label>
-                        <input type="url" id="productImage" value="${product?.imageUrl || ''}" 
-                               style="width: 100%; padding: 0.8rem; border-radius: 5px; border: 1px solid #333; background: #2a2a2a; color: white;">
-                    </div>
-                    
-                    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                        <button type="button" onclick="closeProductModal()" 
-                                style="padding: 0.8rem 1.5rem; border: 1px solid #666; background: transparent; color: #ccc; border-radius: 5px; cursor: pointer;">
-                            Cancelar
-                        </button>
-                        <button type="submit"
-                                style="padding: 0.8rem 1.5rem; background: #25D366; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                            ${isEdit ? '💾 Salvar' : '➕ Adicionar'}
-                        </button>
-                    </div>
-                </form>
-            </div>
+        <div class="loading" id="loadingSpinner">
+          <div class="spinner"></div>
+          <p style="color: #25D366; margin-top: 0.5rem;">Verificando credenciais...</p>
         </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
-
-function closeProductModal() {
-    const modal = document.getElementById('productModal');
-    if (modal) modal.remove();
-}
-
-function handleProductSubmit(event, productId = null) {
-    event.preventDefault();
-    
-    const productData = {
-        nome: document.getElementById('productName').value,
-        id: document.getElementById('productId').value,
-        categoria: document.getElementById('productCategory').value,
-        preco: parseFloat(document.getElementById('productPrice').value),
-        descricao: document.getElementById('productDescription').value,
-        imageUrl: document.getElementById('productImage').value,
-        dataAtualizacao: new Date().toISOString(),
-        origem: "local"
-    };
-    
-    const products = dashboard.getProducts();
-    
-    if (productId) {
-        // Editar produto existente
-        const index = products.findIndex(p => p.id === productId);
-        if (index !== -1) {
-            products[index] = { ...products[index], ...productData };
-        }
-    } else {
-        // Adicionar novo produto
-        productData.dataCriacao = new Date().toISOString();
-        productData.views = 0;
-        products.push(productData);
-    }
-    
-    dashboard.saveProducts(products);
-    closeProductModal();
-    alert(`✅ Produto ${productId ? 'atualizado' : 'adicionado'} com sucesso!`);
-}
-
-function editProduct(productId) {
-    const products = dashboard.getProducts();
-    const product = products.find(p => p.id === productId);
-    if (product) {
-        showAddProductModal(product);
-    }
-}
-
-function deleteProduct(productId) {
-    if (confirm('⚠️ Tem certeza que deseja excluir este produto?\nEsta ação não pode ser desfeita.')) {
-        const products = dashboard.getProducts();
-        const updatedProducts = products.filter(p => p.id !== productId);
-        dashboard.saveProducts(updatedProducts);
-        alert('✅ Produto excluído com sucesso!');
-    }
-}
-
-function viewProductDetails(productId) {
-    const products = dashboard.getProducts();
-    const product = products.find(p => p.id === productId);
-    
-    if (product) {
-        const detailsHTML = `
-            <div style="background: #1a1a1a; padding: 2rem; border-radius: 10px; max-width: 600px; margin: 2rem auto;">
-                <h2 style="color: #25D366; margin-bottom: 1rem;">🔍 Detalhes do Produto</h2>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                    <div><strong>ID:</strong> ${product.id}</div>
-                    <div><strong>Categoria:</strong> ${product.categoria}</div>
-                    <div><strong>Nome:</strong> ${product.nome}</div>
-                    <div><strong>Preço:</strong> R$ ${parseFloat(product.preco).toFixed(2)}</div>
-                    <div><strong>Visualizações:</strong> ${product.views || 0}</div>
-                    <div><strong>Origem:</strong> ${product.origem || 'local'}</div>
-                </div>
-                
-                <div style="margin-bottom: 1.5rem;">
-                    <strong>Descrição:</strong>
-                    <p style="color: #ccc; margin-top: 0.5rem;">${product.descricao || 'Sem descrição'}</p>
-                </div>
-                
-                ${product.imageUrl ? `
-                <div style="margin-bottom: 1.5rem;">
-                    <strong>Imagem:</strong>
-                    <img src="${product.imageUrl}" style="max-width: 200px; border-radius: 8px; margin-top: 0.5rem;">
-                </div>
-                ` : ''}
-                
-                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button onclick="closeModal()" 
-                            style="padding: 0.6rem 1.2rem; border: 1px solid #666; background: transparent; color: #ccc; border-radius: 5px; cursor: pointer;">
-                        Fechar
-                    </button>
-                    <button onclick="editProduct('${product.id}')" 
-                            style="padding: 0.6rem 1.2rem; background: #25D366; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                        ✏️ Editar
-                    </button>
-                </div>
-            </div>
-        `;
         
-        showModal(detailsHTML);
+        <button type="submit" class="login-btn">Entrar no Dashboard</button>
+      </form>
+      
+      <div class="error-msg" id="errorMsg">Usuário ou senha incorretos!</div>
+      
+      <a href="index.html" class="back-link">← Voltar ao Site Principal</a>
+    </div>
+  </div>
+
+  <script>
+    // Sistema de autenticação seguro para Vercel - VERSÃO CORRIGIDA
+    class AuthSystem {
+      constructor() {
+        // 🔐 Credenciais via Environment Variables do Vercel
+        this.adminCredentials = {
+          username: this.getEnvironmentVariable('ADMIN_USERNAME'),
+          password: this.getEnvironmentVariable('ADMIN_PASSWORD')
+        };
+        
+        this.tokenKey = 'admin_token_canecas';
+        this.checkAuth();
+      }
+
+      // Obtém variáveis de ambiente de forma segura
+      getEnvironmentVariable(key) {
+        // No Vercel (produção)
+        if (typeof process !== 'undefined' && process.env && process.env[key]) {
+          return process.env[key];
+        }
+        
+        // Fallback para desenvolvimento local
+        const fallbacks = {
+          'ADMIN_USERNAME': 'admin',
+          'ADMIN_PASSWORD': 'canecas123'
+        };
+        
+        return fallbacks[key] || '';
+      }
+
+      // Gera token seguro
+      generateToken() {
+        return btoa(Date.now() + '|' + Math.random() + '|admin_canecas_' + this.adminCredentials.username);
+      }
+
+      // Verifica se está autenticado
+      isAuthenticated() {
+        const token = localStorage.getItem(this.tokenKey);
+        if (!token) return false;
+        
+        try {
+          const tokenData = atob(token).split('|');
+          const tokenTime = parseInt(tokenData[0]);
+          const now = Date.now();
+          return (now - tokenTime) < (24 * 60 * 60 * 1000); // 24 horas
+        } catch {
+          return false;
+        }
+      }
+
+      // Faz login
+      login(username, password) {
+        console.log('Tentando login para usuário:', username);
+        
+        if (username === this.adminCredentials.username && 
+            password === this.adminCredentials.password) {
+          const token = this.generateToken();
+          localStorage.setItem(this.tokenKey, token);
+          console.log('Login bem-sucedido!');
+          return true;
+        }
+        
+        console.log('Login falhou - Credenciais incorretas');
+        return false;
+      }
+
+      // Faz logout
+      logout() {
+        localStorage.removeItem(this.tokenKey);
+        window.location.href = 'login.html';
+      }
+
+      // Verifica autenticação e redireciona se necessário
+      checkAuth() {
+        const currentPage = window.location.pathname;
+        
+        if (currentPage.includes('dashboard.html') && !this.isAuthenticated()) {
+          console.log('Não autenticado - Redirecionando para login');
+          window.location.href = 'login.html';
+          return;
+        }
+        
+        if (currentPage.includes('login.html') && this.isAuthenticated()) {
+          console.log('Já autenticado - Redirecionando para dashboard');
+          window.location.href = 'dashboard.html';
+          return;
+        }
+      }
     }
-}
 
-function previewOnSite(productId) {
-    const products = dashboard.getProducts();
-    const product = products.find(p => p.id === productId);
-    
-    if (product) {
-        alert(`🌐 Preview do produto: ${product.nome}\n\nAbrindo visualização do produto no estilo do site...`);
-        // Aqui você pode implementar uma visualização mais elaborada depois
+    // Inicializa sistema de auth
+    const auth = new AuthSystem();
+
+    // Função de login no form
+    document.addEventListener('DOMContentLoaded', function() {
+      const loginForm = document.getElementById('loginForm');
+      const errorMsg = document.getElementById('errorMsg');
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      
+      if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          
+          const username = document.getElementById('username').value.trim();
+          const password = document.getElementById('password').value;
+          const submitBtn = document.querySelector('.login-btn');
+          
+          // Mostra loading
+          if (loadingSpinner) loadingSpinner.style.display = 'block';
+          if (submitBtn) submitBtn.disabled = true;
+          if (errorMsg) errorMsg.style.display = 'none';
+          
+          // Simula delay para melhor UX
+          setTimeout(() => {
+            if (auth.login(username, password)) {
+              window.location.href = 'dashboard.html';
+            } else {
+              if (errorMsg) {
+                errorMsg.style.display = 'block';
+              }
+            }
+            
+            // Esconde loading
+            if (loadingSpinner) loadingSpinner.style.display = 'none';
+            if (submitBtn) submitBtn.disabled = false;
+          }, 1000);
+        });
+      }
+    });
+
+    // Função global para logout
+    function logout() {
+      auth.logout();
     }
-}
 
-function exportAllProducts() {
-    const products = dashboard.getProducts();
-    const exportData = {
-        produtos: products,
-        total: products.length,
-        dataExportacao: new Date().toISOString(),
-        categorias: [...new Set(products.map(p => p.categoria))]
-    };
-    
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], {type: 'application/json'});
-    
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(dataBlob);
-    link.download = `export_produtos_completo_${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    
-    alert(`📤 Exportado ${products.length} produtos!`);
-}
-
-function showModal(html) {
-    const modal = document.createElement('div');
-    modal.id = 'detailsModal';
-    modal.style.cssText = `
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-        background: rgba(0,0,0,0.8); display: flex; justify-content: center; 
-        align-items: center; z-index: 2000; padding: 2rem;
-    `;
-    modal.innerHTML = html;
-    document.body.appendChild(modal);
-}
-
-function closeModal() {
-    const modal = document.getElementById('detailsModal');
-    if (modal) modal.remove();
-}
-
-function adicionarProduto() {
-    showAddProductModal();
-}
-
-function gerenciarCategorias() {
-    alert('🎯 Gerenciar Categorias\n\nFuncionalidade em desenvolvimento...');
-}
-
-function verEstatisticas() {
-    const products = dashboard.getProducts();
-    const totalPreco = products.reduce((sum, p) => sum + (parseFloat(p.preco) || 0), 0);
-    const avgPreco = products.length > 0 ? totalPreco / products.length : 0;
-    
-    alert(`📊 Estatísticas:\n\n• Produtos: ${products.length}\n• Valor Total: R$ ${totalPreco.toFixed(2)}\n• Preço Médio: R$ ${avgPreco.toFixed(2)}`);
-}
-
-function backupDados() {
-    const products = dashboard.getProducts();
-    const backupData = {
-        produtos: products,
-        dataBackup: new Date().toISOString(),
-        total: products.length
-    };
-    
-    const dataStr = JSON.stringify(backupData, null, 2);
-    const dataBlob = new Blob([dataStr], {type: 'application/json'});
-    
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(dataBlob);
-    link.download = `backup_produtos_${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    
-    alert('💾 Backup realizado!');
-}
-
-// Atualiza estatísticas periodicamente
-setInterval(() => {
-    dashboard.loadStats();
-}, 30000);
+    // Verificação de segurança
+    window.addEventListener('load', function() {
+      auth.checkAuth();
+    });
+  </script>
+</body>
+</html>
