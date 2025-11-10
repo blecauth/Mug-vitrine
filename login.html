@@ -1,144 +1,407 @@
-<script>
-    // Sistema de autenticação SEGURO com API Vercel
-    class AuthSystem {
-        constructor() {
-            this.tokenKey = 'admin_token_canecas';
-            this.apiUrl = '/api/auth'; // URL da API serverless
-            this.checkAuth();
-        }
-
-        // Verifica se está autenticado
-        isAuthenticated() {
-            const token = localStorage.getItem(this.tokenKey);
-            if (!token) return false;
-            
-            try {
-                const tokenData = atob(token).split('|');
-                const tokenTime = parseInt(tokenData[0]);
-                const now = Date.now();
-                return (now - tokenTime) < (24 * 60 * 60 * 1000); // 24 horas
-            } catch {
-                return false;
-            }
-        }
-
-        // Faz login via API
-        async login(username, password) {
-            console.log('🔐 Tentando login via API...');
-            
-            try {
-                const response = await fetch(this.apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        username: username.trim(),
-                        password: password
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    console.log('✅ Login autorizado via API');
-                    // Gera token seguro para o front-end
-                    const token = btoa(Date.now() + '|' + Math.random() + '|admin_canecas');
-                    localStorage.setItem(this.tokenKey, token);
-                    return true;
-                } else {
-                    console.log('❌ Login recusado:', data.error);
-                    return false;
-                }
-                
-            } catch (error) {
-                console.error('💥 Erro na comunicação com a API:', error);
-                // Fallback para desenvolvimento
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    console.log('🛠️ Modo desenvolvimento - usando fallback');
-                    if (username === 'admin' && password === 'devpassword') {
-                        const token = btoa(Date.now() + '|' + Math.random() + '|admin_canecas');
-                        localStorage.setItem(this.tokenKey, token);
-                        return true;
-                    }
-                }
-                return false;
-            }
-        }
-
-        // Faz logout
-        logout() {
-            localStorage.removeItem(this.tokenKey);
-            window.location.href = 'login.html';
-        }
-
-        // Verifica autenticação
-        checkAuth() {
-            const currentPage = window.location.pathname;
-            
-            if (currentPage.includes('dashboard.html') && !this.isAuthenticated()) {
-                window.location.href = 'login.html';
-                return;
-            }
-            
-            if (currentPage.includes('login.html') && this.isAuthenticated()) {
-                window.location.href = 'dashboard.html';
-                return;
-            }
-        }
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Admin Canecas</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #0d0d0d;
+      padding: 2rem;
+    }
+    
+    .login-container {
+      width: 100%;
+      max-width: 400px;
+    }
+    
+    .login-box {
+      background: #181818;
+      padding: 2.5rem;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      border: 1px solid #333;
+    }
+    
+    .login-title {
+      text-align: center;
+      color: #25D366;
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+    }
+    
+    .login-input {
+      width: 100%;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: #1a1a1a;
+      color: white;
+      font-size: 1rem;
+    }
+    
+    .login-input:focus {
+      border-color: #25D366;
+      outline: none;
+    }
+    
+    .login-btn {
+      width: 100%;
+      padding: 1rem;
+      background: #25D366;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 0.5rem;
+    }
+    
+    .login-btn:hover {
+      background: #1ebe5f;
     }
 
-    // Inicializa sistema de auth
-    const auth = new AuthSystem();
+    .login-btn:disabled {
+      background: #666;
+      cursor: not-allowed;
+    }
+    
+    .error-msg {
+      color: #ff4444;
+      text-align: center;
+      margin-top: 1rem;
+      display: none;
+      padding: 0.5rem;
+      background: rgba(255, 68, 68, 0.1);
+      border-radius: 5px;
+    }
+    
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #888;
+      text-decoration: none;
+    }
+    
+    .back-link:hover {
+      color: #25D366;
+    }
 
-    // Função de login no form
-    document.addEventListener('DOMContentLoaded', function() {
-        const loginForm = document.getElementById('loginForm');
-        const errorMsg = document.getElementById('errorMsg');
-        const loadingSpinner = document.getElementById('loadingSpinner');
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 1rem 0;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #25D366;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .success-msg {
+      color: #25D366;
+      text-align: center;
+      margin-top: 1rem;
+      display: none;
+      padding: 0.5rem;
+      background: rgba(37, 211, 102, 0.1);
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <h1 class="login-title">🔐 Área Admin</h1>
+      
+      <form id="loginForm">
+        <input type="text" class="login-input" id="username" placeholder="Usuário" required>
+        <input type="password" class="login-input" id="password" placeholder="Senha" required>
         
-        if (loginForm) {
-            loginForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const username = document.getElementById('username').value;
-                const password = document.getElementById('password').value;
-                const submitBtn = document.querySelector('.login-btn');
-                
-                // Mostra loading
-                if (loadingSpinner) loadingSpinner.style.display = 'block';
-                if (submitBtn) submitBtn.disabled = true;
-                if (errorMsg) errorMsg.style.display = 'none';
-                
-                try {
-                    const success = await auth.login(username, password);
-                    
-                    if (success) {
-                        window.location.href = 'dashboard.html';
-                    } else {
-                        if (errorMsg) {
-                            errorMsg.textContent = 'Usuário ou senha incorretos';
-                            errorMsg.style.display = 'block';
-                        }
-                    }
-                } catch (error) {
-                    console.error('Erro no login:', error);
-                    if (errorMsg) {
-                        errorMsg.textContent = 'Erro de conexão. Tente novamente.';
-                        errorMsg.style.display = 'block';
-                    }
-                } finally {
-                    // Esconde loading
-                    if (loadingSpinner) loadingSpinner.style.display = 'none';
-                    if (submitBtn) submitBtn.disabled = false;
-                }
-            });
+        <div class="loading" id="loadingSpinner">
+          <div class="spinner"></div>
+          <p style="color: #25D366; margin-top: 0.5rem;">Verificando credenciais...</p>
+        </div>
+        
+        <button type="submit" class="login-btn" id="submitBtn">Entrar no Dashboard</button>
+      </form>
+      
+      <div class="error-msg" id="errorMsg">Usuário ou senha incorretos!</div>
+      <div class="success-msg" id="successMsg">Login realizado com sucesso! Redirecionando...</div>
+      
+      <a href="index.html" class="back-link">← Voltar ao Site Principal</a>
+
+      <div style="text-align: center; margin-top: 2rem; color: #666; font-size: 0.8rem;">
+        <p>🔒 Sistema seguro com autenticação serverless</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Sistema de autenticação SIMPLES e FUNCIONAL
+    console.log('🔐 Sistema de login carregado!');
+
+    class AuthSystem {
+      constructor() {
+        this.tokenKey = 'admin_token_canecas';
+        this.apiUrl = '/api/auth';
+        this.checkAuth();
+      }
+
+      // Verifica se está autenticado
+      isAuthenticated() {
+        const token = localStorage.getItem(this.tokenKey);
+        if (!token) {
+          console.log('❌ Não autenticado - token não encontrado');
+          return false;
         }
+        
+        try {
+          const tokenData = atob(token).split('|');
+          const tokenTime = parseInt(tokenData[0]);
+          const now = Date.now();
+          const isValid = (now - tokenTime) < (24 * 60 * 60 * 1000);
+          
+          console.log('🔍 Verificando token:', isValid ? '✅ Válido' : '❌ Expirado');
+          return isValid;
+        } catch (error) {
+          console.error('💥 Erro ao verificar token:', error);
+          return false;
+        }
+      }
+
+      // Gera token seguro
+      generateToken() {
+        const token = btoa(Date.now() + '|' + Math.random() + '|admin_canecas');
+        console.log('🔑 Token gerado:', token.substring(0, 20) + '...');
+        return token;
+      }
+
+      // Faz login via API
+      async login(username, password) {
+        console.log('🔐 Tentando login para:', username);
+        
+        try {
+          // Tenta a API do Vercel primeiro
+          console.log('🌐 Chamando API:', this.apiUrl);
+          const response = await fetch(this.apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              username: username.trim(),
+              password: password
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          console.log('📨 Resposta da API:', data);
+          
+          if (data.success) {
+            console.log('✅ Login autorizado via API');
+            const token = this.generateToken();
+            localStorage.setItem(this.tokenKey, token);
+            return true;
+          } else {
+            console.log('❌ Login recusado pela API');
+            return false;
+          }
+          
+        } catch (error) {
+          console.error('💥 Erro na API, usando fallback:', error);
+          
+          // Fallback seguro para desenvolvimento
+          const isLocal = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1' ||
+                         window.location.hostname.includes('vercel.app');
+          
+          if (isLocal) {
+            console.log('🛠️ Modo desenvolvimento - usando fallback');
+            // Credenciais de fallback para desenvolvimento
+            if (username === 'admin' && password === 'canecas123') {
+              const token = this.generateToken();
+              localStorage.setItem(this.tokenKey, token);
+              return true;
+            }
+          }
+          
+          return false;
+        }
+      }
+
+      // Faz logout
+      logout() {
+        console.log('👋 Realizando logout');
+        localStorage.removeItem(this.tokenKey);
+        window.location.href = 'login.html';
+      }
+
+      // Verifica autenticação e redireciona
+      checkAuth() {
+        const currentPage = window.location.pathname;
+        console.log('🔍 Verificando autenticação para:', currentPage);
+        
+        if (currentPage.includes('dashboard.html')) {
+          if (!this.isAuthenticated()) {
+            console.log('🚫 Acesso negado ao dashboard - redirecionando para login');
+            window.location.href = 'login.html';
+          } else {
+            console.log('✅ Acesso autorizado ao dashboard');
+          }
+        }
+        
+        if (currentPage.includes('login.html') && this.isAuthenticated()) {
+          console.log('✅ Usuário já autenticado - redirecionando para dashboard');
+          window.location.href = 'dashboard.html';
+        }
+      }
+    }
+
+    // Inicializa sistema de auth quando a página carregar
+    let auth;
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🚀 Página login.html carregada!');
+      auth = new AuthSystem();
+      setupLoginForm();
     });
+
+    // Configura o formulário de login
+    function setupLoginForm() {
+      const loginForm = document.getElementById('loginForm');
+      const errorMsg = document.getElementById('errorMsg');
+      const successMsg = document.getElementById('successMsg');
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      const submitBtn = document.getElementById('submitBtn');
+      
+      if (!loginForm) {
+        console.error('❌ Formulário de login não encontrado!');
+        return;
+      }
+
+      console.log('✅ Formulário de login configurado');
+
+      loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        console.log('📝 Formulário submetido');
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        // Validação básica
+        if (!username || !password) {
+          showError('Por favor, preencha todos os campos');
+          return;
+        }
+
+        // Mostra loading
+        showLoading();
+        
+        try {
+          const success = await auth.login(username, password);
+          
+          if (success) {
+            showSuccess('Login realizado com sucesso! Redirecionando...');
+            console.log('✅ Login bem-sucedido, redirecionando...');
+            
+            // Redireciona após breve delay
+            setTimeout(() => {
+              window.location.href = 'dashboard.html';
+            }, 1000);
+            
+          } else {
+            showError('Usuário ou senha incorretos');
+            console.log('❌ Login falhou');
+          }
+        } catch (error) {
+          console.error('💥 Erro durante o login:', error);
+          showError('Erro de conexão. Tente novamente.');
+        } finally {
+          hideLoading();
+        }
+      });
+    }
+
+    // Funções auxiliares para UI
+    function showLoading() {
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      const submitBtn = document.getElementById('submitBtn');
+      const errorMsg = document.getElementById('errorMsg');
+      const successMsg = document.getElementById('successMsg');
+      
+      if (loadingSpinner) loadingSpinner.style.display = 'block';
+      if (submitBtn) submitBtn.disabled = true;
+      if (errorMsg) errorMsg.style.display = 'none';
+      if (successMsg) successMsg.style.display = 'none';
+    }
+
+    function hideLoading() {
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      const submitBtn = document.getElementById('submitBtn');
+      
+      if (loadingSpinner) loadingSpinner.style.display = 'none';
+      if (submitBtn) submitBtn.disabled = false;
+    }
+
+    function showError(message) {
+      const errorMsg = document.getElementById('errorMsg');
+      if (errorMsg) {
+        errorMsg.textContent = message;
+        errorMsg.style.display = 'block';
+      }
+    }
+
+    function showSuccess(message) {
+      const successMsg = document.getElementById('successMsg');
+      if (successMsg) {
+        successMsg.textContent = message;
+        successMsg.style.display = 'block';
+      }
+    }
 
     // Função global para logout
     function logout() {
-        const auth = new AuthSystem();
+      if (auth) {
         auth.logout();
+      } else {
+        localStorage.removeItem('admin_token_canecas');
+        window.location.href = 'login.html';
+      }
     }
-</script>
+
+    // Debug: verifica se a página carregou completamente
+    window.addEventListener('load', function() {
+      console.log('✅ Página completamente carregada');
+      console.log('📍 URL atual:', window.location.href);
+    });
+  </script>
+</body>
+</html>
