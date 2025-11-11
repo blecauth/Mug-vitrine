@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adicionar Produto - Admin Canecas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background: #0d0d0d;
+            color: #fff;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #181818;
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #25D366;
+            padding-bottom: 1rem;
+        }
+        
+        .header h1 {
+            color: #25D366;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #ccc;
+            font-weight: bold;
+        }
+        
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #1a1a1a;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            border-color: #25D366;
+            outline: none;
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        /* Modelos Section */
+        .modelos-section {
+            background: #1a1a1a;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border: 1px solid #333;
+        }
+        
+        .modelos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .modelo-checkbox {
+            display: none;
+        }
+        
+        .modelo-label {
+            display: block;
+            padding: 1rem;
+            background: #252525;
+            border: 2px solid #333;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .modelo-checkbox:checked + .modelo-label {
+            border-color: #25D366;
+            background: rgba(37, 211, 102, 0.1);
+            color: #25D366;
+        }
+        
+        /* Campos de Modelo */
+        .modelo-campos {
+            display: none;
+            background: #252525;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            border: 1px solid #333;
+        }
+        
+        .modelo-campos.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .campos-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 1rem;
+            align-items: end;
+        }
+        
+        .preview-image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #333;
+        }
+        
+        /* Ações */
+        .acoes {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+        
+        .btn-preview {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-preview:hover {
+            background: #0056b3;
+        }
+        
+        .btn-submit {
+            background: #25D366;
+            color: white;
+        }
+        
+        .btn-submit:hover {
+            background: #1ebe5f;
+        }
+        
+        .btn-cancel {
+            background: #666;
+            color: white;
+        }
+        
+        .btn-cancel:hover {
+            background: #555;
+        }
+        
+        .btn:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+        
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #25D366;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Mensagens */
+        .message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            text-align: center;
+            display: none;
+        }
+        
+        .message.success {
+            background: rgba(37, 211, 102, 0.1);
+            border: 1px solid #25D366;
+            color: #25D366;
+        }
+        
+        .message.error {
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid #ff4444;
+            color: #ff4444;
+        }
+        
+        /* Responsivo */
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .campos-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .acoes {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>➕ Adicionar Novo Produto</h1>
+            <p>Preencha os dados do produto para publicar no site</p>
+        </div>
+        
+        <form id="productForm">
+            <!-- Dados Básicos -->
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="productName">Nome do Produto *</label>
+                    <input type="text" class="form-input" id="productName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="productId">ID do Produto *</label>
+                    <input type="text" class="form-input" id="productId" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="productDescription">Descrição *</label>
+                <textarea class="form-textarea" id="productDescription" required></textarea>
+            </div>
+            
+            <!-- Seção de Modelos -->
+            <div class="modelos-section">
+                <h3 style="color: #25D366; margin-bottom: 1rem;">🎨 Selecione os Modelos Disponíveis</h3>
+                
+                <div class="modelos-grid" id="modelosContainer">
+                    <!-- Modelos serão inseridos via JavaScript -->
+                </div>
+                
+                <!-- Campos Dinâmicos para cada Modelo -->
+                <div id="modelosCampos">
+                    <!-- Campos aparecerão aqui quando modelos forem selecionados -->
+                </div>
+            </div>
+            
+            <!-- Mensagens -->
+            <div class="message success" id="successMessage"></div>
+            <div class="message error" id="errorMessage"></div>
+            
+            <!-- Loading -->
+            <div class="loading" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p style="color: #25D366; margin-top: 0.5rem;">Processando...</p>
+            </div>
+            
+            <!-- Ações -->
+            <div class="acoes">
+                <button type="button" class="btn btn-cancel" onclick="voltarDashboard()">← Voltar</button>
+                <button type="button" class="btn btn-preview" onclick="previewProduto()">👁️ Prévia</button>
+                <button type="submit" class="btn btn-submit" id="submitBtn">🚀 Publicar no Site</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal de Prévia -->
+    <div id="previewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center;">
+        <div style="background: #181818; padding: 2rem; border-radius: 15px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="color: #25D366;">👁️ Prévia do Produto</h3>
+                <button onclick="fecharPreview()" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">×</button>
+            </div>
+            <div id="previewContent">
+                <!-- Prévia será inserida aqui -->
+            </div>
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <button onclick="fecharPreview()" class="btn btn-cancel">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="src/adicionar-produto.js"></script>
+</body>
+</html>
