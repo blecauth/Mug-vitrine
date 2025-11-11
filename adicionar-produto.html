@@ -16,44 +16,33 @@
             background: #0d0d0d;
             color: #fff;
             min-height: 100vh;
-            padding: 2rem;
+            padding: 1rem;
         }
         
         .container {
             max-width: 800px;
             margin: 0 auto;
             background: #181818;
-            padding: 2rem;
+            padding: 1.5rem;
             border-radius: 15px;
             border: 1px solid #333;
         }
         
         .header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             border-bottom: 2px solid #25D366;
             padding-bottom: 1rem;
         }
         
         .header h1 {
             color: #25D366;
-            font-size: 2rem;
+            font-size: 1.5rem;
             margin-bottom: 0.5rem;
         }
         
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
         .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-group.full-width {
-            grid-column: 1 / -1;
+            margin-bottom: 1rem;
         }
         
         .form-label {
@@ -80,22 +69,22 @@
         
         .form-textarea {
             resize: vertical;
-            min-height: 100px;
+            min-height: 80px;
         }
         
         /* Modelos Section */
         .modelos-section {
             background: #1a1a1a;
-            padding: 1.5rem;
+            padding: 1rem;
             border-radius: 10px;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             border: 1px solid #333;
         }
         
         .modelos-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.5rem;
             margin-top: 1rem;
         }
         
@@ -105,13 +94,14 @@
         
         .modelo-label {
             display: block;
-            padding: 1rem;
+            padding: 0.8rem 0.5rem;
             background: #252525;
             border: 2px solid #333;
             border-radius: 8px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
+            font-size: 0.9rem;
         }
         
         .modelo-checkbox:checked + .modelo-label {
@@ -124,7 +114,7 @@
         .modelo-campos {
             display: none;
             background: #252525;
-            padding: 1.5rem;
+            padding: 1rem;
             border-radius: 8px;
             margin-top: 1rem;
             border: 1px solid #333;
@@ -137,14 +127,13 @@
         
         .campos-grid {
             display: grid;
-            grid-template-columns: 1fr auto;
+            grid-template-columns: 1fr;
             gap: 1rem;
-            align-items: end;
         }
         
         .preview-image {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             object-fit: cover;
             border-radius: 8px;
             border: 2px solid #333;
@@ -153,20 +142,21 @@
         /* Ações */
         .acoes {
             display: flex;
-            gap: 1rem;
+            gap: 0.5rem;
             justify-content: center;
-            margin-top: 2rem;
+            margin-top: 1.5rem;
             flex-wrap: wrap;
         }
         
         .btn {
-            padding: 1rem 2rem;
+            padding: 0.8rem 1rem;
             border: none;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.3s ease;
-            min-width: 150px;
+            flex: 1;
+            min-width: 120px;
         }
         
         .btn-preview {
@@ -249,45 +239,42 @@
             color: #ff4444;
         }
         
-        /* Responsivo */
-        @media (max-width: 768px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .campos-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .acoes {
-                flex-direction: column;
-            }
-            
-            .btn {
-                width: 100%;
-            }
+        /* Logs Mobile */
+        #mobileLogs {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.9);
+            color: #25D366;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 11px;
+            max-width: 150px;
+            max-height: 80px;
+            overflow-y: auto;
+            z-index: 10000;
+            display: none;
+            border: 1px solid #25D366;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>➕ Adicionar Novo Produto</h1>
-            <p>Preencha os dados do produto para publicar no site</p>
+            <h1>➕ Adicionar Produto</h1>
+            <p>Preencha os dados para publicar no site</p>
         </div>
         
         <form id="productForm">
             <!-- Dados Básicos -->
-            <div class="form-grid">
-                <div class="form-group">
-                    <label class="form-label" for="productName">Nome do Produto *</label>
-                    <input type="text" class="form-input" id="productName" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="productId">ID do Produto *</label>
-                    <input type="text" class="form-input" id="productId" required>
-                </div>
+            <div class="form-group">
+                <label class="form-label" for="productName">Nome do Produto *</label>
+                <input type="text" class="form-input" id="productName" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="productId">ID do Produto *</label>
+                <input type="text" class="form-input" id="productId" required>
             </div>
             
             <div class="form-group">
@@ -297,16 +284,14 @@
             
             <!-- Seção de Modelos -->
             <div class="modelos-section">
-                <h3 style="color: #25D366; margin-bottom: 1rem;">🎨 Selecione os Modelos Disponíveis</h3>
+                <h3 style="color: #25D366; margin-bottom: 1rem; font-size: 1.1rem;">🎨 Modelos Disponíveis</h3>
                 
                 <div class="modelos-grid" id="modelosContainer">
-                    <!-- Modelos serão inseridos via JavaScript -->
+                    <!-- Modelos carregados via JavaScript -->
                 </div>
                 
-                <!-- Campos Dinâmicos para cada Modelo -->
-                <div id="modelosCampos">
-                    <!-- Campos aparecerão aqui quando modelos forem selecionados -->
-                </div>
+                <!-- Campos Dinâmicos -->
+                <div id="modelosCampos"></div>
             </div>
             
             <!-- Mensagens -->
@@ -323,385 +308,341 @@
             <div class="acoes">
                 <button type="button" class="btn btn-cancel" onclick="voltarDashboard()">← Voltar</button>
                 <button type="button" class="btn btn-preview" onclick="previewProduto()">👁️ Prévia</button>
-                <button type="submit" class="btn btn-submit" id="submitBtn">🚀 Publicar no Site</button>
+                <button type="submit" class="btn btn-submit" id="submitBtn">🚀 Publicar</button>
             </div>
         </form>
     </div>
 
+    <!-- Área de Logs Mobile -->
+    <div id="mobileLogs"></div>
+
     <!-- Modal de Prévia -->
-    <div id="previewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center;">
-        <div style="background: #181818; padding: 2rem; border-radius: 15px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h3 style="color: #25D366;">👁️ Prévia do Produto</h3>
+    <div id="previewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; padding: 1rem;">
+        <div style="background: #181818; padding: 1.5rem; border-radius: 15px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="color: #25D366; font-size: 1.2rem;">👁️ Prévia do Produto</h3>
                 <button onclick="fecharPreview()" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">×</button>
             </div>
-            <div id="previewContent">
-                <!-- Prévia será inserida aqui -->
-            </div>
-            <div style="text-align: center; margin-top: 1.5rem;">
-                <button onclick="fecharPreview()" class="btn btn-cancel">Fechar</button>
+            <div id="previewContent"></div>
+            <div style="text-align: center; margin-top: 1rem;">
+                <button onclick="fecharPreview()" class="btn btn-cancel" style="min-width: 100px;">Fechar</button>
             </div>
         </div>
     </div>
 
     <script>
-// Configurações
-const MODELOS_DISPONIVEIS = [
-    'Branca', 'Preta', 'Vermelha', 'Amarela', 'Rosa', 
-    'Azul Clara', 'Azul', 'Azul Escura', 'Verde Clara', 'Verde', 
-    'Verde Escura', 'Laranja', 'Roxa'
-];
+    // =============================================
+    // 📱 CÓDIGO PRINCIPAL - OTIMIZADO PARA MOBILE
+    // =============================================
+    
+    const MODELOS_DISPONIVEIS = [
+        'Branca', 'Preta', 'Vermelha', 'Amarela', 'Rosa', 
+        'Azul Clara', 'Azul', 'Azul Escura', 'Verde Clara', 'Verde', 
+        'Verde Escura', 'Laranja', 'Roxa'
+    ];
 
-class ProductForm {
-    constructor() {
-        this.modelosSelecionados = new Map();
-        this.init();
+    // Função para mostrar logs na tela do mobile
+    function mobileLog(mensagem) {
+        const logs = document.getElementById('mobileLogs');
+        if (logs) {
+            logs.style.display = 'block';
+            logs.innerHTML += '<div>› ' + mensagem + '</div>';
+            // Limita a 3 mensagens
+            if (logs.children.length > 3) {
+                logs.removeChild(logs.children[0]);
+            }
+        }
+        console.log('📱', mensagem);
     }
 
-    init() {
-        this.carregarModelos();
-        this.configurarFormulario();
-        console.log('🚀 Formulário de produto inicializado');
-    }
+    class ProductForm {
+        constructor() {
+            this.modelosSelecionados = new Map();
+            this.init();
+        }
 
-    carregarModelos() {
-        const container = document.getElementById('modelosContainer');
-        const camposContainer = document.getElementById('modelosCampos');
-        
-        MODELOS_DISPONIVEIS.forEach(modelo => {
-            // Checkbox do modelo
-            const checkboxId = `modelo-${modelo.replace(/\s+/g, '-').toLowerCase()}`;
-            container.innerHTML += `
-                <div>
-                    <input type="checkbox" class="modelo-checkbox" id="${checkboxId}" value="${modelo}">
-                    <label class="modelo-label" for="${checkboxId}">${modelo}</label>
-                </div>
-            `;
+        init() {
+            mobileLog('Iniciando formulário...');
+            this.carregarModelos();
+            this.configurarFormulario();
+            mobileLog('✅ Formulário pronto!');
+        }
 
-            // Campos do modelo
-            camposContainer.innerHTML += `
-                <div class="modelo-campos" id="campos-${modelo.replace(/\s+/g, '-').toLowerCase()}">
-                    <h4 style="color: #25D366; margin-bottom: 1rem;">Configurações para ${modelo}</h4>
-                    <div class="campos-grid">
-                        <div>
-                            <label class="form-label">Preço (R$)</label>
-                            <input type="number" class="form-input" 
-                                   id="preco-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
-                                   step="0.01" min="0" placeholder="Ex: 29.90">
-                        </div>
-                        <div>
-                            <label class="form-label">Imagem</label>
-                            <input type="file" class="form-input" 
-                                   id="imagem-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
-                                   accept="image/*">
-                            <img id="preview-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
-                                 class="preview-image" style="display: none; margin-top: 0.5rem;">
+        carregarModelos() {
+            const container = document.getElementById('modelosContainer');
+            const camposContainer = document.getElementById('modelosCampos');
+            
+            MODELOS_DISPONIVEIS.forEach(modelo => {
+                const checkboxId = `modelo-${modelo.replace(/\s+/g, '-').toLowerCase()}`;
+                
+                // Checkbox do modelo
+                container.innerHTML += `
+                    <div>
+                        <input type="checkbox" class="modelo-checkbox" id="${checkboxId}" value="${modelo}">
+                        <label class="modelo-label" for="${checkboxId}">${modelo}</label>
+                    </div>
+                `;
+
+                // Campos do modelo
+                camposContainer.innerHTML += `
+                    <div class="modelo-campos" id="campos-${modelo.replace(/\s+/g, '-').toLowerCase()}">
+                        <h4 style="color: #25D366; margin-bottom: 0.5rem; font-size: 1rem;">${modelo}</h4>
+                        <div class="campos-grid">
+                            <div>
+                                <label class="form-label">Preço (R$)</label>
+                                <input type="number" class="form-input" 
+                                       id="preco-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
+                                       step="0.01" min="0" placeholder="Ex: 29.90">
+                            </div>
+                            <div>
+                                <label class="form-label">Imagem</label>
+                                <input type="file" class="form-input" 
+                                       id="imagem-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
+                                       accept="image/*">
+                                <img id="preview-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
+                                     class="preview-image" style="display: none; margin-top: 0.5rem;">
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-        });
-
-        // Configurar eventos
-        MODELOS_DISPONIVEIS.forEach(modelo => {
-            const checkbox = document.getElementById(`modelo-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
-            checkbox.addEventListener('change', (e) => {
-                this.toggleCamposModelo(modelo, e.target.checked);
+                `;
             });
 
-            const fileInput = document.getElementById(`imagem-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
-            fileInput.addEventListener('change', (e) => {
-                this.fazerPreviewImagem(e.target, modelo);
-            });
+            // Configurar eventos
+            MODELOS_DISPONIVEIS.forEach(modelo => {
+                const checkbox = document.getElementById(`modelo-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
+                const fileInput = document.getElementById(`imagem-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
+                const precoInput = document.getElementById(`preco-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
 
-            const precoInput = document.getElementById(`preco-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
-            precoInput.addEventListener('input', (e) => {
-                this.atualizarPrecoModelo(modelo, e.target.value);
-            });
-        });
-    }
+                checkbox.addEventListener('change', (e) => {
+                    this.toggleCamposModelo(modelo, e.target.checked);
+                    mobileLog(`${modelo}: ${e.target.checked ? 'selecionado' : 'removido'}`);
+                });
 
-    toggleCamposModelo(modelo, mostrar) {
-        const campos = document.getElementById(`campos-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
-        
-        if (mostrar) {
-            campos.classList.add('active');
-            this.modelosSelecionados.set(modelo, {
-                preco: '',
-                imagemUrl: '',
-                imagemFile: null
+                fileInput.addEventListener('change', (e) => {
+                    this.fazerPreviewImagem(e.target, modelo);
+                    mobileLog(`Imagem ${modelo}: selecionada`);
+                });
+
+                precoInput.addEventListener('input', (e) => {
+                    this.atualizarPrecoModelo(modelo, e.target.value);
+                });
             });
-        } else {
-            campos.classList.remove('active');
-            this.modelosSelecionados.delete(modelo);
         }
-    }
 
-    fazerPreviewImagem(input, modelo) {
-        const file = input.files[0];
-        if (!file) return;
-
-        const previewId = `preview-${modelo.replace(/\s+/g, '-').toLowerCase()}`;
-        const preview = document.getElementById(previewId);
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            preview.src = e.target.result;
-            preview.style.display = 'block';
+        toggleCamposModelo(modelo, mostrar) {
+            const campos = document.getElementById(`campos-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
             
-            // Armazena o arquivo para upload posterior
-            const modeloData = this.modelosSelecionados.get(modelo);
-            if (modeloData) {
-                modeloData.imagemFile = file;
-                this.modelosSelecionados.set(modelo, modeloData);
-            }
-        };
-        reader.readAsDataURL(file);
-    }
-
-    atualizarPrecoModelo(modelo, preco) {
-        const modeloData = this.modelosSelecionados.get(modelo);
-        if (modeloData) {
-            modeloData.preco = preco;
-            this.modelosSelecionados.set(modelo, modeloData);
-        }
-    }
-
-    configurarFormulario() {
-        const form = document.getElementById('productForm');
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await this.enviarProduto();
-        });
-    }
-
-    validarFormulario() {
-        const nome = document.getElementById('productName').value.trim();
-        const id = document.getElementById('productId').value.trim();
-        const descricao = document.getElementById('productDescription').value.trim();
-
-        if (!nome || !id || !descricao) {
-            throw new Error('Preencha todos os campos básicos do produto');
-        }
-
-        if (this.modelosSelecionados.size === 0) {
-            throw new Error('Selecione pelo menos um modelo');
-        }
-
-        for (const [modelo, dados] of this.modelosSelecionados) {
-            if (!dados.preco || isNaN(parseFloat(dados.preco))) {
-                throw new Error(`Preço inválido para o modelo ${modelo}`);
-            }
-            if (!dados.imagemFile) {
-                throw new Error(`Selecione uma imagem para o modelo ${modelo}`);
+            if (mostrar) {
+                campos.classList.add('active');
+                this.modelosSelecionados.set(modelo, {
+                    preco: '',
+                    imagemUrl: '',
+                    imagemFile: null
+                });
+            } else {
+                campos.classList.remove('active');
+                this.modelosSelecionados.delete(modelo);
             }
         }
 
-        return true;
-    }
+        fazerPreviewImagem(input, modelo) {
+            const file = input.files[0];
+            if (!file) return;
 
-    async fazerUploadImagem(file) {
-        // Para teste, vamos usar uma URL temporária
-        // Em produção, você configuraria o ImgBB aqui
-        return new Promise((resolve) => {
+            const previewId = `preview-${modelo.replace(/\s+/g, '-').toLowerCase()}`;
+            const preview = document.getElementById(previewId);
+            
             const reader = new FileReader();
             reader.onload = (e) => {
-                // Usando data URL temporária - substitua pelo ImgBB em produção
-                resolve(e.target.result);
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                
+                const modeloData = this.modelosSelecionados.get(modelo);
+                if (modeloData) {
+                    modeloData.imagemFile = file;
+                    this.modelosSelecionados.set(modelo, modeloData);
+                }
             };
             reader.readAsDataURL(file);
-        });
-    }
-
-    async gerarHTMLProduto() {
-        const nome = document.getElementById('productName').value.trim();
-        const id = document.getElementById('productId').value.trim();
-        const descricao = document.getElementById('productDescription').value.trim();
-        
-        // Processar imagens e gerar opções
-        const opcoes = [];
-        
-        for (const [modelo, dados] of this.modelosSelecionados) {
-            const imagemUrl = await this.fazerUploadImagem(dados.imagemFile);
-            opcoes.push({
-                model: modelo,
-                price: parseFloat(dados.preco),
-                image: imagemUrl
-            });
         }
 
-        const opcoesJSON = JSON.stringify(opcoes).replace(/'/g, "&#39;");
-
-        return `
-<div class="item" data-categoria="personalizada">
-    <img src="${opcoes[0].image}" alt="${nome}" loading="lazy">
-    <div class="info">
-        <h2>${nome}</h2>
-        <p>ID: ${id}</p>
-        <p>R$ ${opcoes[0].price.toFixed(2)}</p>
-        <button class="open-modal-btn"
-            data-name="${nome}"
-            data-id="${id}"
-            data-image="${opcoes[0].image}"
-            data-specs="${descricao}"
-            data-options='${opcoesJSON}'>
-            Ver Detalhes
-        </button>
-    </div>
-</div>`.trim();
-    }
-
-    async enviarProduto() {
-        try {
-            this.mostrarLoading(true);
-            this.limparMensagens();
-
-            // Validar formulário
-            this.validarFormulario();
-
-            // Gerar HTML do produto
-            const htmlProduto = await this.gerarHTMLProduto();
-            const nomeProduto = document.getElementById('productName').value.trim();
-
-            console.log('📝 HTML Gerado:', htmlProduto);
-            console.log('🚀 Enviando para GitHub...');
-
-            // Enviar para GitHub
-            const response = await fetch('/api/github-update', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    htmlCode: htmlProduto,
-                    commitMessage: `✨ Adicionar produto: ${nomeProduto}`
-                })
-            });
-
-            const data = await response.json();
-            console.log('📨 Resposta da API:', data);
-
-            if (data.success) {
-                this.mostrarMensagem(
-                    `🎉 Produto "${nomeProduto}" publicado com sucesso!<br>
-                    ⏱️ O site será atualizado em 1-2 minutos.`,
-                    'success'
-                );
-                
-                // Limpar formulário
-                this.limparFormulario();
-                
-            } else {
-                throw new Error(data.error || 'Erro desconhecido do GitHub');
+        atualizarPrecoModelo(modelo, preco) {
+            const modeloData = this.modelosSelecionados.get(modelo);
+            if (modeloData) {
+                modeloData.preco = preco;
+                this.modelosSelecionados.set(modelo, modeloData);
             }
-
-        } catch (error) {
-            console.error('❌ Erro ao publicar produto:', error);
-            this.mostrarMensagem(`❌ ${error.message}`, 'error');
-        } finally {
-            this.mostrarLoading(false);
         }
-    }
 
-    previewProduto() {
-        try {
-            this.validarFormulario();
-            
-            // Para preview, vamos usar uma abordagem simples
+        configurarFormulario() {
+            const form = document.getElementById('productForm');
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await this.enviarProduto();
+            });
+        }
+
+        validarFormulario() {
             const nome = document.getElementById('productName').value.trim();
             const id = document.getElementById('productId').value.trim();
             const descricao = document.getElementById('productDescription').value.trim();
-            
-            let previewHTML = `
-                <div style="background: #1a1a1a; padding: 1rem; border-radius: 10px;">
-                    <h3 style="color: #25D366;">${nome}</h3>
-                    <p><strong>ID:</strong> ${id}</p>
-                    <p><strong>Descrição:</strong> ${descricao}</p>
-                    <p><strong>Modelos selecionados:</strong></p>
-                    <ul>
-            `;
-            
-            for (const [modelo, dados] of this.modelosSelecionados) {
-                previewHTML += `<li>${modelo} - R$ ${parseFloat(dados.preco).toFixed(2)}</li>`;
+
+            if (!nome || !id || !descricao) {
+                throw new Error('Preencha todos os campos básicos');
             }
+
+            if (this.modelosSelecionados.size === 0) {
+                throw new Error('Selecione pelo menos um modelo');
+            }
+
+            for (const [modelo, dados] of this.modelosSelecionados) {
+                if (!dados.preco || isNaN(parseFloat(dados.preco))) {
+                    throw new Error(`Preço inválido: ${modelo}`);
+                }
+                if (!dados.imagemFile) {
+                    throw new Error(`Imagem não selecionada: ${modelo}`);
+                }
+            }
+
+            return true;
+        }
+
+        async enviarProduto() {
+            try {
+                this.mostrarLoading(true);
+                this.limparMensagens();
+
+                mobileLog('Validando formulário...');
+                this.validarFormulario();
+
+                const nomeProduto = document.getElementById('productName').value.trim();
+                mobileLog(`Enviando: ${nomeProduto}`);
+
+                // Simulação - substitua pela API real
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                this.mostrarMensagem(
+                    `🎉 "${nomeProduto}" enviado!<br>
+                    ⚠️ API em desenvolvimento`,
+                    'success'
+                );
+                
+                this.limparFormulario();
+                mobileLog('✅ Produto processado!');
+
+            } catch (error) {
+                mobileLog(`❌ Erro: ${error.message}`);
+                this.mostrarMensagem(`❌ ${error.message}`, 'error');
+            } finally {
+                this.mostrarLoading(false);
+            }
+        }
+
+        previewProduto() {
+            try {
+                this.validarFormulario();
+                
+                const nome = document.getElementById('productName').value.trim();
+                const id = document.getElementById('productId').value.trim();
+                const descricao = document.getElementById('productDescription').value.trim();
+                
+                let previewHTML = `
+                    <div style="background: #1a1a1a; padding: 1rem; border-radius: 10px;">
+                        <h4 style="color: #25D366;">${nome}</h4>
+                        <p><strong>ID:</strong> ${id}</p>
+                        <p><strong>Descrição:</strong> ${descricao}</p>
+                        <p><strong>Modelos (${this.modelosSelecionados.size}):</strong></p>
+                        <ul style="margin-left: 1rem;">
+                `;
+                
+                for (const [modelo, dados] of this.modelosSelecionados) {
+                    previewHTML += `<li>${modelo} - R$ ${parseFloat(dados.preco).toFixed(2)}</li>`;
+                }
+                
+                previewHTML += `
+                        </ul>
+                        <p style="color: #25D366; margin-top: 1rem; font-size: 0.9rem;">
+                            ✅ Prévia gerada com sucesso!
+                        </p>
+                    </div>
+                `;
+                
+                document.getElementById('previewContent').innerHTML = previewHTML;
+                document.getElementById('previewModal').style.display = 'flex';
+                mobileLog('👁️ Prévia gerada');
+                
+            } catch (error) {
+                mobileLog(`❌ Erro na prévia: ${error.message}`);
+                this.mostrarMensagem(`❌ ${error.message}`, 'error');
+            }
+        }
+
+        // Métodos auxiliares
+        mostrarLoading(mostrar) {
+            const spinner = document.getElementById('loadingSpinner');
+            const submitBtn = document.getElementById('submitBtn');
             
-            previewHTML += `
-                    </ul>
-                    <p style="color: #888; margin-top: 1rem;">
-                        ⚠️ As imagens serão processadas quando publicar
-                    </p>
-                </div>
-            `;
+            if (spinner) spinner.style.display = mostrar ? 'block' : 'none';
+            if (submitBtn) {
+                submitBtn.disabled = mostrar;
+                submitBtn.textContent = mostrar ? '⏳ Enviando...' : '🚀 Publicar';
+            }
+        }
+
+        mostrarMensagem(mensagem, tipo) {
+            const element = document.getElementById(tipo === 'success' ? 'successMessage' : 'errorMessage');
+            if (element) {
+                element.innerHTML = mensagem;
+                element.style.display = 'block';
+            }
+        }
+
+        limparMensagens() {
+            const successMsg = document.getElementById('successMessage');
+            const errorMsg = document.getElementById('errorMessage');
             
-            document.getElementById('previewContent').innerHTML = previewHTML;
-            document.getElementById('previewModal').style.display = 'flex';
+            if (successMsg) successMsg.style.display = 'none';
+            if (errorMsg) errorMsg.style.display = 'none';
+        }
+
+        limparFormulario() {
+            document.getElementById('productForm').reset();
+            this.modelosSelecionados.clear();
             
-        } catch (error) {
-            this.mostrarMensagem(`❌ ${error.message}`, 'error');
+            MODELOS_DISPONIVEIS.forEach(modelo => {
+                const campos = document.getElementById(`campos-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
+                if (campos) campos.classList.remove('active');
+                
+                const preview = document.getElementById(`preview-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
+                if (preview) preview.style.display = 'none';
+            });
+            
+            mobileLog('🧹 Formulário limpo');
         }
     }
 
-    // Métodos auxiliares
-    mostrarLoading(mostrar) {
-        const spinner = document.getElementById('loadingSpinner');
-        const submitBtn = document.getElementById('submitBtn');
-        
-        if (spinner) spinner.style.display = mostrar ? 'block' : 'none';
-        if (submitBtn) submitBtn.disabled = mostrar;
+    // Funções globais
+    function fecharPreview() {
+        document.getElementById('previewModal').style.display = 'none';
+        mobileLog('📌 Prévia fechada');
     }
 
-    mostrarMensagem(mensagem, tipo) {
-        const element = document.getElementById(tipo === 'success' ? 'successMessage' : 'errorMessage');
-        if (element) {
-            element.innerHTML = mensagem;
-            element.style.display = 'block';
+    function voltarDashboard() {
+        mobileLog('Voltando ao dashboard...');
+        window.location.href = 'dashboard.html';
+    }
+
+    function previewProduto() {
+        if (window.productForm) {
+            window.productForm.previewProduto();
         }
     }
 
-    limparMensagens() {
-        const successMsg = document.getElementById('successMessage');
-        const errorMsg = document.getElementById('errorMessage');
-        
-        if (successMsg) successMsg.style.display = 'none';
-        if (errorMsg) errorMsg.style.display = 'none';
-    }
-
-    limparFormulario() {
-        document.getElementById('productForm').reset();
-        this.modelosSelecionados.clear();
-        
-        // Limpar todos os campos de modelo
-        MODELOS_DISPONIVEIS.forEach(modelo => {
-            const campos = document.getElementById(`campos-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
-            if (campos) campos.classList.remove('active');
-            
-            const preview = document.getElementById(`preview-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
-            if (preview) preview.style.display = 'none';
-        });
-    }
-}
-
-// Funções globais
-function fecharPreview() {
-    document.getElementById('previewModal').style.display = 'none';
-}
-
-function voltarDashboard() {
-    window.location.href = 'dashboard.html';
-}
-
-function previewProduto() {
-    if (window.productForm) {
-        window.productForm.previewProduto();
-    }
-}
-
-// Inicializar quando a página carregar
-document.addEventListener('DOMContentLoaded', () => {
-    window.productForm = new ProductForm();
-    console.log('✅ Formulário inicializado com sucesso!');
-});
-                                        </script>
-
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', () => {
+        mobileLog('📄 Página carregada');
+        window.productForm = new ProductForm();
+    });
+    </script>
 </body>
 </html>
