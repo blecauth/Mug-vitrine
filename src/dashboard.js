@@ -206,3 +206,61 @@ function logout() {
     localStorage.removeItem('admin_token_canecas');
     window.location.href = 'login.html';
 }
+// 🔄 FUNÇÃO PARA INSERIR NO GITHUB
+async function inserirNoGitHub(produto) {
+    try {
+        // Gera o HTML do card (igual ao do seu gerador)
+        const htmlCode = gerarHTMLDoCard(produto);
+        
+        console.log('🚀 Enviando para GitHub...');
+        
+        const response = await fetch('/api/github-update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                htmlCode: htmlCode,
+                commitMessage: `Adicionar produto: ${produto.nome}`
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(`✅ Produto "${produto.nome}" adicionado ao site!\n\nO site será atualizado em alguns segundos.`);
+            return true;
+        } else {
+            alert(`❌ Erro: ${data.error}`);
+            return false;
+        }
+        
+    } catch (error) {
+        console.error('💥 Erro ao inserir no GitHub:', error);
+        alert('❌ Erro de conexão com o GitHub');
+        return false;
+    }
+}
+
+// 🎴 FUNÇÃO PARA GERAR HTML DO CARD
+function gerarHTMLDoCard(produto) {
+    const options = produto.options || [{ model: "Padrão", price: produto.preco, image: produto.imageUrl }];
+    
+    return `
+<div class="item" data-categoria="${produto.categoria}">
+  <img src="${produto.imageUrl}" alt="${produto.nome}">
+  <div class="info">
+    <h2>${produto.nome}</h2>
+    <p>ID: ${produto.id}</p>
+    <p>R$ ${parseFloat(produto.preco).toFixed(2)}</p>
+    <button class="open-modal-btn"
+      data-name="${produto.nome}"
+      data-id="${produto.id}"
+      data-image="${produto.imageUrl}"
+      data-specs="${produto.descricao}"
+      data-options='${JSON.stringify(options)}'>
+      Ver Detalhes
+    </button>
+  </div>
+</div>`.trim();
+}
