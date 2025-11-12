@@ -1,975 +1,532 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Admin Canecas</title>
-    <style>
-        /* ========================= */
-        /* 🎯 MODAL STYLES */
-        /* ========================= */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            padding: 1rem;
+<script>
+    // 🔥 DASHBOARD CONECTADO AO GITHUB - CORRIGIDO
+    class GitHubDashboard {
+        constructor() {
+            this.products = [];
+            this.currentDisplayedProducts = []; // 🔥 NOVO: produtos atualmente exibidos
+            this.init();
         }
 
-        .modal-content {
-            background: #1a1a1a;
-            padding: 2rem;
-            border-radius: 10px;
-            width: 100%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
-            border: 1px solid #333;
+        async init() {
+            this.mostrarLoading(true, '🔄 Conectando com GitHub...');
+            await this.carregarProdutosDoGitHub();
+            this.loadStats();
+            this.setupSearch();
+            this.mostrarLoading(false, '✅ Conectado com GitHub');
         }
 
-        .modal-title {
-            color: #25D366;
-            margin-bottom: 1.5rem;
-            text-align: center;
-        }
+        async carregarProdutosDoGitHub() {
+            try {
+                console.log('📡 Buscando produtos do GitHub...');
+                
+                // Busca o conteúdo do index.html do GitHub
+                const response = await fetch('/api/github-read');
+                const data = await response.json();
 
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #ccc;
-        }
-
-        .form-input, .form-select, .form-textarea {
-            width: 100%;
-            padding: 0.8rem;
-            border-radius: 5px;
-            border: 1px solid #333;
-            background: #2a2a2a;
-            color: white;
-            font-size: 1rem;
-        }
-
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            border-color: #25D366;
-            outline: none;
-        }
-
-        .form-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-            margin-top: 1.5rem;
-        }
-
-        .btn {
-            padding: 0.8rem 1.5rem;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .btn-cancel {
-            border: 1px solid #666;
-            background: transparent;
-            color: #ccc;
-        }
-
-        .btn-cancel:hover {
-            background: #333;
-        }
-
-        .btn-primary {
-            background: #25D366;
-            color: white;
-            border: none;
-        }
-
-        .btn-primary:hover {
-            background: #1ebe5f;
-        }
-
-        .btn-primary:disabled {
-            background: #666;
-            cursor: not-allowed;
-        }
-
-        /* CSS EMBUTIDO PARA GARANTIR QUE FUNCIONE */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-        
-        body {
-            background: #0d0d0d;
-            color: #fff;
-            line-height: 1.6;
-        }
-        
-        .dashboard-header {
-            background: #181818;
-            padding: 1rem 2rem;
-            border-bottom: 2px solid #25D366;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-        }
-        
-        .dashboard-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .dashboard-nav h1 {
-            color: #25D366;
-            font-size: 1.5rem;
-        }
-        
-        .logout-btn {
-            background: #ff4444;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
-        .dashboard-main {
-            margin-top: 80px;
-            padding: 2rem;
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        .stat-card {
-            background: #181818;
-            padding: 1.5rem;
-            border-radius: 10px;
-            text-align: center;
-            border-left: 4px solid #25D366;
-        }
-        
-        .stat-number {
-            font-size: 2rem;
-            color: #25D366;
-            font-weight: bold;
-            display: block;
-        }
-        
-        .dashboard-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        .action-btn {
-            background: #25D366;
-            color: white;
-            border: none;
-            padding: 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.3s;
-        }
-        
-        .action-btn:hover {
-            background: #1ebe5f;
-        }
-
-        /* 🔥 NOVA SEÇÃO DE GERENCIAMENTO */
-        .management-section {
-            background: #181818;
-            padding: 1.5rem;
-            border-radius: 10px;
-            margin-bottom: 2rem;
-            border: 1px solid #333;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .section-title {
-            color: #25D366;
-            font-size: 1.3rem;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .search-input {
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            border: 1px solid #333;
-            background: #1a1a1a;
-            color: white;
-            min-width: 250px;
-        }
-
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-        
-        .product-card {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 10px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .product-card:hover {
-            transform: translateY(-5px);
-            border-color: #25D366;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        
-        .product-image {
-            height: 200px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .product-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-
-        .product-card:hover .product-image img {
-            transform: scale(1.05);
-        }
-        
-        .product-content {
-            padding: 1rem;
-        }
-        
-        .product-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 0.5rem;
-        }
-        
-        .product-title {
-            color: #25D366;
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .product-tags {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
-            flex-wrap: wrap;
-        }
-        
-        .product-tag {
-            background: #333;
-            color: #ccc;
-            padding: 0.2rem 0.5rem;
-            border-radius: 10px;
-            font-size: 0.8rem;
-        }
-        
-        .product-category {
-            background: #25D366 !important;
-            color: white !important;
-        }
-        
-        .product-price {
-            color: #25D366;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        
-        .product-description {
-            color: #ccc;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-            line-height: 1.4;
-        }
-        
-        .product-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.5rem;
-        }
-        
-        .action-button {
-            background: #25D366;
-            color: white;
-            border: none;
-            padding: 0.5rem;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: background 0.3s ease;
-        }
-
-        .action-button.edit {
-            background: #007bff;
-        }
-
-        .action-button.edit:hover {
-            background: #0056b3;
-        }
-        
-        .action-button.delete {
-            background: #ff4444;
-        }
-
-        .action-button.delete:hover {
-            background: #cc3333;
-        }
-
-        .action-button:hover {
-            background: #1ebe5f;
-        }
-
-        /* Loading States */
-        .loading {
-            display: none;
-            text-align: center;
-            margin: 1rem 0;
-        }
-
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #25D366;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #888;
-        }
-
-        .empty-state h3 {
-            margin-bottom: 1rem;
-            color: #25D366;
-        }
-
-        .sync-status {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #25D366;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-        }
-
-        @media (max-width: 768px) {
-            .dashboard-main {
-                padding: 1rem;
-                margin-top: 70px;
+                if (data.success && data.content) {
+                    console.log('✅ Conteúdo do GitHub recebido');
+                    this.products = this.extrairProdutosDoHTML(data.content);
+                    this.currentDisplayedProducts = [...this.products]; // 🔥 INICIALIZA
+                    this.exibirProdutos(this.currentDisplayedProducts);
+                } else {
+                    throw new Error(data.error || 'Erro ao carregar do GitHub');
+                }
+            } catch (error) {
+                console.error('❌ Erro ao carregar do GitHub:', error);
+                this.mostrarErro('Erro ao carregar produtos: ' + error.message);
             }
+        }
+
+        extrairProdutosDoHTML(htmlContent) {
+            const products = [];
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlContent, 'text/html');
             
-            .products-grid {
-                grid-template-columns: 1fr;
-            }
+            // Encontra todos os cards de produtos
+            const productCards = doc.querySelectorAll('.item');
+            
+            console.log(`📦 Encontrados ${productCards.length} produtos no HTML`);
 
-            .section-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .search-box {
-                justify-content: center;
-            }
-
-            .search-input {
-                min-width: auto;
-                width: 100%;
-            }
-        }
-    </style>
-</head>
-<body>
-    <header class="dashboard-header">
-        <nav class="dashboard-nav">
-            <h1>📊 Dashboard Admin - GitHub</h1>
-            <button class="logout-btn" onclick="logout()">Sair</button>
-        </nav>
-    </header>
-
-    <main class="dashboard-main">
-        <!-- Estatísticas -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <span class="stat-number" id="totalProducts">0</span>
-                <div>Produtos no Site</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number" id="totalCategories">0</span>
-                <div>Categorias</div>
-            </div>
-        </div>
-
-        <!-- Ações -->
-        <div class="dashboard-actions">
-            <button class="action-btn" onclick="window.location.href='adicionar-produto.html'">➕ Adicionar Produto</button>
-            <button class="action-btn" onclick="sincronizarComGitHub()">🔄 Sincronizar com GitHub</button>
-            <button class="action-btn" onclick="verEstatisticas()">📈 Ver Estatísticas</button>
-            <button class="action-btn" onclick="backupDados()">💾 Backup dos Dados</button>
-        </div>
-
-        <!-- 🔥 SEÇÃO: GERENCIAR PRODUTOS DO GITHUB -->
-        <section class="management-section">
-            <div class="section-header">
-                <h2 class="section-title">🛠️ Gerenciar Produtos do Site</h2>
-                <div class="search-box">
-                    <input type="text" class="search-input" id="searchProducts" placeholder="Buscar por nome ou ID...">
-                    <button class="action-btn" onclick="filtrarProdutos()">🔍</button>
-                </div>
-            </div>
-
-            <div class="sync-status" id="syncStatus">
-                <div class="spinner" id="syncSpinner"></div>
-                <span id="syncMessage">🔄 Conectando com GitHub...</span>
-            </div>
-
-            <div id="productsList">
-                <div class="empty-state">
-                    <h3>📦 Carregando produtos do GitHub...</h3>
-                    <p>Aguarde enquanto carregamos os produtos do seu site</p>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <script>
-        // 🔥 DASHBOARD CONECTADO AO GITHUB
-        class GitHubDashboard {
-            constructor() {
-                this.products = [];
-                this.init();
-            }
-
-            async init() {
-                this.mostrarLoading(true, '🔄 Conectando com GitHub...');
-                await this.carregarProdutosDoGitHub();
-                this.loadStats();
-                this.setupSearch();
-                this.mostrarLoading(false, '✅ Conectado com GitHub');
-            }
-
-            async carregarProdutosDoGitHub() {
+            productCards.forEach((card, index) => {
                 try {
-                    console.log('📡 Buscando produtos do GitHub...');
-                    
-                    // Busca o conteúdo do index.html do GitHub
-                    const response = await fetch('/api/github-read');
-                    const data = await response.json();
-
-                    if (data.success && data.content) {
-                        console.log('✅ Conteúdo do GitHub recebido');
-                        this.products = this.extrairProdutosDoHTML(data.content);
-                        this.exibirProdutos(this.products);
-                    } else {
-                        throw new Error(data.error || 'Erro ao carregar do GitHub');
+                    const product = this.parseProductCard(card);
+                    if (product) {
+                        // 🔥 ADICIONA ID ÚNICO para referência segura
+                        product.uniqueId = `prod_${Date.now()}_${index}`;
+                        products.push(product);
                     }
                 } catch (error) {
-                    console.error('❌ Erro ao carregar do GitHub:', error);
-                    this.mostrarErro('Erro ao carregar produtos: ' + error.message);
+                    console.error(`❌ Erro ao parsear card ${index}:`, error);
                 }
+            });
+
+            return products;
+        }
+
+        parseProductCard(card) {
+            // Extrai informações do card
+            const image = card.querySelector('img');
+            const info = card.querySelector('.info');
+            const button = card.querySelector('.open-modal-btn');
+
+            if (!image || !info || !button) {
+                console.warn('Card incompleto:', card);
+                return null;
             }
 
-            extrairProdutosDoHTML(htmlContent) {
-                const products = [];
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlContent, 'text/html');
-                
-                // Encontra todos os cards de produtos
-                const productCards = doc.querySelectorAll('.item');
-                
-                console.log(`📦 Encontrados ${productCards.length} produtos no HTML`);
+            const nomeElement = info.querySelector('h2');
+            const idElement = info.querySelector('p');
+            const precoElement = Array.from(info.querySelectorAll('p')).find(p => p.textContent.includes('R$'));
 
-                productCards.forEach((card, index) => {
-                    try {
-                        const product = this.parseProductCard(card);
-                        if (product) {
-                            products.push(product);
-                        }
-                    } catch (error) {
-                        console.error(`❌ Erro ao parsear card ${index}:`, error);
-                    }
-                });
-
-                return products;
+            if (!nomeElement || !idElement || !precoElement) {
+                console.warn('Card sem informações básicas:', card);
+                return null;
             }
 
-            parseProductCard(card) {
-                // Extrai informações do card
-                const image = card.querySelector('img');
-                const info = card.querySelector('.info');
-                const button = card.querySelector('.open-modal-btn');
+            // Extrai dados do botão modal
+            const nome = button.getAttribute('data-name') || nomeElement.textContent;
+            const id = button.getAttribute('data-id') || idElement.textContent.replace('ID: ', '');
+            const imageUrl = button.getAttribute('data-image') || image.src;
+            const descricao = button.getAttribute('data-specs') || '';
+            
+            // Extrai preço
+            const precoMatch = precoElement.textContent.match(/R\$\s*(\d+[.,]\d+)/);
+            const preco = precoMatch ? parseFloat(precoMatch[1].replace(',', '.')) : 0;
 
-                if (!image || !info || !button) {
-                    console.warn('Card incompleto:', card);
-                    return null;
+            // Extrai categoria do data-categoria
+            const categoria = card.getAttribute('data-categoria') || 'personalizada';
+
+            // Extrai opções do modal
+            let opcoes = [];
+            try {
+                const optionsJSON = button.getAttribute('data-options');
+                if (optionsJSON) {
+                    opcoes = JSON.parse(optionsJSON.replace(/&#39;/g, "'"));
                 }
-
-                const nomeElement = info.querySelector('h2');
-                const idElement = info.querySelector('p');
-                const precoElement = Array.from(info.querySelectorAll('p')).find(p => p.textContent.includes('R$'));
-
-                if (!nomeElement || !idElement || !precoElement) {
-                    console.warn('Card sem informações básicas:', card);
-                    return null;
-                }
-
-                // Extrai dados do botão modal
-                const nome = button.getAttribute('data-name') || nomeElement.textContent;
-                const id = button.getAttribute('data-id') || idElement.textContent.replace('ID: ', '');
-                const imageUrl = button.getAttribute('data-image') || image.src;
-                const descricao = button.getAttribute('data-specs') || '';
-                
-                // Extrai preço
-                const precoMatch = precoElement.textContent.match(/R\$\s*(\d+[.,]\d+)/);
-                const preco = precoMatch ? parseFloat(precoMatch[1].replace(',', '.')) : 0;
-
-                // Extrai categoria do data-categoria
-                const categoria = card.getAttribute('data-categoria') || 'personalizada';
-
-                // Extrai opções do modal
-                let opcoes = [];
-                try {
-                    const optionsJSON = button.getAttribute('data-options');
-                    if (optionsJSON) {
-                        opcoes = JSON.parse(optionsJSON.replace(/&#39;/g, "'"));
-                    }
-                } catch (e) {
-                    console.warn('Erro ao parsear opções:', e);
-                }
-
-                return {
-                    id,
-                    nome,
-                    categoria,
-                    preco,
-                    descricao,
-                    imageUrl,
-                    opcoes,
-                    htmlOriginal: card.outerHTML,
-                    index: this.products.length
-                };
+            } catch (e) {
+                console.warn('Erro ao parsear opções:', e);
             }
 
-            exibirProdutos(products) {
-                const container = document.getElementById('productsList');
-                
-                if (products.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <h3>📦 Nenhum produto encontrado</h3>
-                            <p>Nenhum produto foi encontrado no seu site GitHub</p>
-                            <button class="action-btn" onclick="window.location.href='adicionar-produto.html'" style="margin-top: 1rem;">
-                                ➕ Adicionar Primeiro Produto
-                            </button>
-                        </div>
-                    `;
-                    return;
-                }
+            return {
+                id,
+                nome,
+                categoria,
+                preco,
+                descricao,
+                imageUrl,
+                opcoes,
+                htmlOriginal: card.outerHTML
+            };
+        }
 
-                container.innerHTML = `
-                    <div class="products-grid">
-                        ${products.map(product => `
-                            <div class="product-card">
-                                <div class="product-image">
-                                    <img src="${product.imageUrl}" alt="${product.nome}" 
-                                         onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem'">
-                                </div>
-                                <div class="product-content">
-                                    <div class="product-header">
-                                        <div>
-                                            <h3 class="product-title">${product.nome}</h3>
-                                            <div class="product-tags">
-                                                <span class="product-tag">ID: ${product.id}</span>
-                                                <span class="product-tag product-category">${product.categoria}</span>
-                                                <span class="product-tag">${product.opcoes?.length || 0} modelos</span>
-                                            </div>
-                                        </div>
-                                        <div class="product-price">R$ ${parseFloat(product.preco).toFixed(2)}</div>
-                                    </div>
-                                    
-                                    <p class="product-description">${product.descricao || 'Sem descrição'}</p>
-                                    
-                                    <div class="product-actions">
-                                        <button class="action-button edit" onclick="editarProdutoGitHub(${product.index})">✏️ Editar</button>
-                                        <button class="action-button delete" onclick="excluirProdutoGitHub(${product.index})">🗑️ Excluir</button>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-
-            loadStats() {
-                document.getElementById('totalProducts').textContent = this.products.length;
-                
-                const categories = [...new Set(this.products.map(p => p.categoria))];
-                document.getElementById('totalCategories').textContent = categories.length;
-            }
-
-            setupSearch() {
-                const searchInput = document.getElementById('searchProducts');
-                searchInput.addEventListener('input', (e) => {
-                    this.filtrarProdutos(e.target.value);
-                });
-
-                searchInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        this.filtrarProdutos(e.target.value);
-                    }
-                });
-            }
-
-            filtrarProdutos(termo = null) {
-                const searchTerm = termo || document.getElementById('searchProducts').value.toLowerCase();
-                
-                if (!searchTerm) {
-                    this.exibirProdutos(this.products);
-                    return;
-                }
-
-                const filteredProducts = this.products.filter(product => 
-                    product.nome.toLowerCase().includes(searchTerm) ||
-                    product.id.toLowerCase().includes(searchTerm) ||
-                    product.descricao.toLowerCase().includes(searchTerm) ||
-                    product.categoria.toLowerCase().includes(searchTerm)
-                );
-
-                this.exibirProdutos(filteredProducts);
-            }
-
-            mostrarLoading(mostrar, mensagem = '') {
-                const spinner = document.getElementById('syncSpinner');
-                const message = document.getElementById('syncMessage');
-                const status = document.getElementById('syncStatus');
-
-                if (mostrar) {
-                    spinner.style.display = 'inline-block';
-                    status.style.display = 'flex';
-                } else {
-                    spinner.style.display = 'none';
-                    if (!mensagem) {
-                        status.style.display = 'none';
-                    }
-                }
-
-                if (mensagem) {
-                    message.textContent = mensagem;
-                }
-            }
-
-            mostrarErro(mensagem) {
-                this.mostrarLoading(false, `❌ ${mensagem}`);
-                
-                const container = document.getElementById('productsList');
+        exibirProdutos(products) {
+            const container = document.getElementById('productsList');
+            
+            // 🔥 ATUALIZA lista atual de exibição
+            this.currentDisplayedProducts = products;
+            
+            if (products.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <h3>❌ Erro ao carregar</h3>
-                        <p>${mensagem}</p>
-                        <button class="action-btn" onclick="dashboard.carregarProdutosDoGitHub()" style="margin-top: 1rem;">
-                            🔄 Tentar Novamente
+                        <h3>📦 Nenhum produto encontrado</h3>
+                        <p>Nenhum produto foi encontrado no seu site GitHub</p>
+                        <button class="action-btn" onclick="window.location.href='adicionar-produto.html'" style="margin-top: 1rem;">
+                            ➕ Adicionar Primeiro Produto
                         </button>
                     </div>
                 `;
-            }
-
-            getProductByIndex(index) {
-                return this.products[index];
-            }
-        }
-
-        // 🔥 INICIALIZA DASHBOARD
-        const dashboard = new GitHubDashboard();
-
-        // 🔥 FUNÇÕES DE GERENCIAMENTO GITHUB
-        async function editarProdutoGitHub(productIndex) {
-            const product = dashboard.getProductByIndex(productIndex);
-            if (!product) {
-                alert('Produto não encontrado!');
                 return;
             }
 
-            const modalHTML = `
-                <div class="modal-overlay" id="editModal">
-                    <div class="modal-content">
-                        <h2 class="modal-title">✏️ Editar Produto no GitHub</h2>
-                        
-                        <form id="editProductForm">
-                            <div class="form-group">
-                                <label class="form-label">Nome do Produto</label>
-                                <input type="text" class="form-input" id="editProductName" value="${product.nome}" required>
+            container.innerHTML = `
+                <div class="products-grid">
+                    ${products.map((product, index) => `
+                        <div class="product-card">
+                            <div class="product-image">
+                                <img src="${product.imageUrl}" alt="${product.nome}" 
+                                     onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem'">
                             </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">ID do Produto</label>
-                                <input type="text" class="form-input" id="editProductId" value="${product.id}" required>
+                            <div class="product-content">
+                                <div class="product-header">
+                                    <div>
+                                        <h3 class="product-title">${product.nome}</h3>
+                                        <div class="product-tags">
+                                            <span class="product-tag">ID: ${product.id}</span>
+                                            <span class="product-tag product-category">${product.categoria}</span>
+                                            <span class="product-tag">${product.opcoes?.length || 0} modelos</span>
+                                        </div>
+                                    </div>
+                                    <div class="product-price">R$ ${parseFloat(product.preco).toFixed(2)}</div>
+                                </div>
+                                
+                                <p class="product-description">${product.descricao || 'Sem descrição'}</p>
+                                
+                                <div class="product-actions">
+                                    <button class="action-button edit" onclick="editarProdutoGitHub('${product.id}')">✏️ Editar</button>
+                                    <button class="action-button delete" onclick="excluirProdutoGitHub('${product.id}')">🗑️ Excluir</button>
+                                </div>
                             </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Categoria</label>
-                                <input type="text" class="form-input" id="editProductCategory" value="${product.categoria}" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Preço (R$)</label>
-                                <input type="number" class="form-input" id="editProductPrice" step="0.01" value="${product.preco}" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Descrição</label>
-                                <textarea class="form-textarea" id="editProductDescription" rows="3">${product.descricao || ''}</textarea>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">URL da Imagem</label>
-                                <input type="url" class="form-input" id="editProductImage" value="${product.imageUrl}">
-                                <small style="color: #888;">Cole aqui a URL da nova imagem</small>
-                            </div>
-                            
-                            <div class="form-buttons">
-                                <button type="button" class="btn btn-cancel" onclick="fecharModalEdicao()">Cancelar</button>
-                                <button type="submit" class="btn btn-primary">💾 Atualizar no GitHub</button>
-                            </div>
-                        </form>
-                    </div>
+                        </div>
+                    `).join('')}
                 </div>
             `;
+        }
+
+        loadStats() {
+            document.getElementById('totalProducts').textContent = this.products.length;
             
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-            
-            const form = document.getElementById('editProductForm');
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                await salvarEdicaoGitHub(productIndex);
+            const categories = [...new Set(this.products.map(p => p.categoria))];
+            document.getElementById('totalCategories').textContent = categories.length;
+        }
+
+        setupSearch() {
+            const searchInput = document.getElementById('searchProducts');
+            searchInput.addEventListener('input', (e) => {
+                this.filtrarProdutos(e.target.value);
+            });
+
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.filtrarProdutos(e.target.value);
+                }
             });
         }
 
-        async function salvarEdicaoGitHub(productIndex) {
-            const product = dashboard.getProductByIndex(productIndex);
-            if (!product) return;
-
-            const nome = document.getElementById('editProductName').value.trim();
-            const id = document.getElementById('editProductId').value.trim();
-            const categoria = document.getElementById('editProductCategory').value.trim();
-            const preco = parseFloat(document.getElementById('editProductPrice').value);
-            const descricao = document.getElementById('editProductDescription').value.trim();
-            const imageUrl = document.getElementById('editProductImage').value.trim();
-
-            if (!nome || !id || !categoria || isNaN(preco)) {
-                alert('Preencha todos os campos obrigatórios!');
+        filtrarProdutos(termo = null) {
+            const searchTerm = termo || document.getElementById('searchProducts').value.toLowerCase();
+            
+            if (!searchTerm) {
+                this.exibirProdutos(this.products);
                 return;
             }
 
+            const filteredProducts = this.products.filter(product => 
+                product.nome.toLowerCase().includes(searchTerm) ||
+                product.id.toLowerCase().includes(searchTerm) ||
+                product.descricao.toLowerCase().includes(searchTerm) ||
+                product.categoria.toLowerCase().includes(searchTerm)
+            );
+
+            this.exibirProdutos(filteredProducts);
+        }
+
+        // 🔥 CORREÇÃO: Busca produto por ID (não por índice)
+        getProductById(productId) {
+            return this.products.find(product => product.id === productId);
+        }
+
+        // 🔥 CORREÇÃO: Busca produto atual por ID
+        getCurrentProductById(productId) {
+            return this.currentDisplayedProducts.find(product => product.id === productId);
+        }
+
+        mostrarLoading(mostrar, mensagem = '') {
+            const spinner = document.getElementById('syncSpinner');
+            const message = document.getElementById('syncMessage');
+            const status = document.getElementById('syncStatus');
+
+            if (mostrar) {
+                spinner.style.display = 'inline-block';
+                status.style.display = 'flex';
+            } else {
+                spinner.style.display = 'none';
+                if (!mensagem) {
+                    status.style.display = 'none';
+                }
+            }
+
+            if (mensagem) {
+                message.textContent = mensagem;
+            }
+        }
+
+        mostrarErro(mensagem) {
+            this.mostrarLoading(false, `❌ ${mensagem}`);
+            
+            const container = document.getElementById('productsList');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <h3>❌ Erro ao carregar</h3>
+                    <p>${mensagem}</p>
+                    <button class="action-btn" onclick="dashboard.carregarProdutosDoGitHub()" style="margin-top: 1rem;">
+                        🔄 Tentar Novamente
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // 🔥 INICIALIZA DASHBOARD
+    const dashboard = new GitHubDashboard();
+
+    // 🔥 FUNÇÕES DE GERENCIAMENTO GITHUB - CORRIGIDAS
+    async function editarProdutoGitHub(productId) {
+        console.log('✏️ Editando produto ID:', productId);
+        
+        const product = dashboard.getProductById(productId);
+        if (!product) {
+            alert('❌ Produto não encontrado! ID: ' + productId);
+            return;
+        }
+
+        const modalHTML = `
+            <div class="modal-overlay" id="editModal">
+                <div class="modal-content">
+                    <h2 class="modal-title">✏️ Editar Produto no GitHub</h2>
+                    
+                    <form id="editProductForm">
+                        <div class="form-group">
+                            <label class="form-label">Nome do Produto</label>
+                            <input type="text" class="form-input" id="editProductName" value="${this.escapeHtml(product.nome)}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">ID do Produto</label>
+                            <input type="text" class="form-input" id="editProductId" value="${this.escapeHtml(product.id)}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Categoria</label>
+                            <input type="text" class="form-input" id="editProductCategory" value="${this.escapeHtml(product.categoria)}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Preço (R$)</label>
+                            <input type="number" class="form-input" id="editProductPrice" step="0.01" value="${product.preco}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Descrição</label>
+                            <textarea class="form-textarea" id="editProductDescription" rows="3">${this.escapeHtml(product.descricao || '')}</textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">URL da Imagem</label>
+                            <input type="url" class="form-input" id="editProductImage" value="${this.escapeHtml(product.imageUrl)}">
+                            <small style="color: #888;">Cole aqui a URL da nova imagem</small>
+                        </div>
+                        
+                        <div class="form-buttons">
+                            <button type="button" class="btn btn-cancel" onclick="fecharModalEdicao()">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">💾 Atualizar no GitHub</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        const form = document.getElementById('editProductForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await salvarEdicaoGitHub(productId);
+        });
+    }
+
+    async function salvarEdicaoGitHub(productId) {
+        console.log('💾 Salvando edição do produto ID:', productId);
+        
+        const product = dashboard.getProductById(productId);
+        if (!product) {
+            alert('❌ Produto não encontrado durante a edição!');
+            return;
+        }
+
+        const nome = document.getElementById('editProductName').value.trim();
+        const id = document.getElementById('editProductId').value.trim();
+        const categoria = document.getElementById('editProductCategory').value.trim();
+        const preco = parseFloat(document.getElementById('editProductPrice').value);
+        const descricao = document.getElementById('editProductDescription').value.trim();
+        const imageUrl = document.getElementById('editProductImage').value.trim();
+
+        if (!nome || !id || !categoria || isNaN(preco)) {
+            alert('❌ Preencha todos os campos obrigatórios!');
+            return;
+        }
+
+        try {
+            dashboard.mostrarLoading(true, '🔄 Atualizando no GitHub...');
+
+            // Gera o novo HTML do produto
+            const novoHTML = gerarHTMLProduto({
+                nome,
+                id,
+                categoria,
+                preco,
+                descricao,
+                imageUrl,
+                opcoes: product.opcoes || [{ model: "Padrão", price: preco, image: imageUrl }]
+            });
+
+            console.log('📝 Enviando atualização para GitHub...');
+            console.log('HTML Antigo:', product.htmlOriginal.substring(0, 100) + '...');
+            console.log('HTML Novo:', novoHTML.substring(0, 100) + '...');
+
+            // Atualiza no GitHub
+            const response = await fetch('/api/github-update-product', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    oldHtml: product.htmlOriginal,
+                    newHtml: novoHTML,
+                    commitMessage: `✏️ Editar produto: ${nome} (ID: ${id})`
+                })
+            });
+
+            const data = await response.json();
+            console.log('📨 Resposta da API:', data);
+
+            if (data.success) {
+                fecharModalEdicao();
+                alert('✅ Produto atualizado no GitHub!\n\nO site será atualizado em 1-2 minutos.');
+                
+                // Recarrega os produtos após um tempo
+                setTimeout(() => {
+                    dashboard.carregarProdutosDoGitHub();
+                }, 3000);
+                
+            } else {
+                throw new Error(data.error || 'Erro ao atualizar no GitHub');
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao atualizar:', error);
+            alert('❌ Erro ao atualizar produto: ' + error.message);
+        } finally {
+            dashboard.mostrarLoading(false);
+        }
+    }
+
+    async function excluirProdutoGitHub(productId) {
+        console.log('🗑️ Excluindo produto ID:', productId);
+        
+        const product = dashboard.getProductById(productId);
+        if (!product) {
+            alert('❌ Produto não encontrado! ID: ' + productId);
+            return;
+        }
+
+        if (confirm(`⚠️ Tem certeza que deseja excluir o produto do site?\n\n"${product.nome}" (ID: ${product.id})\n\nEsta ação removerá o produto permanentemente do GitHub!`)) {
             try {
-                dashboard.mostrarLoading(true, '🔄 Atualizando no GitHub...');
+                dashboard.mostrarLoading(true, '🗑️ Excluindo do GitHub...');
 
-                // Gera o novo HTML do produto
-                const novoHTML = gerarHTMLProduto({
-                    nome,
-                    id,
-                    categoria,
-                    preco,
-                    descricao,
-                    imageUrl,
-                    opcoes: product.opcoes || [{ model: "Padrão", price: preco, image: imageUrl }]
-                });
+                console.log('📝 Enviando exclusão para GitHub...');
+                console.log('HTML a excluir:', product.htmlOriginal.substring(0, 100) + '...');
 
-                // Atualiza no GitHub
-                const response = await fetch('/api/github-update-product', {
+                const response = await fetch('/api/github-delete-product', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        oldHtml: product.htmlOriginal,
-                        newHtml: novoHTML,
-                        commitMessage: `✏️ Editar produto: ${nome} (ID: ${id})`
+                        productHtml: product.htmlOriginal,
+                        commitMessage: `🗑️ Excluir produto: ${product.nome} (ID: ${product.id})`
                     })
                 });
 
                 const data = await response.json();
+                console.log('📨 Resposta da API Exclusão:', data);
 
                 if (data.success) {
-                    fecharModalEdicao();
-                    alert('✅ Produto atualizado no GitHub!\n\nO site será atualizado em 1-2 minutos.');
+                    alert('✅ Produto excluído do GitHub!\n\nO site será atualizado em 1-2 minutos.');
                     
-                    // Recarrega os produtos
+                    // Recarrega os produtos após um tempo
                     setTimeout(() => {
                         dashboard.carregarProdutosDoGitHub();
-                    }, 2000);
+                    }, 3000);
                     
                 } else {
-                    throw new Error(data.error || 'Erro ao atualizar no GitHub');
+                    throw new Error(data.error || 'Erro ao excluir no GitHub');
                 }
 
             } catch (error) {
-                console.error('❌ Erro ao atualizar:', error);
-                alert('❌ Erro ao atualizar produto: ' + error.message);
+                console.error('❌ Erro ao excluir:', error);
+                alert('❌ Erro ao excluir produto: ' + error.message);
             } finally {
                 dashboard.mostrarLoading(false);
             }
         }
+    }
 
-        async function excluirProdutoGitHub(productIndex) {
-            const product = dashboard.getProductByIndex(productIndex);
-            if (!product) return;
+    function gerarHTMLProduto(product) {
+        const opcoesJSON = JSON.stringify(product.opcoes).replace(/'/g, "&#39;");
 
-            if (confirm(`⚠️ Tem certeza que deseja excluir o produto do site?\n\n"${product.nome}" (ID: ${product.id})\n\nEsta ação removerá o produto permanentemente do GitHub!`)) {
-                try {
-                    dashboard.mostrarLoading(true, '🗑️ Excluindo do GitHub...');
+        return `
+<div class="item" data-categoria="${this.escapeHtml(product.categoria)}">
+    <img src="${this.escapeHtml(product.imageUrl)}" alt="${this.escapeHtml(product.nome)}" loading="lazy">
+    <div class="info">
+        <h2>${this.escapeHtml(product.nome)}</h2>
+        <p>ID: ${this.escapeHtml(product.id)}</p>
+        <p>R$ ${product.preco.toFixed(2)}</p>
+        <button class="open-modal-btn"
+            data-name="${this.escapeHtml(product.nome)}"
+            data-id="${this.escapeHtml(product.id)}"
+            data-image="${this.escapeHtml(product.imageUrl)}"
+            data-specs="${this.escapeHtml(product.descricao)}"
+            data-options='${opcoesJSON}'>
+            Ver Detalhes
+        </button>
+    </div>
+</div>`.trim();
+    }
 
-                    const response = await fetch('/api/github-delete-product', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            productHtml: product.htmlOriginal,
-                            commitMessage: `🗑️ Excluir produto: ${product.nome} (ID: ${product.id})`
-                        })
-                    });
+    // 🔥 FUNÇÃO AUXILIAR: Escape HTML para prevenir XSS
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 
-                    const data = await response.json();
+    function fecharModalEdicao() {
+        const modal = document.getElementById('editModal');
+        if (modal) modal.remove();
+    }
 
-                    if (data.success) {
-                        alert('✅ Produto excluído do GitHub!\n\nO site será atualizado em 1-2 minutos.');
-                        
-                        // Recarrega os produtos
-                        setTimeout(() => {
-                            dashboard.carregarProdutosDoGitHub();
-                        }, 2000);
-                        
-                    } else {
-                        throw new Error(data.error || 'Erro ao excluir no GitHub');
-                    }
+    function filtrarProdutos() {
+        dashboard.filtrarProdutos();
+    }
 
-                } catch (error) {
-                    console.error('❌ Erro ao excluir:', error);
-                    alert('❌ Erro ao excluir produto: ' + error.message);
-                } finally {
-                    dashboard.mostrarLoading(false);
-                }
-            }
+    async function sincronizarComGitHub() {
+        await dashboard.carregarProdutosDoGitHub();
+    }
+
+    // Funções globais
+    function verEstatisticas() {
+        const products = dashboard.products;
+        const categorias = [...new Set(products.map(p => p.categoria))];
+        const precoMedio = products.length > 0 ? products.reduce((acc, p) => acc + p.preco, 0) / products.length : 0;
+        
+        alert(`📊 Estatísticas do Site:\n\n• Total de Produtos: ${products.length}\n• Categorias: ${categorias.length}\n• Preço Médio: R$ ${precoMedio.toFixed(2)}\n\nCategorias:\n${categorias.map(cat => `  - ${cat}`).join('\n')}`);
+    }
+
+    function backupDados() {
+        const data = JSON.stringify(dashboard.products, null, 2);
+        const blob = new Blob([data], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_produtos_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        alert('💾 Backup realizado com sucesso!');
+    }
+
+    function logout() {
+        localStorage.removeItem('admin_token_canecas');
+        window.location.href = 'login.html';
+    }
+
+    // Fechar modal com ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            fecharModalEdicao();
         }
+    });
 
-        function gerarHTMLProduto(product) {
-            const opcoesJSON = JSON.stringify(product.opcoes).replace(/'/g, "&#39;");
-
-            return `
-    <div class="item" data-categoria="${product.categoria}">
-        <img src="${product.imageUrl}" alt="${product.nome}" loading="lazy">
-        <div class="info">
-            <h2>${product.nome}</h2>
-            <p>ID: ${product.id}</p>
-            <p>R$ ${product.preco.toFixed(2)}</p>
-            <button class="open-modal-btn"
-                data-name="${product.nome}"
-                data-id="${product.id}"
-                data-image="${product.imageUrl}"
-                data-specs="${product.descricao}"
-                data-options='${opcoesJSON}'>
-                Ver Detalhes
-            </button>
-        </div>
-    </div>`.trim();
-        }
-
-        function fecharModalEdicao() {
-            const modal = document.getElementById('editModal');
-            if (modal) modal.remove();
-        }
-
-        function filtrarProdutos() {
-            dashboard.filtrarProdutos();
-        }
-
-        async function sincronizarComGitHub() {
-            await dashboard.carregarProdutosDoGitHub();
-        }
-
-        // Funções globais
-        function verEstatisticas() {
-            const products = dashboard.products;
-            const categorias = [...new Set(products.map(p => p.categoria))];
-            const precoMedio = products.length > 0 ? products.reduce((acc, p) => acc + p.preco, 0) / products.length : 0;
-            
-            alert(`📊 Estatísticas do Site:\n\n• Total de Produtos: ${products.length}\n• Categorias: ${categorias.length}\n• Preço Médio: R$ ${precoMedio.toFixed(2)}\n\nCategorias:\n${categorias.map(cat => `  - ${cat}`).join('\n')}`);
-        }
-
-        function backupDados() {
-            const data = JSON.stringify(dashboard.products, null, 2);
-            const blob = new Blob([data], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `backup_produtos_${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            alert('💾 Backup realizado com sucesso!');
-        }
-
-        function logout() {
-            localStorage.removeItem('admin_token_canecas');
-            window.location.href = 'login.html';
-        }
-
-        // Fechar modal com ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                fecharModalEdicao();
-            }
-        });
-    </script>
-</body>
-</html>
+    // 🔥 EXPORTA funções para escopo global
+    window.editarProdutoGitHub = editarProdutoGitHub;
+    window.excluirProdutoGitHub = excluirProdutoGitHub;
+    window.escapeHtml = escapeHtml;
+</script>
