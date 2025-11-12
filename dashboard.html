@@ -363,109 +363,26 @@
             background: #1ebe5f;
         }
 
-        /* 🔥 NOVO MODAL DE EDIÇÃO AVANÇADO */
-        .edit-modal-content {
-            max-width: 600px;
-        }
-
-        .image-preview-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
+        /* Loading States */
+        .loading {
+            display: none;
+            text-align: center;
             margin: 1rem 0;
         }
 
-        .image-preview {
-            position: relative;
-            border: 2px solid #333;
-            border-radius: 8px;
-            overflow: hidden;
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #25D366;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
         }
 
-        .image-preview img {
-            width: 100%;
-            height: 120px;
-            object-fit: cover;
-        }
-
-        .image-preview-actions {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            display: flex;
-            gap: 0.3rem;
-        }
-
-        .image-action-btn {
-            background: rgba(0,0,0,0.7);
-            color: white;
-            border: none;
-            border-radius: 3px;
-            width: 25px;
-            height: 25px;
-            cursor: pointer;
-            font-size: 0.7rem;
-        }
-
-        .image-action-btn:hover {
-            background: rgba(0,0,0,0.9);
-        }
-
-        .add-image-btn {
-            background: #25D366;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 1rem;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            transition: background 0.3s ease;
-        }
-
-        .add-image-btn:hover {
-            background: #1ebe5f;
-        }
-
-        .models-section {
-            background: #252525;
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-        }
-
-        .models-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .model-item {
-            background: #1a1a1a;
-            padding: 1rem;
-            border-radius: 8px;
-            border: 1px solid #333;
-        }
-
-        .model-header {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .model-name {
-            color: #25D366;
-            font-weight: bold;
-        }
-
-        .model-price {
-            color: #25D366;
-            font-weight: bold;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .empty-state {
@@ -477,6 +394,15 @@
         .empty-state h3 {
             margin-bottom: 1rem;
             color: #25D366;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #25D366;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
         }
 
         @media (max-width: 768px) {
@@ -508,7 +434,7 @@
 <body>
     <header class="dashboard-header">
         <nav class="dashboard-nav">
-            <h1>📊 Dashboard Admin</h1>
+            <h1>📊 Dashboard Admin - GitHub</h1>
             <button class="logout-btn" onclick="logout()">Sair</button>
         </nav>
     </header>
@@ -518,7 +444,7 @@
         <div class="stats-grid">
             <div class="stat-card">
                 <span class="stat-number" id="totalProducts">0</span>
-                <div>Produtos Cadastrados</div>
+                <div>Produtos no Site</div>
             </div>
             <div class="stat-card">
                 <span class="stat-number" id="totalCategories">0</span>
@@ -529,93 +455,161 @@
         <!-- Ações -->
         <div class="dashboard-actions">
             <button class="action-btn" onclick="window.location.href='adicionar-produto.html'">➕ Adicionar Produto</button>
-            <button class="action-btn" onclick="gerenciarCategorias()">📂 Gerenciar Categorias</button>
+            <button class="action-btn" onclick="sincronizarComGitHub()">🔄 Sincronizar com GitHub</button>
             <button class="action-btn" onclick="verEstatisticas()">📈 Ver Estatísticas</button>
             <button class="action-btn" onclick="backupDados()">💾 Backup dos Dados</button>
         </div>
 
-        <!-- 🔥 NOVA SEÇÃO: GERENCIAR PRODUTOS EXISTENTES -->
+        <!-- 🔥 SEÇÃO: GERENCIAR PRODUTOS DO GITHUB -->
         <section class="management-section">
             <div class="section-header">
-                <h2 class="section-title">🛠️ Gerenciar Produtos Existentes</h2>
+                <h2 class="section-title">🛠️ Gerenciar Produtos do Site</h2>
                 <div class="search-box">
                     <input type="text" class="search-input" id="searchProducts" placeholder="Buscar por nome ou ID...">
                     <button class="action-btn" onclick="filtrarProdutos()">🔍</button>
                 </div>
             </div>
 
+            <div class="sync-status" id="syncStatus">
+                <div class="spinner" id="syncSpinner"></div>
+                <span id="syncMessage">🔄 Conectando com GitHub...</span>
+            </div>
+
             <div id="productsList">
                 <div class="empty-state">
-                    <h3>📦 Carregando produtos...</h3>
-                    <p>Aguarde enquanto carregamos seus produtos</p>
+                    <h3>📦 Carregando produtos do GitHub...</h3>
+                    <p>Aguarde enquanto carregamos os produtos do seu site</p>
                 </div>
             </div>
         </section>
     </main>
 
     <script>
-        // DASHBOARD COMPLETO COM GERENCIAMENTO
-        class Dashboard {
+        // 🔥 DASHBOARD CONECTADO AO GITHUB
+        class GitHubDashboard {
             constructor() {
-                this.productsKey = 'canecas_products';
+                this.products = [];
                 this.init();
             }
 
-            init() {
-                this.initializeProducts();
+            async init() {
+                this.mostrarLoading(true, '🔄 Conectando com GitHub...');
+                await this.carregarProdutosDoGitHub();
                 this.loadStats();
-                this.loadProducts();
                 this.setupSearch();
+                this.mostrarLoading(false, '✅ Conectado com GitHub');
             }
 
-            initializeProducts() {
-                const existingProducts = this.getProducts();
-                if (existingProducts.length === 0) {
-                    const defaultProducts = [
-                        {
-                            id: "0001",
-                            nome: "Caneca Teste Floral",
-                            categoria: "floral",
-                            preco: 32.00,
-                            descricao: "Caneca de teste com design floral",
-                            imageUrl: "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg",
-                            dataCriacao: new Date().toISOString()
-                        },
-                        {
-                            id: "CN0001",
-                            nome: "Caneca Orgulho Negro", 
-                            categoria: "personalizada",
-                            preco: 30.00,
-                            descricao: "Caneca de cerâmica com estampa exclusiva",
-                            imageUrl: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg",
-                            dataCriacao: new Date().toISOString()
-                        }
-                    ];
-                    this.saveProducts(defaultProducts);
+            async carregarProdutosDoGitHub() {
+                try {
+                    console.log('📡 Buscando produtos do GitHub...');
+                    
+                    // Busca o conteúdo do index.html do GitHub
+                    const response = await fetch('/api/github-read');
+                    const data = await response.json();
+
+                    if (data.success && data.content) {
+                        console.log('✅ Conteúdo do GitHub recebido');
+                        this.products = this.extrairProdutosDoHTML(data.content);
+                        this.exibirProdutos(this.products);
+                    } else {
+                        throw new Error(data.error || 'Erro ao carregar do GitHub');
+                    }
+                } catch (error) {
+                    console.error('❌ Erro ao carregar do GitHub:', error);
+                    this.mostrarErro('Erro ao carregar produtos: ' + error.message);
                 }
             }
 
-            loadStats() {
-                const products = this.getProducts();
-                const categories = [...new Set(products.map(p => p.categoria))];
+            extrairProdutosDoHTML(htmlContent) {
+                const products = [];
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlContent, 'text/html');
                 
-                document.getElementById('totalProducts').textContent = products.length;
-                document.getElementById('totalCategories').textContent = categories.length;
+                // Encontra todos os cards de produtos
+                const productCards = doc.querySelectorAll('.item');
+                
+                console.log(`📦 Encontrados ${productCards.length} produtos no HTML`);
+
+                productCards.forEach((card, index) => {
+                    try {
+                        const product = this.parseProductCard(card);
+                        if (product) {
+                            products.push(product);
+                        }
+                    } catch (error) {
+                        console.error(`❌ Erro ao parsear card ${index}:`, error);
+                    }
+                });
+
+                return products;
             }
 
-            loadProducts(products = null) {
-                const productsToShow = products || this.getProducts();
-                this.displayProducts(productsToShow);
+            parseProductCard(card) {
+                // Extrai informações do card
+                const image = card.querySelector('img');
+                const info = card.querySelector('.info');
+                const button = card.querySelector('.open-modal-btn');
+
+                if (!image || !info || !button) {
+                    console.warn('Card incompleto:', card);
+                    return null;
+                }
+
+                const nomeElement = info.querySelector('h2');
+                const idElement = info.querySelector('p');
+                const precoElement = Array.from(info.querySelectorAll('p')).find(p => p.textContent.includes('R$'));
+
+                if (!nomeElement || !idElement || !precoElement) {
+                    console.warn('Card sem informações básicas:', card);
+                    return null;
+                }
+
+                // Extrai dados do botão modal
+                const nome = button.getAttribute('data-name') || nomeElement.textContent;
+                const id = button.getAttribute('data-id') || idElement.textContent.replace('ID: ', '');
+                const imageUrl = button.getAttribute('data-image') || image.src;
+                const descricao = button.getAttribute('data-specs') || '';
+                
+                // Extrai preço
+                const precoMatch = precoElement.textContent.match(/R\$\s*(\d+[.,]\d+)/);
+                const preco = precoMatch ? parseFloat(precoMatch[1].replace(',', '.')) : 0;
+
+                // Extrai categoria do data-categoria
+                const categoria = card.getAttribute('data-categoria') || 'personalizada';
+
+                // Extrai opções do modal
+                let opcoes = [];
+                try {
+                    const optionsJSON = button.getAttribute('data-options');
+                    if (optionsJSON) {
+                        opcoes = JSON.parse(optionsJSON.replace(/&#39;/g, "'"));
+                    }
+                } catch (e) {
+                    console.warn('Erro ao parsear opções:', e);
+                }
+
+                return {
+                    id,
+                    nome,
+                    categoria,
+                    preco,
+                    descricao,
+                    imageUrl,
+                    opcoes,
+                    htmlOriginal: card.outerHTML,
+                    index: this.products.length
+                };
             }
 
-            displayProducts(products) {
+            exibirProdutos(products) {
                 const container = document.getElementById('productsList');
                 
                 if (products.length === 0) {
                     container.innerHTML = `
                         <div class="empty-state">
                             <h3>📦 Nenhum produto encontrado</h3>
-                            <p>Nenhum produto corresponde à sua busca</p>
+                            <p>Nenhum produto foi encontrado no seu site GitHub</p>
                             <button class="action-btn" onclick="window.location.href='adicionar-produto.html'" style="margin-top: 1rem;">
                                 ➕ Adicionar Primeiro Produto
                             </button>
@@ -639,6 +633,7 @@
                                             <div class="product-tags">
                                                 <span class="product-tag">ID: ${product.id}</span>
                                                 <span class="product-tag product-category">${product.categoria}</span>
+                                                <span class="product-tag">${product.opcoes?.length || 0} modelos</span>
                                             </div>
                                         </div>
                                         <div class="product-price">R$ ${parseFloat(product.preco).toFixed(2)}</div>
@@ -647,14 +642,21 @@
                                     <p class="product-description">${product.descricao || 'Sem descrição'}</p>
                                     
                                     <div class="product-actions">
-                                        <button class="action-button edit" onclick="editarProduto('${product.id}')">✏️ Editar</button>
-                                        <button class="action-button delete" onclick="excluirProduto('${product.id}')">🗑️ Excluir</button>
+                                        <button class="action-button edit" onclick="editarProdutoGitHub(${product.index})">✏️ Editar</button>
+                                        <button class="action-button delete" onclick="excluirProdutoGitHub(${product.index})">🗑️ Excluir</button>
                                     </div>
                                 </div>
                             </div>
                         `).join('')}
                     </div>
                 `;
+            }
+
+            loadStats() {
+                document.getElementById('totalProducts').textContent = this.products.length;
+                
+                const categories = [...new Set(this.products.map(p => p.categoria))];
+                document.getElementById('totalCategories').textContent = categories.length;
             }
 
             setupSearch() {
@@ -672,68 +674,68 @@
 
             filtrarProdutos(termo = null) {
                 const searchTerm = termo || document.getElementById('searchProducts').value.toLowerCase();
-                const products = this.getProducts();
                 
                 if (!searchTerm) {
-                    this.loadProducts(products);
+                    this.exibirProdutos(this.products);
                     return;
                 }
 
-                const filteredProducts = products.filter(product => 
+                const filteredProducts = this.products.filter(product => 
                     product.nome.toLowerCase().includes(searchTerm) ||
                     product.id.toLowerCase().includes(searchTerm) ||
                     product.descricao.toLowerCase().includes(searchTerm) ||
                     product.categoria.toLowerCase().includes(searchTerm)
                 );
 
-                this.loadProducts(filteredProducts);
+                this.exibirProdutos(filteredProducts);
             }
 
-            getProducts() {
-                try {
-                    return JSON.parse(localStorage.getItem(this.productsKey)) || [];
-                } catch {
-                    return [];
+            mostrarLoading(mostrar, mensagem = '') {
+                const spinner = document.getElementById('syncSpinner');
+                const message = document.getElementById('syncMessage');
+                const status = document.getElementById('syncStatus');
+
+                if (mostrar) {
+                    spinner.style.display = 'inline-block';
+                    status.style.display = 'flex';
+                } else {
+                    spinner.style.display = 'none';
+                    if (!mensagem) {
+                        status.style.display = 'none';
+                    }
+                }
+
+                if (mensagem) {
+                    message.textContent = mensagem;
                 }
             }
 
-            saveProducts(products) {
-                localStorage.setItem(this.productsKey, JSON.stringify(products));
-                this.loadStats();
-                this.loadProducts();
-            }
-
-            getProductById(id) {
-                const products = this.getProducts();
-                return products.find(p => p.id === id);
-            }
-
-            updateProduct(productId, updatedData) {
-                const products = this.getProducts();
-                const index = products.findIndex(p => p.id === productId);
+            mostrarErro(mensagem) {
+                this.mostrarLoading(false, `❌ ${mensagem}`);
                 
-                if (index !== -1) {
-                    products[index] = { ...products[index], ...updatedData };
-                    this.saveProducts(products);
-                    return true;
-                }
-                return false;
+                const container = document.getElementById('productsList');
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>❌ Erro ao carregar</h3>
+                        <p>${mensagem}</p>
+                        <button class="action-btn" onclick="dashboard.carregarProdutosDoGitHub()" style="margin-top: 1rem;">
+                            🔄 Tentar Novamente
+                        </button>
+                    </div>
+                `;
             }
 
-            deleteProduct(productId) {
-                const products = this.getProducts();
-                const filteredProducts = products.filter(p => p.id !== productId);
-                this.saveProducts(filteredProducts);
-                return true;
+            getProductByIndex(index) {
+                return this.products[index];
             }
         }
 
-        // Inicializa o dashboard
-        const dashboard = new Dashboard();
+        // 🔥 INICIALIZA DASHBOARD
+        const dashboard = new GitHubDashboard();
 
-        // 🔥 FUNÇÕES DE GERENCIAMENTO AVANÇADAS
-        function editarProduto(productId) {
-            const product = dashboard.getProductById(productId);
+        // 🔥 FUNÇÕES DE GERENCIAMENTO GITHUB
+        async function editarProdutoGitHub(productIndex) {
+            const product = dashboard.getProductByIndex(productIndex);
             if (!product) {
                 alert('Produto não encontrado!');
                 return;
@@ -741,8 +743,8 @@
 
             const modalHTML = `
                 <div class="modal-overlay" id="editModal">
-                    <div class="modal-content edit-modal-content">
-                        <h2 class="modal-title">✏️ Editar Produto</h2>
+                    <div class="modal-content">
+                        <h2 class="modal-title">✏️ Editar Produto no GitHub</h2>
                         
                         <form id="editProductForm">
                             <div class="form-group">
@@ -778,7 +780,7 @@
                             
                             <div class="form-buttons">
                                 <button type="button" class="btn btn-cancel" onclick="fecharModalEdicao()">Cancelar</button>
-                                <button type="submit" class="btn btn-primary">💾 Salvar Alterações</button>
+                                <button type="submit" class="btn btn-primary">💾 Atualizar no GitHub</button>
                             </div>
                         </form>
                     </div>
@@ -788,13 +790,16 @@
             document.body.insertAdjacentHTML('beforeend', modalHTML);
             
             const form = document.getElementById('editProductForm');
-            form.addEventListener('submit', (e) => {
+            form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                salvarEdicaoProduto(productId);
+                await salvarEdicaoGitHub(productIndex);
             });
         }
 
-        function salvarEdicaoProduto(productId) {
+        async function salvarEdicaoGitHub(productIndex) {
+            const product = dashboard.getProductByIndex(productIndex);
+            if (!product) return;
+
             const nome = document.getElementById('editProductName').value.trim();
             const id = document.getElementById('editProductId').value.trim();
             const categoria = document.getElementById('editProductCategory').value.trim();
@@ -807,24 +812,118 @@
                 return;
             }
 
-            const updatedData = {
-                nome,
-                id,
-                categoria,
-                preco,
-                descricao,
-                imageUrl,
-                dataAtualizacao: new Date().toISOString()
-            };
+            try {
+                dashboard.mostrarLoading(true, '🔄 Atualizando no GitHub...');
 
-            const success = dashboard.updateProduct(productId, updatedData);
-            
-            if (success) {
-                fecharModalEdicao();
-                alert('✅ Produto atualizado com sucesso!');
-            } else {
-                alert('❌ Erro ao atualizar produto!');
+                // Gera o novo HTML do produto
+                const novoHTML = gerarHTMLProduto({
+                    nome,
+                    id,
+                    categoria,
+                    preco,
+                    descricao,
+                    imageUrl,
+                    opcoes: product.opcoes || [{ model: "Padrão", price: preco, image: imageUrl }]
+                });
+
+                // Atualiza no GitHub
+                const response = await fetch('/api/github-update-product', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        oldHtml: product.htmlOriginal,
+                        newHtml: novoHTML,
+                        commitMessage: `✏️ Editar produto: ${nome} (ID: ${id})`
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    fecharModalEdicao();
+                    alert('✅ Produto atualizado no GitHub!\n\nO site será atualizado em 1-2 minutos.');
+                    
+                    // Recarrega os produtos
+                    setTimeout(() => {
+                        dashboard.carregarProdutosDoGitHub();
+                    }, 2000);
+                    
+                } else {
+                    throw new Error(data.error || 'Erro ao atualizar no GitHub');
+                }
+
+            } catch (error) {
+                console.error('❌ Erro ao atualizar:', error);
+                alert('❌ Erro ao atualizar produto: ' + error.message);
+            } finally {
+                dashboard.mostrarLoading(false);
             }
+        }
+
+        async function excluirProdutoGitHub(productIndex) {
+            const product = dashboard.getProductByIndex(productIndex);
+            if (!product) return;
+
+            if (confirm(`⚠️ Tem certeza que deseja excluir o produto do site?\n\n"${product.nome}" (ID: ${product.id})\n\nEsta ação removerá o produto permanentemente do GitHub!`)) {
+                try {
+                    dashboard.mostrarLoading(true, '🗑️ Excluindo do GitHub...');
+
+                    const response = await fetch('/api/github-delete-product', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            productHtml: product.htmlOriginal,
+                            commitMessage: `🗑️ Excluir produto: ${product.nome} (ID: ${product.id})`
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        alert('✅ Produto excluído do GitHub!\n\nO site será atualizado em 1-2 minutos.');
+                        
+                        // Recarrega os produtos
+                        setTimeout(() => {
+                            dashboard.carregarProdutosDoGitHub();
+                        }, 2000);
+                        
+                    } else {
+                        throw new Error(data.error || 'Erro ao excluir no GitHub');
+                    }
+
+                } catch (error) {
+                    console.error('❌ Erro ao excluir:', error);
+                    alert('❌ Erro ao excluir produto: ' + error.message);
+                } finally {
+                    dashboard.mostrarLoading(false);
+                }
+            }
+        }
+
+        function gerarHTMLProduto(product) {
+            const opcoesJSON = JSON.stringify(product.opcoes).replace(/'/g, "&#39;");
+
+            return `
+    <div class="item" data-categoria="${product.categoria}">
+        <img src="${product.imageUrl}" alt="${product.nome}" loading="lazy">
+        <div class="info">
+            <h2>${product.nome}</h2>
+            <p>ID: ${product.id}</p>
+            <p>R$ ${product.preco.toFixed(2)}</p>
+            <button class="open-modal-btn"
+                data-name="${product.nome}"
+                data-id="${product.id}"
+                data-image="${product.imageUrl}"
+                data-specs="${product.descricao}"
+                data-options='${opcoesJSON}'>
+                Ver Detalhes
+            </button>
+        </div>
+    </div>`.trim();
         }
 
         function fecharModalEdicao() {
@@ -832,40 +931,25 @@
             if (modal) modal.remove();
         }
 
-        function excluirProduto(productId) {
-            const product = dashboard.getProductById(productId);
-            if (!product) return;
-
-            if (confirm(`⚠️ Tem certeza que deseja excluir o produto?\n\n"${product.nome}" (ID: ${product.id})\n\nEsta ação não pode ser desfeita!`)) {
-                const success = dashboard.deleteProduct(productId);
-                if (success) {
-                    alert('✅ Produto excluído com sucesso!');
-                } else {
-                    alert('❌ Erro ao excluir produto!');
-                }
-            }
-        }
-
         function filtrarProdutos() {
             dashboard.filtrarProdutos();
         }
 
-        // Funções globais existentes
-        function gerenciarCategorias() {
-            alert('📂 Gerenciar Categorias\n\nEm breve...');
+        async function sincronizarComGitHub() {
+            await dashboard.carregarProdutosDoGitHub();
         }
 
+        // Funções globais
         function verEstatisticas() {
-            const products = dashboard.getProducts();
+            const products = dashboard.products;
             const categorias = [...new Set(products.map(p => p.categoria))];
-            const precoMedio = products.reduce((acc, p) => acc + p.preco, 0) / products.length;
+            const precoMedio = products.length > 0 ? products.reduce((acc, p) => acc + p.preco, 0) / products.length : 0;
             
-            alert(`📊 Estatísticas Detalhadas:\n\n• Total de Produtos: ${products.length}\n• Categorias: ${categorias.length}\n• Preço Médio: R$ ${precoMedio.toFixed(2)}\n\nCategorias:\n${categorias.map(cat => `  - ${cat}`).join('\n')}`);
+            alert(`📊 Estatísticas do Site:\n\n• Total de Produtos: ${products.length}\n• Categorias: ${categorias.length}\n• Preço Médio: R$ ${precoMedio.toFixed(2)}\n\nCategorias:\n${categorias.map(cat => `  - ${cat}`).join('\n')}`);
         }
 
         function backupDados() {
-            const products = dashboard.getProducts();
-            const data = JSON.stringify(products, null, 2);
+            const data = JSON.stringify(dashboard.products, null, 2);
             const blob = new Blob([data], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -873,10 +957,6 @@
             a.download = `backup_produtos_${new Date().toISOString().split('T')[0]}.json`;
             a.click();
             alert('💾 Backup realizado com sucesso!');
-        }
-
-        function exportAllProducts() {
-            backupDados();
         }
 
         function logout() {
