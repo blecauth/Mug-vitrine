@@ -22,13 +22,14 @@ export default async function handler(req, res) {
     const FILE_PATH = 'index.html';
 
     if (!GITHUB_TOKEN || !REPO_OWNER || !REPO_NAME) {
+      console.error('❌ Variáveis de ambiente não configuradas');
       return res.status(500).json({ 
         success: false, 
         error: 'Variáveis de ambiente do GitHub não configuradas' 
       });
     }
 
-    console.log('📖 Lendo arquivo do GitHub...');
+    console.log('📖 Lendo arquivo do GitHub...', { REPO_OWNER, REPO_NAME });
 
     // Busca o arquivo atual
     const fileResponse = await fetch(
@@ -43,13 +44,15 @@ export default async function handler(req, res) {
     );
 
     if (!fileResponse.ok) {
+      const errorText = await fileResponse.text();
+      console.error('❌ Erro GitHub:', fileResponse.status, errorText);
       throw new Error(`Erro ao buscar arquivo: ${fileResponse.status}`);
     }
 
     const fileData = await fileResponse.json();
     const content = Buffer.from(fileData.content, 'base64').toString('utf8');
 
-    console.log('✅ Arquivo lido com sucesso');
+    console.log('✅ Arquivo lido com sucesso - Tamanho:', content.length);
     return res.status(200).json({ 
       success: true, 
       content: content
