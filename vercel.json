@@ -1,8 +1,18 @@
+[file name]: vercel.json
+[file content begin]
 {
   "version": 2,
   "builds": [
     {
       "src": "*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "src/**/*.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "src/**/*.js", 
       "use": "@vercel/static"
     },
     {
@@ -12,8 +22,8 @@
   ],
   "routes": [
     {
-      "src": "/",
-      "dest": "/index.html"
+      "src": "/src/(.*)",
+      "dest": "/src/$1"
     },
     {
       "src": "/(.*)",
@@ -21,3 +31,4 @@
     }
   ]
 }
+[file content end]
