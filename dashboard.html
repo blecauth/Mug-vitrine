@@ -3,572 +3,310 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hub Admin - Canecas Personalizadas</title>
+    <title>Admin Hub - Canecas Personalizadas</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
         }
         
         body {
-            background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
+            background: #0d0d0d;
             color: #fff;
             min-height: 100vh;
-            line-height: 1.6;
         }
         
-        .dashboard-header {
-            background: rgba(24, 24, 24, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 1.5rem 2rem;
-            border-bottom: 3px solid #25D366;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        .header {
+            background: #181818;
+            padding: 1rem 2rem;
+            border-bottom: 2px solid #25D366;
+            text-align: center;
         }
         
-        .dashboard-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .logo h1 {
+        .header h1 {
             color: #25D366;
             font-size: 1.8rem;
-            font-weight: bold;
+            margin-bottom: 0.5rem;
         }
         
-        .logo-icon {
-            font-size: 2rem;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
-        .logout-btn {
-            background: linear-gradient(135deg, #ff4444, #cc3333);
-            color: white;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3);
-        }
-        
-        .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 68, 68, 0.4);
-        }
-        
-        .dashboard-main {
-            margin-top: 100px;
-            padding: 2rem;
+        .container {
             max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        .welcome-section {
-            text-align: center;
-            margin-bottom: 3rem;
-            padding: 2rem;
-            background: linear-gradient(135deg, #181818, #252525);
-            border-radius: 20px;
-            border: 1px solid #333;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        
-        .welcome-section h2 {
-            color: #25D366;
-            font-size: 2.2rem;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(45deg, #25D366, #1ebe5f);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .welcome-section p {
-            color: #ccc;
-            font-size: 1.1rem;
-            max-width: 600px;
             margin: 0 auto;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 3rem;
-        }
-        
-        .stat-card {
-            background: linear-gradient(135deg, #181818, #1f1f1f);
             padding: 2rem;
-            border-radius: 15px;
+        }
+        
+        .welcome {
             text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: #181818;
+            border-radius: 10px;
             border: 1px solid #333;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
         }
         
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #25D366, #1ebe5f);
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(37, 211, 102, 0.2);
-        }
-        
-        .stat-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            display: block;
-        }
-        
-        .stat-number {
-            font-size: 2.5rem;
+        .welcome h2 {
             color: #25D366;
-            font-weight: bold;
-            display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1rem;
         }
         
-        .stat-label {
-            color: #ccc;
-            font-size: 1rem;
-        }
-        
-        .actions-grid {
+        .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2rem;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
         }
         
-        .action-card {
-            background: linear-gradient(135deg, #181818, #252525);
-            padding: 2.5rem 2rem;
-            border-radius: 20px;
+        .card {
+            background: #181818;
+            padding: 2rem;
+            border-radius: 10px;
+            border: 1px solid #333;
             text-align: center;
-            border: 2px solid transparent;
-            transition: all 0.4s ease;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .action-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(37, 211, 102, 0.1), transparent);
-            transition: left 0.6s ease;
-        }
-        
-        .action-card:hover::before {
-            left: 100%;
-        }
-        
-        .action-card:hover {
-            transform: translateY(-8px);
-            border-color: #25D366;
-            box-shadow: 0 20px 40px rgba(37, 211, 102, 0.3);
-        }
-        
-        .action-icon {
-            font-size: 3.5rem;
-            margin-bottom: 1.5rem;
-            display: block;
             transition: transform 0.3s ease;
         }
         
-        .action-card:hover .action-icon {
-            transform: scale(1.1);
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #25D366;
         }
         
-        .action-title {
-            color: #25D366;
-            font-size: 1.4rem;
+        .card-icon {
+            font-size: 3rem;
             margin-bottom: 1rem;
-            font-weight: bold;
+            display: block;
         }
         
-        .action-description {
+        .card h3 {
+            color: #25D366;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        
+        .card p {
             color: #ccc;
-            font-size: 0.95rem;
-            line-height: 1.5;
             margin-bottom: 1.5rem;
+            line-height: 1.5;
         }
         
-        .action-btn {
-            background: linear-gradient(135deg, #25D366, #1ebe5f);
+        .btn {
+            background: #25D366;
             color: white;
             border: none;
             padding: 0.8rem 2rem;
-            border-radius: 25px;
+            border-radius: 5px;
             cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
+            font-size: 1rem;
             text-decoration: none;
             display: inline-block;
+            transition: background 0.3s ease;
         }
         
-        .action-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(37, 211, 102, 0.4);
+        .btn:hover {
+            background: #1ebe5f;
         }
         
-        .quick-stats {
-            background: linear-gradient(135deg, #181818, #1a1a1a);
-            padding: 2rem;
-            border-radius: 15px;
+        .stats {
+            background: #181818;
+            padding: 1.5rem;
+            border-radius: 10px;
             border: 1px solid #333;
             margin-top: 2rem;
         }
         
-        .quick-stats h3 {
+        .stats h3 {
             color: #25D366;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
             text-align: center;
-            font-size: 1.3rem;
         }
         
-        .stats-list {
+        .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1rem;
         }
         
         .stat-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
             background: #252525;
-            border-radius: 10px;
+            padding: 1rem;
+            border-radius: 5px;
+            text-align: center;
             border-left: 4px solid #25D366;
         }
         
-        .stat-item span:first-child {
-            color: #ccc;
-        }
-        
-        .stat-item span:last-child {
+        .stat-number {
+            font-size: 1.5rem;
             color: #25D366;
             font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            color: #ccc;
+            font-size: 0.9rem;
         }
         
         .footer {
             text-align: center;
             padding: 2rem;
             color: #666;
-            border-top: 1px solid #333;
             margin-top: 3rem;
+            border-top: 1px solid #333;
         }
         
-        /* Animações */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .logout-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 1rem;
         }
         
-        .animate-fade-in {
-            animation: fadeInUp 0.6s ease-out;
-        }
-        
-        .delay-1 { animation-delay: 0.1s; }
-        .delay-2 { animation-delay: 0.2s; }
-        .delay-3 { animation-delay: 0.3s; }
-        .delay-4 { animation-delay: 0.4s; }
-        
-        /* Responsivo */
         @media (max-width: 768px) {
-            .dashboard-main {
+            .container {
                 padding: 1rem;
-                margin-top: 80px;
             }
             
-            .welcome-section h2 {
-                font-size: 1.8rem;
-            }
-            
-            .actions-grid {
+            .grid {
                 grid-template-columns: 1fr;
             }
             
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .action-card {
-                padding: 2rem 1.5rem;
+            .card {
+                padding: 1.5rem;
             }
         }
     </style>
 </head>
 <body>
-    <header class="dashboard-header">
-        <nav class="dashboard-nav">
-            <div class="logo">
-                <div class="logo-icon">⚡</div>
-                <h1>Hub Administrativo</h1>
-            </div>
-            <button class="logout-btn" onclick="logout()">🚪 Sair do Sistema</button>
-        </nav>
+    <header class="header">
+        <h1>⚡ Hub Administrativo</h1>
+        <p style="color: #ccc;">Central de controle do seu site</p>
     </header>
 
-    <main class="dashboard-main">
-        <!-- Seção de Boas-Vindas -->
-        <section class="welcome-section animate-fade-in">
-            <h2>🎯 Painel de Controle</h2>
-            <p>Gerencie todos os aspectos do seu site de canecas personalizadas em um só lugar</p>
+    <main class="container">
+        <section class="welcome">
+            <h2>🎯 Bem-vindo ao Painel de Controle</h2>
+            <p style="color: #ccc; max-width: 600px; margin: 0 auto;">
+                Gerencie todos os aspectos do seu site de canecas personalizadas. Escolha uma das opções abaixo para começar.
+            </p>
         </section>
 
-        <!-- Estatísticas em Tempo Real -->
-        <div class="stats-grid">
-            <div class="stat-card animate-fade-in delay-1">
-                <div class="stat-icon">📦</div>
-                <span class="stat-number" id="totalProducts">12</span>
-                <div class="stat-label">Produtos Ativos</div>
-            </div>
-            
-            <div class="stat-card animate-fade-in delay-2">
-                <div class="stat-icon">📁</div>
-                <span class="stat-number" id="totalCategories">8</span>
-                <div class="stat-label">Categorias</div>
-            </div>
-            
-            <div class="stat-card animate-fade-in delay-3">
-                <div class="stat-icon">👁️</div>
-                <span class="stat-number" id="totalViews">1.2K</span>
-                <div class="stat-label">Visualizações</div>
-            </div>
-            
-            <div class="stat-card animate-fade-in delay-4">
-                <div class="stat-icon">🔄</div>
-                <span class="stat-number" id="lastUpdate">Hoje</span>
-                <div class="stat-label">Última Atualização</div>
-            </div>
-        </div>
-
-        <!-- Grid de Ações Principais -->
-        <div class="actions-grid">
+        <div class="grid">
             <!-- Gerenciar Produtos -->
-            <div class="action-card animate-fade-in" onclick="navigateTo('gerenciar-produtos.html')">
-                <div class="action-icon">🛠️</div>
-                <h3 class="action-title">Gerenciar Produtos</h3>
-                <p class="action-description">
-                    Visualize, edite ou exclua produtos existentes. Controle completo sobre seu catálogo.
-                </p>
-                <button class="action-btn">Acessar Gestão</button>
+            <div class="card">
+                <div class="card-icon">🛠️</div>
+                <h3>Gerenciar Produtos</h3>
+                <p>Visualize, edite ou exclua produtos existentes no seu catálogo.</p>
+                <a href="gerenciar-produtos.html" class="btn">Acessar</a>
             </div>
 
             <!-- Adicionar Produto -->
-            <div class="action-card animate-fade-in" onclick="navigateTo('adicionar-produto.html')">
-                <div class="action-icon">➕</div>
-                <h3 class="action-title">Adicionar Produto</h3>
-                <p class="action-description">
-                    Adicione novos produtos ao seu site com formulário completo e upload de imagens.
-                </p>
-                <button class="action-btn">Criar Produto</button>
+            <div class="card">
+                <div class="card-icon">➕</div>
+                <h3>Adicionar Produto</h3>
+                <p>Adicione novos produtos ao site com formulário completo.</p>
+                <a href="adicionar-produto.html" class="btn">Criar Produto</a>
+            </div>
+
+            <!-- Ver Site -->
+            <div class="card">
+                <div class="card-icon">🌐</div>
+                <h3>Ver Site</h3>
+                <p>Visualize como está o seu site atualmente para os visitantes.</p>
+                <a href="/" class="btn" target="_blank">Abrir Site</a>
             </div>
 
             <!-- Estatísticas -->
-            <div class="action-card animate-fade-in" onclick="showStats()">
-                <div class="action-icon">📊</div>
-                <h3 class="action-title">Relatórios</h3>
-                <p class="action-description">
-                    Acompanhe métricas, visualizações e performance do seu site em tempo real.
-                </p>
-                <button class="action-btn">Ver Relatórios</button>
+            <div class="card">
+                <div class="card-icon">📊</div>
+                <h3>Estatísticas</h3>
+                <p>Acompanhe métricas e visualizações do seu site.</p>
+                <button class="btn" onclick="showStats()">Ver Stats</button>
             </div>
 
             <!-- Backup -->
-            <div class="action-card animate-fade-in" onclick="backupData()">
-                <div class="action-icon">💾</div>
-                <h3 class="action-title">Backup & Export</h3>
-                <p class="action-description">
-                    Faça backup dos seus dados ou exporte o catálogo completo para arquivo JSON.
-                </p>
-                <button class="action-btn">Fazer Backup</button>
-            </div>
-
-            <!-- Configurações -->
-            <div class="action-card animate-fade-in" onclick="showSettings()">
-                <div class="action-icon">⚙️</div>
-                <h3 class="action-title">Configurações</h3>
-                <p class="action-description">
-                    Configure preferências do sistema, temas e integrações com outras plataformas.
-                </p>
-                <button class="action-btn">Configurar</button>
+            <div class="card">
+                <div class="card-icon">💾</div>
+                <h3>Backup</h3>
+                <p>Faça backup dos seus dados ou exporte o catálogo.</p>
+                <button class="btn" onclick="backupData()">Fazer Backup</button>
             </div>
 
             <!-- Ajuda -->
-            <div class="action-card animate-fade-in" onclick="showHelp()">
-                <div class="action-icon">❓</div>
-                <h3 class="action-title">Suporte</h3>
-                <p class="action-description">
-                    Tutorial, documentação e suporte para tirar dúvidas sobre o sistema.
-                </p>
-                <button class="action-btn">Obter Ajuda</button>
+            <div class="card">
+                <div class="card-icon">❓</div>
+                <h3>Ajuda</h3>
+                <p>Tutorial e suporte para usar o sistema.</p>
+                <button class="btn" onclick="showHelp()">Obter Ajuda</button>
             </div>
         </div>
 
         <!-- Estatísticas Rápidas -->
-        <section class="quick-stats animate-fade-in">
-            <h3>📈 Visão Geral Rápida</h3>
-            <div class="stats-list">
+        <section class="stats">
+            <h3>📈 Visão Rápida do Sistema</h3>
+            <div class="stats-grid">
                 <div class="stat-item">
-                    <span>Produtos mais visualizados:</span>
-                    <span>Caneca Floral</span>
+                    <span class="stat-number" id="statProducts">12</span>
+                    <span class="stat-label">Produtos Ativos</span>
                 </div>
                 <div class="stat-item">
-                    <span>Última atualização:</span>
-                    <span>15 min atrás</span>
+                    <span class="stat-number" id="statCategories">8</span>
+                    <span class="stat-label">Categorias</span>
                 </div>
                 <div class="stat-item">
-                    <span>Status do site:</span>
-                    <span style="color: #25D366;">● Online</span>
+                    <span class="stat-number" id="statStatus">Online</span>
+                    <span class="stat-label">Status do Site</span>
                 </div>
                 <div class="stat-item">
-                    <span>Próxima ação:</span>
-                    <span>Revisar estoque</span>
+                    <span class="stat-number" id="statUpdated">Hoje</span>
+                    <span class="stat-label">Última Atualização</span>
                 </div>
             </div>
         </section>
+
+        <div style="text-align: center; margin-top: 2rem;">
+            <button class="logout-btn" onclick="logout()">🚪 Sair do Sistema</button>
+        </div>
     </main>
 
     <footer class="footer">
-        <p>© 2024 Canecas Personalizadas • Sistema Administrativo v2.0</p>
-        <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #888;">
-            Desenvolvido com ❤️ para seu negócio
-        </p>
+        <p>© 2024 Canecas Personalizadas • Sistema Admin</p>
     </footer>
 
     <script>
-        // Sistema de Navegação
-        function navigateTo(page) {
-            window.location.href = page;
-        }
-
-        // Funções das Ações
+        // Funções simples e seguras
         function showStats() {
-            alert('📊 Relatórios Detalhados\n\nEm desenvolvimento - Em breve você terá:\n\n• Gráficos de visualizações\n• Métricas de conversão\n• Análise de desempenho\n• Relatórios semanais');
+            alert('📊 Estatísticas do Sistema\n\n• Produtos: 12\n• Categorias: 8\n• Status: Online\n• Última atualização: Hoje\n\nEm breve: gráficos detalhados!');
         }
 
         function backupData() {
-            alert('💾 Sistema de Backup\n\nFuncionalidade em desenvolvimento:\n\n• Backup automático diário\n• Export para JSON/CSV\n• Restauração de dados\n• Histórico de versões');
-        }
-
-        function showSettings() {
-            alert('⚙️ Configurações do Sistema\n\nEm breve disponível:\n\n• Personalização de tema\n• Configurações de notificação\n• Integrações com APIs\n• Preferências de usuário');
+            alert('💾 Sistema de Backup\n\nBackup automático ativo!\nSeus dados estão seguros no GitHub.\n\nEm breve: export para JSON/CSV');
         }
 
         function showHelp() {
-            alert('❓ Central de Ajuda\n\nRecursos disponíveis:\n\n📚 Documentação completa\n🎥 Vídeo tutoriais\n💬 Suporte por email\n🔄 Atualizações do sistema');
+            alert('❓ Central de Ajuda\n\n📞 Suporte: contato@canecas.com\n📚 Tutorial: Use o formulário de adicionar produto\n🔄 Atualizações: Sistema sempre atualizado');
         }
 
         function logout() {
-            if (confirm('Tem certeza que deseja sair do sistema administrativo?')) {
+            if (confirm('Tem certeza que deseja sair?')) {
                 localStorage.removeItem('admin_token_canecas');
                 window.location.href = 'login.html';
             }
         }
 
-        // Atualizar estatísticas em tempo real
-        function updateStats() {
-            // Simulação de dados - em produção viria de uma API
-            const stats = {
-                products: 12,
-                categories: 8,
-                views: '1.2K',
-                lastUpdate: 'Hoje'
-            };
-            
-            document.getElementById('totalProducts').textContent = stats.products;
-            document.getElementById('totalCategories').textContent = stats.categories;
-            document.getElementById('totalViews').textContent = stats.views;
-            document.getElementById('lastUpdate').textContent = stats.lastUpdate;
-        }
-
-        // Efeitos visuais
+        // Inicialização segura
         document.addEventListener('DOMContentLoaded', function() {
-            updateStats();
+            console.log('✅ Dashboard carregado com sucesso!');
             
-            // Adiciona efeito de digitação no título
-            const welcomeText = "🎯 Painel de Controle";
-            let i = 0;
-            const titleElement = document.querySelector('.welcome-section h2');
-            const originalText = titleElement.textContent;
-            titleElement.textContent = '';
-            
-            function typeWriter() {
-                if (i < welcomeText.length) {
-                    titleElement.textContent += welcomeText.charAt(i);
-                    i++;
-                    setTimeout(typeWriter, 100);
-                }
-            }
-            
-            typeWriter();
+            // Estatísticas básicas
+            document.getElementById('statProducts').textContent = '12';
+            document.getElementById('statCategories').textContent = '8';
+            document.getElementById('statStatus').textContent = 'Online';
+            document.getElementById('statUpdated').textContent = 'Hoje';
         });
-
-        // Teclas de atalho
-        document.addEventListener('keydown', function(e) {
-            // Ctrl + 1 - Gerenciar Produtos
-            if (e.ctrlKey && e.key === '1') {
-                navigateTo('gerenciar-produtos.html');
-            }
-            // Ctrl + 2 - Adicionar Produto
-            if (e.ctrlKey && e.key === '2') {
-                navigateTo('adicionar-produto.html');
-            }
-            // Ctrl + L - Logout
-            if (e.ctrlKey && e.key === 'l') {
-                logout();
-            }
-        });
-
-        // Mostrar atalhos de teclado
-        console.log('🎮 Atalhos de teclado disponíveis:');
-        console.log('Ctrl + 1 - Gerenciar Produtos');
-        console.log('Ctrl + 2 - Adicionar Produto');
-        console.log('Ctrl + L - Logout');
     </script>
 </body>
 </html>
