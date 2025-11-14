@@ -131,6 +131,17 @@
       background: rgba(37, 211, 102, 0.1);
       border-radius: 5px;
     }
+
+    .warning-msg {
+      color: #ffa500;
+      text-align: center;
+      margin-top: 1rem;
+      display: none;
+      padding: 0.5rem;
+      background: rgba(255, 165, 0, 0.1);
+      border-radius: 5px;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
@@ -151,6 +162,7 @@
       </form>
       
       <div class="error-msg" id="errorMsg">Usuário ou senha incorretos!</div>
+      <div class="warning-msg" id="warningMsg">API não disponível. Usando modo desenvolvimento.</div>
       <div class="success-msg" id="successMsg">Login realizado com sucesso! Redirecionando...</div>
       
       <a href="index.html" class="back-link">← Voltar ao Site Principal</a>
@@ -165,13 +177,14 @@
   </div>
 
   <script>
-    // Sistema de autenticação ATUALIZADO para Vercel
+    // Sistema de autenticação CORRIGIDO para lidar com erros de API
     console.log('🔐 Sistema de login carregado!');
 
     class AuthSystem {
       constructor() {
         this.tokenKey = 'admin_token_canecas';
         this.apiUrl = '/api/auth';
+        this.apiAvailable = true; // Assume que a API está disponível inicialmente
         this.checkAuth();
       }
 
@@ -185,8 +198,8 @@
         
         try {
           // Verifica se o token é válido (24 horas)
-          const tokenData = atob(token).split('|');
-          const tokenTime = parseInt(tokenData[0]);
+          const tokenData = JSON.parse(atob(token));
+          const tokenTime = tokenData.timestamp;
           const now = Date.now();
           const isValid = (now - tokenTime) < (24 * 60 * 60 * 1000);
           
@@ -204,19 +217,49 @@
         const tokenData = {
           timestamp: Date.now(),
           random: Math.random().toString(36).substring(2),
-          origin: 'canecas_admin'
+          origin: 'canecas_admin',
+          env: this.isProduction() ? 'production' : 'development'
         };
         const token = btoa(JSON.stringify(tokenData));
-        console.log('🔑 Token gerado');
+        console.log('🔑 Token gerado para:', tokenData.env);
         return token;
       }
 
-      // Faz login via API do Vercel
+      // Verifica se está em produção
+      isProduction() {
+        return window.location.hostname.includes('vercel.app') && 
+               !window.location.hostname.includes('localhost');
+      }
+
+      // Faz login - tenta API primeiro, depois fallback
       async login(username, password) {
         console.log('🔐 Tentando login para:', username);
         
+        // Se a API estava disponível, tenta primeiro
+        if (this.apiAvailable) {
+          console.log('🌐 Tentando API primeiro...');
+          const apiResult = await this.tryApiLogin(username, password);
+          
+          if (apiResult.success) {
+            return apiResult;
+          }
+          
+          // Se API falhou mas não foi erro de rede, marca como indisponível
+          if (!apiResult.networkError) {
+            this.apiAvailable = false;
+            console.log('🚫 API marcada como indisponível');
+          }
+        }
+        
+        // Se API não disponível ou falhou, usa fallback
+        console.log('🛠️ Usando fallback de desenvolvimento');
+        return await this.fallbackLogin(username, password);
+      }
+
+      // Tenta login via API
+      async tryApiLogin(username, password) {
         try {
-          console.log('🌐 Chamando API:', this.apiUrl);
+          console.log('📡 Chamando API:', this.apiUrl);
           const response = await fetch(this.apiUrl, {
             method: 'POST',
             headers: {
@@ -228,67 +271,79 @@
             })
           });
 
-          // Log detalhado da resposta
           console.log('📨 Status da resposta:', response.status);
           
+          // Verifica se a resposta é JSON
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            console.error('❌ API retornou não-JSON:', contentType);
+            const textResponse = await response.text();
+            console.error('📄 Conteúdo da resposta:', textResponse.substring(0, 200));
+            throw new Error('API retornou formato inválido');
+          }
+          
           const data = await response.json();
-          console.log('📨 Resposta da API:', data);
+          console.log('📨 Resposta JSON da API:', data);
           
           if (data.success) {
             console.log('✅ Login autorizado via API');
             const token = this.generateToken();
             localStorage.setItem(this.tokenKey, token);
-            return { success: true, message: data.message };
+            return { 
+              success: true, 
+              message: 'Login realizado com sucesso!',
+              source: 'api'
+            };
           } else {
             console.log('❌ Login recusado pela API:', data.error);
-            return { success: false, message: data.error || 'Credenciais inválidas' };
+            return { 
+              success: false, 
+              message: data.error || 'Credenciais inválidas',
+              source: 'api'
+            };
           }
           
         } catch (error) {
           console.error('💥 Erro na comunicação com API:', error);
-          
-          // Fallback para desenvolvimento/local
-          return await this.fallbackLogin(username, password, error);
+          return { 
+            success: false, 
+            message: 'API indisponível. Usando modo desenvolvimento.',
+            networkError: true,
+            source: 'api_error'
+          };
         }
       }
 
       // Fallback para desenvolvimento
-      async fallbackLogin(username, password, originalError) {
-        console.log('🛠️ Tentando fallback para desenvolvimento');
+      async fallbackLogin(username, password) {
+        console.log('🔧 Modo desenvolvimento ativo');
         
-        const isDevelopment = window.location.hostname === 'localhost' || 
-                            window.location.hostname === '127.0.0.1' ||
-                            window.location.hostname.includes('vercel.app');
+        // Credenciais padrão para desenvolvimento
+        const devCredentials = [
+          { user: 'admin', pass: 'canecas123' },
+          { user: 'test', pass: 'test123' }
+        ];
         
-        if (isDevelopment) {
-          console.log('🔧 Modo desenvolvimento ativo');
-          
-          // Credenciais padrão para desenvolvimento
-          const devCredentials = [
-            { user: 'admin', pass: 'canecas123' },
-            { user: 'test', pass: 'test123' }
-          ];
-          
-          const validCredential = devCredentials.find(cred => 
-            cred.user === username.trim() && cred.pass === password
-          );
-          
-          if (validCredential) {
-            console.log('✅ Login via fallback de desenvolvimento');
-            const token = this.generateToken();
-            localStorage.setItem(this.tokenKey, token);
-            return { 
-              success: true, 
-              message: 'Login realizado (modo desenvolvimento)' 
-            };
-          }
+        const validCredential = devCredentials.find(cred => 
+          cred.user === username.trim() && cred.pass === password
+        );
+        
+        if (validCredential) {
+          console.log('✅ Login via fallback de desenvolvimento');
+          const token = this.generateToken();
+          localStorage.setItem(this.tokenKey, token);
+          return { 
+            success: true, 
+            message: 'Login realizado (modo desenvolvimento)',
+            source: 'fallback'
+          };
         }
         
-        // Se chegou aqui, login falhou
-        console.error('❌ Todas as tentativas de login falharam');
+        console.log('❌ Credenciais inválidas no fallback');
         return { 
           success: false, 
-          message: originalError.message || 'Erro de conexão com o servidor' 
+          message: 'Usuário ou senha incorretos',
+          source: 'fallback'
         };
       }
 
@@ -334,6 +389,7 @@
     function setupLoginForm() {
       const loginForm = document.getElementById('loginForm');
       const errorMsg = document.getElementById('errorMsg');
+      const warningMsg = document.getElementById('warningMsg');
       const successMsg = document.getElementById('successMsg');
       const loadingSpinner = document.getElementById('loadingSpinner');
       const submitBtn = document.getElementById('submitBtn');
@@ -365,7 +421,13 @@
           const result = await auth.login(username, password);
           
           if (result.success) {
-            showSuccess(result.message || 'Login realizado com sucesso! Redirecionando...');
+            // Mostra mensagem específica baseada na fonte
+            if (result.source === 'fallback') {
+              showWarning(result.message);
+            } else {
+              showSuccess(result.message);
+            }
+            
             console.log('✅ Login bem-sucedido, redirecionando...');
             
             // Redireciona após breve delay
@@ -374,7 +436,12 @@
             }, 1500);
             
           } else {
-            showError(result.message || 'Usuário ou senha incorretos');
+            // Mostra mensagem de aviso se API não está disponível
+            if (result.source === 'api_error') {
+              showWarning(result.message);
+            } else {
+              showError(result.message);
+            }
             console.log('❌ Login falhou:', result.message);
           }
         } catch (error) {
@@ -391,6 +458,7 @@
       const loadingSpinner = document.getElementById('loadingSpinner');
       const submitBtn = document.getElementById('submitBtn');
       const errorMsg = document.getElementById('errorMsg');
+      const warningMsg = document.getElementById('warningMsg');
       const successMsg = document.getElementById('successMsg');
       
       if (loadingSpinner) loadingSpinner.style.display = 'block';
@@ -399,6 +467,7 @@
         submitBtn.textContent = 'Verificando...';
       }
       if (errorMsg) errorMsg.style.display = 'none';
+      if (warningMsg) warningMsg.style.display = 'none';
       if (successMsg) successMsg.style.display = 'none';
     }
 
@@ -418,8 +487,16 @@
       if (errorMsg) {
         errorMsg.textContent = message;
         errorMsg.style.display = 'block';
-        // Scroll para o erro
         errorMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    function showWarning(message) {
+      const warningMsg = document.getElementById('warningMsg');
+      if (warningMsg) {
+        warningMsg.textContent = message;
+        warningMsg.style.display = 'block';
+        warningMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
 
