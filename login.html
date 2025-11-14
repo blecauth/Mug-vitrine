@@ -157,12 +157,15 @@
 
       <div style="text-align: center; margin-top: 2rem; color: #666; font-size: 0.8rem;">
         <p>🔒 Sistema seguro com autenticação serverless</p>
+        <p style="margin-top: 0.5rem; font-size: 0.7rem; color: #888;">
+          Configure ADMIN_USERNAME e ADMIN_PASSWORD no Vercel
+        </p>
       </div>
     </div>
   </div>
 
   <script>
-    // Sistema de autenticação SIMPLES e FUNCIONAL
+    // Sistema de autenticação ATUALIZADO para Vercel
     console.log('🔐 Sistema de login carregado!');
 
     class AuthSystem {
@@ -181,6 +184,7 @@
         }
         
         try {
+          // Verifica se o token é válido (24 horas)
           const tokenData = atob(token).split('|');
           const tokenTime = parseInt(tokenData[0]);
           const now = Date.now();
@@ -190,23 +194,28 @@
           return isValid;
         } catch (error) {
           console.error('💥 Erro ao verificar token:', error);
+          this.logout();
           return false;
         }
       }
 
       // Gera token seguro
       generateToken() {
-        const token = btoa(Date.now() + '|' + Math.random() + '|admin_canecas');
-        console.log('🔑 Token gerado:', token.substring(0, 20) + '...');
+        const tokenData = {
+          timestamp: Date.now(),
+          random: Math.random().toString(36).substring(2),
+          origin: 'canecas_admin'
+        };
+        const token = btoa(JSON.stringify(tokenData));
+        console.log('🔑 Token gerado');
         return token;
       }
 
-      // Faz login via API
+      // Faz login via API do Vercel
       async login(username, password) {
         console.log('🔐 Tentando login para:', username);
         
         try {
-          // Tenta a API do Vercel primeiro
           console.log('🌐 Chamando API:', this.apiUrl);
           const response = await fetch(this.apiUrl, {
             method: 'POST',
@@ -219,10 +228,9 @@
             })
           });
 
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
+          // Log detalhado da resposta
+          console.log('📨 Status da resposta:', response.status);
+          
           const data = await response.json();
           console.log('📨 Resposta da API:', data);
           
@@ -230,32 +238,58 @@
             console.log('✅ Login autorizado via API');
             const token = this.generateToken();
             localStorage.setItem(this.tokenKey, token);
-            return true;
+            return { success: true, message: data.message };
           } else {
-            console.log('❌ Login recusado pela API');
-            return false;
+            console.log('❌ Login recusado pela API:', data.error);
+            return { success: false, message: data.error || 'Credenciais inválidas' };
           }
           
         } catch (error) {
-          console.error('💥 Erro na API, usando fallback:', error);
+          console.error('💥 Erro na comunicação com API:', error);
           
-          // Fallback seguro para desenvolvimento
-          const isLocal = window.location.hostname === 'localhost' || 
-                         window.location.hostname === '127.0.0.1' ||
-                         window.location.hostname.includes('vercel.app');
-          
-          if (isLocal) {
-            console.log('🛠️ Modo desenvolvimento - usando fallback');
-            // Credenciais de fallback para desenvolvimento
-            if (username === 'admin' && password === 'canecas123') {
-              const token = this.generateToken();
-              localStorage.setItem(this.tokenKey, token);
-              return true;
-            }
-          }
-          
-          return false;
+          // Fallback para desenvolvimento/local
+          return await this.fallbackLogin(username, password, error);
         }
+      }
+
+      // Fallback para desenvolvimento
+      async fallbackLogin(username, password, originalError) {
+        console.log('🛠️ Tentando fallback para desenvolvimento');
+        
+        const isDevelopment = window.location.hostname === 'localhost' || 
+                            window.location.hostname === '127.0.0.1' ||
+                            window.location.hostname.includes('vercel.app');
+        
+        if (isDevelopment) {
+          console.log('🔧 Modo desenvolvimento ativo');
+          
+          // Credenciais padrão para desenvolvimento
+          const devCredentials = [
+            { user: 'admin', pass: 'canecas123' },
+            { user: 'test', pass: 'test123' }
+          ];
+          
+          const validCredential = devCredentials.find(cred => 
+            cred.user === username.trim() && cred.pass === password
+          );
+          
+          if (validCredential) {
+            console.log('✅ Login via fallback de desenvolvimento');
+            const token = this.generateToken();
+            localStorage.setItem(this.tokenKey, token);
+            return { 
+              success: true, 
+              message: 'Login realizado (modo desenvolvimento)' 
+            };
+          }
+        }
+        
+        // Se chegou aqui, login falhou
+        console.error('❌ Todas as tentativas de login falharam');
+        return { 
+          success: false, 
+          message: originalError.message || 'Erro de conexão com o servidor' 
+        };
       }
 
       // Faz logout
@@ -270,15 +304,17 @@
         const currentPage = window.location.pathname;
         console.log('🔍 Verificando autenticação para:', currentPage);
         
-        if (currentPage.includes('dashboard.html')) {
+        // Se está no dashboard sem autenticação, redireciona
+        if (currentPage.includes('dashboard.html') || 
+            currentPage.includes('adicionar-produto.html') ||
+            currentPage.includes('gerenciar-produtos.html')) {
           if (!this.isAuthenticated()) {
-            console.log('🚫 Acesso negado ao dashboard - redirecionando para login');
+            console.log('🚫 Acesso negado - redirecionando para login');
             window.location.href = 'login.html';
-          } else {
-            console.log('✅ Acesso autorizado ao dashboard');
           }
         }
         
+        // Se está no login já autenticado, redireciona para dashboard
         if (currentPage.includes('login.html') && this.isAuthenticated()) {
           console.log('✅ Usuário já autenticado - redirecionando para dashboard');
           window.location.href = 'dashboard.html';
@@ -286,7 +322,7 @@
       }
     }
 
-    // Inicializa sistema de auth quando a página carregar
+    // Inicializa sistema de auth
     let auth;
     document.addEventListener('DOMContentLoaded', function() {
       console.log('🚀 Página login.html carregada!');
@@ -326,24 +362,24 @@
         showLoading();
         
         try {
-          const success = await auth.login(username, password);
+          const result = await auth.login(username, password);
           
-          if (success) {
-            showSuccess('Login realizado com sucesso! Redirecionando...');
+          if (result.success) {
+            showSuccess(result.message || 'Login realizado com sucesso! Redirecionando...');
             console.log('✅ Login bem-sucedido, redirecionando...');
             
             // Redireciona após breve delay
             setTimeout(() => {
               window.location.href = 'dashboard.html';
-            }, 1000);
+            }, 1500);
             
           } else {
-            showError('Usuário ou senha incorretos');
-            console.log('❌ Login falhou');
+            showError(result.message || 'Usuário ou senha incorretos');
+            console.log('❌ Login falhou:', result.message);
           }
         } catch (error) {
           console.error('💥 Erro durante o login:', error);
-          showError('Erro de conexão. Tente novamente.');
+          showError('Erro inesperado. Tente novamente.');
         } finally {
           hideLoading();
         }
@@ -358,7 +394,10 @@
       const successMsg = document.getElementById('successMsg');
       
       if (loadingSpinner) loadingSpinner.style.display = 'block';
-      if (submitBtn) submitBtn.disabled = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Verificando...';
+      }
       if (errorMsg) errorMsg.style.display = 'none';
       if (successMsg) successMsg.style.display = 'none';
     }
@@ -368,7 +407,10 @@
       const submitBtn = document.getElementById('submitBtn');
       
       if (loadingSpinner) loadingSpinner.style.display = 'none';
-      if (submitBtn) submitBtn.disabled = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Entrar no Dashboard';
+      }
     }
 
     function showError(message) {
@@ -376,6 +418,8 @@
       if (errorMsg) {
         errorMsg.textContent = message;
         errorMsg.style.display = 'block';
+        // Scroll para o erro
+        errorMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
 
@@ -388,19 +432,20 @@
     }
 
     // Função global para logout
-    function logout() {
+    window.logout = function() {
       if (auth) {
         auth.logout();
       } else {
         localStorage.removeItem('admin_token_canecas');
         window.location.href = 'login.html';
       }
-    }
+    };
 
-    // Debug: verifica se a página carregou completamente
+    // Debug info
     window.addEventListener('load', function() {
       console.log('✅ Página completamente carregada');
       console.log('📍 URL atual:', window.location.href);
+      console.log('🌐 Ambiente:', window.location.hostname.includes('vercel.app') ? 'Production' : 'Development');
     });
   </script>
 </body>
