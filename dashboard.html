@@ -1,460 +1,574 @@
-<script>
-    // DASHBOARD COM GITHUB REAL
-    console.log('🚀 Iniciando dashboard com GitHub...');
-
-    class GitHubDashboard {
-        constructor() {
-            this.products = [];
-            this.currentEditingProduct = null;
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub Admin - Canecas Personalizadas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
         }
-
-        async init() {
-            console.log('📡 Iniciando carregamento do GitHub...');
-            await this.carregarProdutosDoGitHub();
-        }
-
-        async carregarProdutosDoGitHub() {
-            try {
-                console.log('🌐 Conectando com GitHub...');
-                
-                // Tenta a API primeiro
-                let htmlContent;
-                try {
-                    const response = await fetch('/api/github-read');
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        htmlContent = data.content;
-                        console.log('✅ API GitHub funcionando!');
-                    } else {
-                        throw new Error('API retornou erro');
-                    }
-                } catch (apiError) {
-                    console.log('❌ API não disponível, usando fallback...');
-                    // Fallback: carrega do site principal
-                    const response = await fetch('/');
-                    htmlContent = await response.text();
-                }
-                
-                this.products = this.extrairProdutosDoHTML(htmlContent);
-                console.log(`📦 Encontrados ${this.products.length} produtos`);
-                
-                this.exibirProdutos(this.products);
-                this.loadStats();
-                
-            } catch (error) {
-                console.error('❌ Erro ao carregar produtos:', error);
-                this.mostrarErro('Erro ao carregar produtos: ' + error.message);
-            }
-        }
-
-        extrairProdutosDoHTML(htmlContent) {
-            const products = [];
-            
-            try {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlContent, 'text/html');
-                const productCards = doc.querySelectorAll('.item');
-                console.log(`🎯 Encontrados ${productCards.length} elementos .item`);
-
-                productCards.forEach((card, index) => {
-                    try {
-                        const product = this.parseProductCard(card);
-                        if (product) {
-                            products.push(product);
-                        }
-                    } catch (error) {
-                        console.error(`❌ Erro no card ${index}:`, error);
-                    }
-                });
-            } catch (error) {
-                console.error('❌ Erro no parser HTML:', error);
-            }
-
-            return products;
-        }
-
-        parseProductCard(card) {
-            try {
-                const image = card.querySelector('img');
-                const info = card.querySelector('.info');
-                const button = card.querySelector('.open-modal-btn');
-
-                if (!image || !info || !button) {
-                    return null;
-                }
-
-                const nome = button.getAttribute('data-name') || '';
-                const id = button.getAttribute('data-id') || '';
-                const descricao = button.getAttribute('data-specs') || '';
-                const imageUrl = button.getAttribute('data-image') || image.src;
-                
-                // Extrai preço
-                const precoElement = Array.from(info.querySelectorAll('p')).find(p => p.textContent.includes('R$'));
-                const precoMatch = precoElement ? precoElement.textContent.match(/R\$\s*(\d+[.,]\d+)/) : null;
-                const preco = precoMatch ? parseFloat(precoMatch[1].replace(',', '.')) : 0;
-
-                const categoria = card.getAttribute('data-categoria') || 'personalizada';
-
-                // Extrai opções
-                let opcoes = [];
-                try {
-                    const optionsJSON = button.getAttribute('data-options');
-                    if (optionsJSON) {
-                        opcoes = JSON.parse(optionsJSON.replace(/&#39;/g, "'"));
-                    }
-                } catch (e) {
-                    console.warn('Erro ao parsear opções:', e);
-                }
-
-                return {
-                    id,
-                    nome,
-                    categoria,
-                    preco,
-                    descricao,
-                    imageUrl,
-                    opcoes,
-                    htmlOriginal: card.outerHTML
-                };
-
-            } catch (error) {
-                console.error('❌ Erro ao parsear card:', error);
-                return null;
-            }
-        }
-
-        exibirProdutos(products) {
-            const container = document.getElementById('productsList');
-            
-            if (products.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <h3>📦 Nenhum produto encontrado</h3>
-                        <p>Não foram encontrados produtos no GitHub.</p>
-                        <button class="action-btn" onclick="window.location.href='adicionar-produto.html'" style="margin-top: 1rem;">
-                            ➕ Adicionar Primeiro Produto
-                        </button>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = `
-                <div class="products-grid">
-                    ${products.map(product => `
-                        <div class="product-card">
-                            <div class="product-image">
-                                <img src="${product.imageUrl}" alt="${product.nome}" 
-                                     onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem'">
-                            </div>
-                            <div class="product-content">
-                                <div class="product-header">
-                                    <div>
-                                        <h3 class="product-title">${product.nome}</h3>
-                                        <div class="product-tags">
-                                            <span class="product-tag">ID: ${product.id}</span>
-                                            <span class="product-tag product-category">${product.categoria}</span>
-                                            <span class="product-tag">${product.opcoes?.length || 0} modelos</span>
-                                        </div>
-                                    </div>
-                                    <div class="product-price">R$ ${parseFloat(product.preco).toFixed(2)}</div>
-                                </div>
-                                
-                                <p class="product-description">${product.descricao || 'Sem descrição'}</p>
-                                
-                                <div class="product-actions">
-                                    <button class="action-button edit" onclick="editarProduto('${product.id}')">✏️ Editar</button>
-                                    <button class="action-button delete" onclick="excluirProduto('${product.id}')">🗑️ Excluir</button>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        loadStats() {
-            document.getElementById('totalProducts').textContent = this.products.length;
-            const categories = [...new Set(this.products.map(p => p.categoria))];
-            document.getElementById('totalCategories').textContent = categories.length;
-        }
-
-        getProductById(productId) {
-            return this.products.find(product => product.id === productId);
-        }
-
-        mostrarErro(mensagem) {
-            const container = document.getElementById('productsList');
-            container.innerHTML = `
-                <div class="empty-state">
-                    <h3>❌ Erro ao carregar</h3>
-                    <p>${mensagem}</p>
-                    <button class="action-btn" onclick="dashboard.carregarProdutosDoGitHub()" style="margin-top: 1rem;">
-                        🔄 Tentar Novamente
-                    </button>
-                </div>
-            `;
-        }
-    }
-
-    // INICIALIZAÇÃO
-    const dashboard = new GitHubDashboard();
-
-    // 🔥 FUNÇÕES DE EDIÇÃO E EXCLUSÃO REAIS
-    async function editarProduto(productId) {
-        console.log('✏️ Editando produto:', productId);
         
-        const product = dashboard.getProductById(productId);
-        if (!product) {
-            alert('❌ Produto não encontrado!');
-            return;
+        body {
+            background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
+            color: #fff;
+            min-height: 100vh;
+            line-height: 1.6;
         }
+        
+        .dashboard-header {
+            background: rgba(24, 24, 24, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 2rem;
+            border-bottom: 3px solid #25D366;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .dashboard-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo h1 {
+            color: #25D366;
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .logo-icon {
+            font-size: 2rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .logout-btn {
+            background: linear-gradient(135deg, #ff4444, #cc3333);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3);
+        }
+        
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 68, 68, 0.4);
+        }
+        
+        .dashboard-main {
+            margin-top: 100px;
+            padding: 2rem;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #181818, #252525);
+            border-radius: 20px;
+            border: 1px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .welcome-section h2 {
+            color: #25D366;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #25D366, #1ebe5f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .welcome-section p {
+            color: #ccc;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #181818, #1f1f1f);
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #333;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #25D366, #1ebe5f);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(37, 211, 102, 0.2);
+        }
+        
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            color: #25D366;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #ccc;
+            font-size: 1rem;
+        }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .action-card {
+            background: linear-gradient(135deg, #181818, #252525);
+            padding: 2.5rem 2rem;
+            border-radius: 20px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.4s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .action-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(37, 211, 102, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .action-card:hover::before {
+            left: 100%;
+        }
+        
+        .action-card:hover {
+            transform: translateY(-8px);
+            border-color: #25D366;
+            box-shadow: 0 20px 40px rgba(37, 211, 102, 0.3);
+        }
+        
+        .action-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+        
+        .action-card:hover .action-icon {
+            transform: scale(1.1);
+        }
+        
+        .action-title {
+            color: #25D366;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+        
+        .action-description {
+            color: #ccc;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+        }
+        
+        .action-btn {
+            background: linear-gradient(135deg, #25D366, #1ebe5f);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 211, 102, 0.4);
+        }
+        
+        .quick-stats {
+            background: linear-gradient(135deg, #181818, #1a1a1a);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid #333;
+            margin-top: 2rem;
+        }
+        
+        .quick-stats h3 {
+            color: #25D366;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-size: 1.3rem;
+        }
+        
+        .stats-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #252525;
+            border-radius: 10px;
+            border-left: 4px solid #25D366;
+        }
+        
+        .stat-item span:first-child {
+            color: #ccc;
+        }
+        
+        .stat-item span:last-child {
+            color: #25D366;
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+            border-top: 1px solid #333;
+            margin-top: 3rem;
+        }
+        
+        /* Animações */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+        
+        /* Responsivo */
+        @media (max-width: 768px) {
+            .dashboard-main {
+                padding: 1rem;
+                margin-top: 80px;
+            }
+            
+            .welcome-section h2 {
+                font-size: 1.8rem;
+            }
+            
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-card {
+                padding: 2rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <nav class="dashboard-nav">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <h1>Hub Administrativo</h1>
+            </div>
+            <button class="logout-btn" onclick="logout()">🚪 Sair do Sistema</button>
+        </nav>
+    </header>
 
-        // Cria modal de edição
-        const modalHTML = `
-            <div class="modal-overlay" id="editModal" style="display: flex;">
-                <div class="modal-content">
-                    <h2 class="modal-title">✏️ Editar Produto</h2>
-                    
-                    <form id="editProductForm">
-                        <div class="form-group">
-                            <label class="form-label">Nome do Produto</label>
-                            <input type="text" class="form-input" id="editProductName" value="${product.nome}" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">ID do Produto</label>
-                            <input type="text" class="form-input" id="editProductId" value="${product.id}" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Categoria</label>
-                            <input type="text" class="form-input" id="editProductCategory" value="${product.categoria}" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Preço (R$)</label>
-                            <input type="number" class="form-input" id="editProductPrice" step="0.01" value="${product.preco}" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Descrição</label>
-                            <textarea class="form-textarea" id="editProductDescription" rows="3">${product.descricao || ''}</textarea>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">URL da Imagem</label>
-                            <input type="url" class="form-input" id="editProductImage" value="${product.imageUrl}">
-                        </div>
-                        
-                        <div class="form-buttons">
-                            <button type="button" class="btn btn-cancel" onclick="fecharModal()">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">💾 Salvar no GitHub</button>
-                        </div>
-                    </form>
+    <main class="dashboard-main">
+        <!-- Seção de Boas-Vindas -->
+        <section class="welcome-section animate-fade-in">
+            <h2>🎯 Painel de Controle</h2>
+            <p>Gerencie todos os aspectos do seu site de canecas personalizadas em um só lugar</p>
+        </section>
+
+        <!-- Estatísticas em Tempo Real -->
+        <div class="stats-grid">
+            <div class="stat-card animate-fade-in delay-1">
+                <div class="stat-icon">📦</div>
+                <span class="stat-number" id="totalProducts">12</span>
+                <div class="stat-label">Produtos Ativos</div>
+            </div>
+            
+            <div class="stat-card animate-fade-in delay-2">
+                <div class="stat-icon">📁</div>
+                <span class="stat-number" id="totalCategories">8</span>
+                <div class="stat-label">Categorias</div>
+            </div>
+            
+            <div class="stat-card animate-fade-in delay-3">
+                <div class="stat-icon">👁️</div>
+                <span class="stat-number" id="totalViews">1.2K</span>
+                <div class="stat-label">Visualizações</div>
+            </div>
+            
+            <div class="stat-card animate-fade-in delay-4">
+                <div class="stat-icon">🔄</div>
+                <span class="stat-number" id="lastUpdate">Hoje</span>
+                <div class="stat-label">Última Atualização</div>
+            </div>
+        </div>
+
+        <!-- Grid de Ações Principais -->
+        <div class="actions-grid">
+            <!-- Gerenciar Produtos -->
+            <div class="action-card animate-fade-in" onclick="navigateTo('gerenciar-produtos.html')">
+                <div class="action-icon">🛠️</div>
+                <h3 class="action-title">Gerenciar Produtos</h3>
+                <p class="action-description">
+                    Visualize, edite ou exclua produtos existentes. Controle completo sobre seu catálogo.
+                </p>
+                <button class="action-btn">Acessar Gestão</button>
+            </div>
+
+            <!-- Adicionar Produto -->
+            <div class="action-card animate-fade-in" onclick="navigateTo('adicionar-produto.html')">
+                <div class="action-icon">➕</div>
+                <h3 class="action-title">Adicionar Produto</h3>
+                <p class="action-description">
+                    Adicione novos produtos ao seu site com formulário completo e upload de imagens.
+                </p>
+                <button class="action-btn">Criar Produto</button>
+            </div>
+
+            <!-- Estatísticas -->
+            <div class="action-card animate-fade-in" onclick="showStats()">
+                <div class="action-icon">📊</div>
+                <h3 class="action-title">Relatórios</h3>
+                <p class="action-description">
+                    Acompanhe métricas, visualizações e performance do seu site em tempo real.
+                </p>
+                <button class="action-btn">Ver Relatórios</button>
+            </div>
+
+            <!-- Backup -->
+            <div class="action-card animate-fade-in" onclick="backupData()">
+                <div class="action-icon">💾</div>
+                <h3 class="action-title">Backup & Export</h3>
+                <p class="action-description">
+                    Faça backup dos seus dados ou exporte o catálogo completo para arquivo JSON.
+                </p>
+                <button class="action-btn">Fazer Backup</button>
+            </div>
+
+            <!-- Configurações -->
+            <div class="action-card animate-fade-in" onclick="showSettings()">
+                <div class="action-icon">⚙️</div>
+                <h3 class="action-title">Configurações</h3>
+                <p class="action-description">
+                    Configure preferências do sistema, temas e integrações com outras plataformas.
+                </p>
+                <button class="action-btn">Configurar</button>
+            </div>
+
+            <!-- Ajuda -->
+            <div class="action-card animate-fade-in" onclick="showHelp()">
+                <div class="action-icon">❓</div>
+                <h3 class="action-title">Suporte</h3>
+                <p class="action-description">
+                    Tutorial, documentação e suporte para tirar dúvidas sobre o sistema.
+                </p>
+                <button class="action-btn">Obter Ajuda</button>
+            </div>
+        </div>
+
+        <!-- Estatísticas Rápidas -->
+        <section class="quick-stats animate-fade-in">
+            <h3>📈 Visão Geral Rápida</h3>
+            <div class="stats-list">
+                <div class="stat-item">
+                    <span>Produtos mais visualizados:</span>
+                    <span>Caneca Floral</span>
+                </div>
+                <div class="stat-item">
+                    <span>Última atualização:</span>
+                    <span>15 min atrás</span>
+                </div>
+                <div class="stat-item">
+                    <span>Status do site:</span>
+                    <span style="color: #25D366;">● Online</span>
+                </div>
+                <div class="stat-item">
+                    <span>Próxima ação:</span>
+                    <span>Revisar estoque</span>
                 </div>
             </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
-        // Configura o formulário
-        document.getElementById('editProductForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await salvarEdicao(product);
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>© 2024 Canecas Personalizadas • Sistema Administrativo v2.0</p>
+        <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #888;">
+            Desenvolvido com ❤️ para seu negócio
+        </p>
+    </footer>
+
+    <script>
+        // Sistema de Navegação
+        function navigateTo(page) {
+            window.location.href = page;
+        }
+
+        // Funções das Ações
+        function showStats() {
+            alert('📊 Relatórios Detalhados\n\nEm desenvolvimento - Em breve você terá:\n\n• Gráficos de visualizações\n• Métricas de conversão\n• Análise de desempenho\n• Relatórios semanais');
+        }
+
+        function backupData() {
+            alert('💾 Sistema de Backup\n\nFuncionalidade em desenvolvimento:\n\n• Backup automático diário\n• Export para JSON/CSV\n• Restauração de dados\n• Histórico de versões');
+        }
+
+        function showSettings() {
+            alert('⚙️ Configurações do Sistema\n\nEm breve disponível:\n\n• Personalização de tema\n• Configurações de notificação\n• Integrações com APIs\n• Preferências de usuário');
+        }
+
+        function showHelp() {
+            alert('❓ Central de Ajuda\n\nRecursos disponíveis:\n\n📚 Documentação completa\n🎥 Vídeo tutoriais\n💬 Suporte por email\n🔄 Atualizações do sistema');
+        }
+
+        function logout() {
+            if (confirm('Tem certeza que deseja sair do sistema administrativo?')) {
+                localStorage.removeItem('admin_token_canecas');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Atualizar estatísticas em tempo real
+        function updateStats() {
+            // Simulação de dados - em produção viria de uma API
+            const stats = {
+                products: 12,
+                categories: 8,
+                views: '1.2K',
+                lastUpdate: 'Hoje'
+            };
+            
+            document.getElementById('totalProducts').textContent = stats.products;
+            document.getElementById('totalCategories').textContent = stats.categories;
+            document.getElementById('totalViews').textContent = stats.views;
+            document.getElementById('lastUpdate').textContent = stats.lastUpdate;
+        }
+
+        // Efeitos visuais
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStats();
+            
+            // Adiciona efeito de digitação no título
+            const welcomeText = "🎯 Painel de Controle";
+            let i = 0;
+            const titleElement = document.querySelector('.welcome-section h2');
+            const originalText = titleElement.textContent;
+            titleElement.textContent = '';
+            
+            function typeWriter() {
+                if (i < welcomeText.length) {
+                    titleElement.textContent += welcomeText.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 100);
+                }
+            }
+            
+            typeWriter();
         });
 
-        dashboard.currentEditingProduct = product;
-    }
-
-    async function salvarEdicao(product) {
-        const nome = document.getElementById('editProductName').value.trim();
-        const id = document.getElementById('editProductId').value.trim();
-        const categoria = document.getElementById('editProductCategory').value.trim();
-        const preco = parseFloat(document.getElementById('editProductPrice').value);
-        const descricao = document.getElementById('editProductDescription').value.trim();
-        const imageUrl = document.getElementById('editProductImage').value.trim();
-
-        if (!nome || !id || !categoria || isNaN(preco)) {
-            alert('❌ Preencha todos os campos obrigatórios!');
-            return;
-        }
-
-        try {
-            // Mostra loading
-            document.querySelector('.btn-primary').textContent = '⏳ Salvando...';
-            document.querySelector('.btn-primary').disabled = true;
-
-            // Gera novo HTML
-            const novoHTML = gerarHTMLProduto({
-                nome,
-                id,
-                categoria,
-                preco,
-                descricao,
-                imageUrl,
-                opcoes: product.opcoes || [{ model: "Padrão", price: preco, image: imageUrl }]
-            });
-
-            console.log('📝 Enviando para GitHub...');
-            
-            // Envia para API
-            const response = await fetch('/api/github-update-product', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    oldHtml: product.htmlOriginal,
-                    newHtml: novoHTML,
-                    commitMessage: `✏️ Editar produto: ${nome} (ID: ${id})`
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                alert('✅ Produto atualizado no GitHub!\n\nO site será atualizado em 1-2 minutos.');
-                fecharModal();
-                
-                // Recarrega os produtos
-                setTimeout(() => {
-                    dashboard.carregarProdutosDoGitHub();
-                }, 2000);
-                
-            } else {
-                throw new Error(data.error || 'Erro desconhecido');
+        // Teclas de atalho
+        document.addEventListener('keydown', function(e) {
+            // Ctrl + 1 - Gerenciar Produtos
+            if (e.ctrlKey && e.key === '1') {
+                navigateTo('gerenciar-produtos.html');
             }
-
-        } catch (error) {
-            console.error('❌ Erro ao salvar:', error);
-            alert('❌ Erro ao atualizar: ' + error.message);
-        } finally {
-            // Restaura botão
-            const btn = document.querySelector('.btn-primary');
-            if (btn) {
-                btn.textContent = '💾 Salvar no GitHub';
-                btn.disabled = false;
+            // Ctrl + 2 - Adicionar Produto
+            if (e.ctrlKey && e.key === '2') {
+                navigateTo('adicionar-produto.html');
             }
-        }
-    }
-
-    async function excluirProduto(productId) {
-        console.log('🗑️ Excluindo produto:', productId);
-        
-        const product = dashboard.getProductById(productId);
-        if (!product) {
-            alert('❌ Produto não encontrado!');
-            return;
-        }
-
-        if (confirm(`⚠️ TEM CERTEZA que deseja excluir?\n\n"${product.nome}" (ID: ${product.id})\n\nEsta ação não pode ser desfeita!`)) {
-            try {
-                // Mostra loading
-                const buttons = document.querySelectorAll(`button[onclick="excluirProduto('${productId}')"]`);
-                buttons.forEach(btn => {
-                    btn.textContent = '⏳ Excluindo...';
-                    btn.disabled = true;
-                });
-
-                console.log('🗑️ Enviando exclusão para GitHub...');
-                
-                const response = await fetch('/api/github-delete-product', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        productHtml: product.htmlOriginal,
-                        commitMessage: `🗑️ Excluir produto: ${product.nome} (ID: ${product.id})`
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    alert('✅ Produto excluído do GitHub!\n\nO site será atualizado em 1-2 minutos.');
-                    
-                    // Recarrega os produtos
-                    setTimeout(() => {
-                        dashboard.carregarProdutosDoGitHub();
-                    }, 2000);
-                    
-                } else {
-                    throw new Error(data.error || 'Erro desconhecido');
-                }
-
-            } catch (error) {
-                console.error('❌ Erro ao excluir:', error);
-                alert('❌ Erro ao excluir: ' + error.message);
-                
-                // Restaura botões
-                const buttons = document.querySelectorAll(`button[onclick="excluirProduto('${productId}')"]`);
-                buttons.forEach(btn => {
-                    btn.textContent = '🗑️ Excluir';
-                    btn.disabled = false;
-                });
+            // Ctrl + L - Logout
+            if (e.ctrlKey && e.key === 'l') {
+                logout();
             }
-        }
-    }
+        });
 
-    function gerarHTMLProduto(product) {
-        const opcoesJSON = JSON.stringify(product.opcoes).replace(/'/g, "&#39;");
-
-        return `
-<div class="item" data-categoria="${product.categoria}">
-    <img src="${product.imageUrl}" alt="${product.nome}" loading="lazy">
-    <div class="info">
-        <h2>${product.nome}</h2>
-        <p>ID: ${product.id}</p>
-        <p>R$ ${product.preco.toFixed(2)}</p>
-        <button class="open-modal-btn"
-            data-name="${product.nome}"
-            data-id="${product.id}"
-            data-image="${product.imageUrl}"
-            data-specs="${product.descricao}"
-            data-options='${opcoesJSON}'>
-            Ver Detalhes
-        </button>
-    </div>
-</div>`.trim();
-    }
-
-    function fecharModal() {
-        const modal = document.getElementById('editModal');
-        if (modal) modal.remove();
-    }
-
-    function carregarProdutos() {
-        dashboard.carregarProdutosDoGitHub();
-    }
-
-    function verEstatisticas() {
-        const products = dashboard.products;
-        const categorias = [...new Set(products.map(p => p.categoria))];
-        const precoMedio = products.length > 0 ? 
-            products.reduce((acc, p) => acc + p.preco, 0) / products.length : 0;
-        
-        alert(`📊 Estatísticas do Site:\n\n• Total de Produtos: ${products.length}\n• Categorias: ${categorias.length}\n• Preço Médio: R$ ${precoMedio.toFixed(2)}`);
-    }
-
-    function logout() {
-        localStorage.removeItem('admin_token_canecas');
-        window.location.href = 'login.html';
-    }
-
-    // Fechar modal com ESC ou clique fora
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') fecharModal();
-    });
-
-    document.addEventListener('click', (e) => {
-        if (e.target.id === 'editModal') fecharModal();
-    });
-
-    // INICIALIZAÇÃO
-    document.addEventListener('DOMContentLoaded', () => {
-        dashboard.init();
-    });
-</script>
+        // Mostrar atalhos de teclado
+        console.log('🎮 Atalhos de teclado disponíveis:');
+        console.log('Ctrl + 1 - Gerenciar Produtos');
+        console.log('Ctrl + 2 - Adicionar Produto');
+        console.log('Ctrl + L - Logout');
+    </script>
+</body>
+</html>
