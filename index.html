@@ -1,5 +1,3 @@
-[file name]: index.html
-[file content begin]
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -9,7 +7,8 @@
   <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
-  <!-- Menu Hamburguer -->
+
+  <!-- 🟢 MENU HAMBÚRGUER -->
   <header class="menu-header">
     <div class="menu-toggle" id="menuToggle">
       <span></span>
@@ -20,16 +19,32 @@
     <nav class="menu" id="menu">
       <ul>
         <li><a href="#inicio" class="menu-link">Início</a></li>
+        <li class="menu-categoria">
+          <span class="menu-link categoria-toggle">Categorias ▾</span>
+          <ul class="submenu" id="submenuCategorias">
+            <li><a href="#" class="menu-link">Brancas</a></li>
+            <li><a href="#" class="menu-link">Coloridas</a></li>
+            <li><a href="#" class="menu-link">Dia das Mães</a></li>
+            <li><a href="#" class="menu-link">Dia dos Pais</a></li>
+            <li><a href="#" class="menu-link">Dia dos Professores</a></li>
+            <li><a href="#" class="menu-link">Pets</a></li>
+            <li><a href="#" class="menu-link">Heróis</a></li>
+            <li><a href="#" class="menu-link">Animes</a></li>
+            <li><a href="#" class="menu-link">Com Foto</a></li>
+            <li><a href="#" class="menu-link">Futebol</a></li>
+          </ul>
+        </li>
         <li><a href="#contatos" class="menu-link">Contatos</a></li>
         <li><a href="#sobre" class="menu-link">Quem Somos</a></li>
-        <li><a href="login.html" class="menu-link admin-link">Área Admin</a></li>
+        <li><a href="login.html" class="menu-link">ADMIN</a></li>
       </ul>
     </nav>
 
+    <!-- 🔲 Overlay escuro -->
     <div class="menu-overlay" id="menuOverlay"></div>
   </header>
 
-  <!-- Cabeçalho Principal -->
+  <!-- 🔍 CABEÇALHO PRINCIPAL -->
   <section class="header-main" id="inicio">
     <h1>Canecas Personalizadas</h1>
     <p>Escolha o estilo que combina com você ☕✨</p>
@@ -39,27 +54,45 @@
     </div>
   </section>
 
-  <!-- Galeria de Produtos -->
+  <!-- 🖼️ GALERIA -->
   <section class="galeria">
-    <!-- Produto 1 -->
+    
     <div class="item" data-categoria="floral">
-      <img src="https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg" alt="Caneca Teste Floral">
+      <img src="https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg" alt="Caneca teste">
       <div class="info">
-        <h2>Caneca Teste Floral</h2>
+        <h2>Caneca teste</h2>
         <p>ID: 0001</p>
         <p>R$ 32,00</p>
         <button class="open-modal-btn"
-          data-name="Caneca Teste Floral"
+          data-name="Caneca teste"
           data-id="0001"
           data-image="https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg"
-          data-specs="Caneca de teste com design floral"
-          data-options='[{"model":"Branca","price":32.00,"image":"https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg"}]'>
-          Ver Detalhes
-        </button>
+          data-specs="Gege"
+          data-options='[
+            {"model":"Branca","price":32.00,"image":"https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg"},
+            {"model":"Preta","price":25.00,"image":"https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"}
+          ]'>Ver Detalhes</button>
       </div>
     </div>
 
-    <!-- Produto 2 -->
+    <div class="item" data-categoria="floral">
+      <img src="https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" alt="Caneca teste">
+      <div class="info">
+        <h2>Caneca teste</h2>
+        <p>ID: Cn0001</p>
+        <p>R$ 40,00</p>
+        <button class="open-modal-btn"
+          data-name="Caneca teste"
+          data-id="Cn0001"
+          data-image="https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"
+          data-specs="Nznxn"
+          data-options='[
+            {"model":"Branca","price":40.00,"image":"https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"},
+            {"model":"Preta","price":42.00,"image":"https://i.ibb.co/N6c4DxfJ/IMG-20251021-WA0000.jpg"}
+          ]'>Ver Detalhes</button>
+      </div>
+    </div>
+    
     <div class="item" data-categoria="personalizada">
       <img src="https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" alt="Caneca Orgulho Negro">
       <div class="info">
@@ -70,40 +103,38 @@
           data-name="Caneca Orgulho Negro"
           data-id="CN0001"
           data-image="https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"
-          data-specs="Caneca de cerâmica com estampa exclusiva"
-          data-options='[{"model":"Padrão","price":30.00,"image":"https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"}]'>
-          Ver Detalhes
-        </button>
+          data-specs="Caneca de cerâmica com estampa exclusiva."
+          data-options='[
+            {"model":"Branca","price":30.00,"image":"https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"},
+            {"model":"Preta","price":32.00,"image":"https://i.ibb.co/PjX9108/IMG-20251021-WA0002.jpg"}
+          ]'>Ver Detalhes</button>
       </div>
     </div>
   </section>
 
   <p id="nenhumProduto">Nenhum produto encontrado 🔍</p>
 
-  <footer>© 2025 • Canecas Personalizadas — Todos os direitos reservados</footer>
-
-  <!-- Modal para detalhes do produto -->
-  <div class="modal" id="produtoModal">
+  <div id="produtoModal" class="modal">
     <div class="modal-content">
       <span class="close-button">&times;</span>
       <div class="modal-body">
         <div class="modal-image-container">
-          <img id="modalImage" src="" alt="Imagem do Produto">
+          <img id="modalImage" src="" alt="">
         </div>
         <div class="modal-details">
-          <h2 id="modalTitle">Nome do Produto</h2>
-          <p id="modalSpecs">Descrição do produto...</p>
-          <div class="model-options" id="modalOptions">
-            <!-- Opções de modelo serão inseridas aqui via JavaScript -->
-          </div>
-          <div class="modal-price" id="modalPrice">R$ 0,00</div>
-          <button class="buy-button" id="buyButton">🛒 Comprar no WhatsApp</button>
+          <h2 id="modalTitle"></h2>
+          <p id="modalSpecs"></p>
+          <h3>Modelos disponíveis:</h3>
+          <div id="modalOptions" class="model-options"></div>
+          <div class="modal-price" id="modalPrice"></div>
+          <button id="buyButton" class="buy-button">Comprar via WhatsApp</button>
         </div>
       </div>
     </div>
   </div>
 
-  <script src="src/script.js"></script>
+  <footer>© 2025 • Canecas Personalizadas — Todos os direitos reservados</footer>
+
+  <script src="src/script.js" defer></script>
 </body>
 </html>
-[file content end]
