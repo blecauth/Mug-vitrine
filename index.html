@@ -1,297 +1,12 @@
+[file name]: index.html
+[file content begin]
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Canecas Personalizadas</title>
-  <style>
-    /* 🔥 CSS EMBUTIDO - SEM DEPENDÊNCIAS EXTERNAS */
-    * { 
-      margin: 0; 
-      padding: 0; 
-      box-sizing: border-box; 
-      font-family: "Arial", sans-serif; 
-    }
-    
-    body { 
-      background: #0d0d0d; 
-      color: #fff; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      min-height: 100vh; 
-      overflow-x: hidden; 
-    }
-
-    /* Menu Hamburguer */
-    .menu-header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      z-index: 1000;
-      display: flex;
-      justify-content: flex-start;
-      align-items: center;
-      padding: 1rem 1.5rem;
-      background: transparent;
-    }
-
-    .menu-toggle {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      width: 26px;
-      height: 20px;
-      cursor: pointer;
-      z-index: 1100;
-    }
-
-    .menu-toggle span {
-      display: block;
-      height: 3px;
-      background: #25D366;
-      border-radius: 3px;
-      transition: all 0.3s ease;
-    }
-
-    .menu-toggle.active span:nth-child(1) {
-      transform: translateY(8px) rotate(45deg);
-    }
-    .menu-toggle.active span:nth-child(2) {
-      opacity: 0;
-    }
-    .menu-toggle.active span:nth-child(3) {
-      transform: translateY(-8px) rotate(-45deg);
-    }
-
-    .menu {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 260px;
-      height: 100vh;
-      background: linear-gradient(180deg, #111 0%, #0c0c0c 100%);
-      box-shadow: 3px 0 20px rgba(0, 0, 0, 0.6);
-      transform: translate(-100%, -100%);
-      transition: transform 0.45s cubic-bezier(.2,.9,.3,1);
-      z-index: 1050;
-      overflow-y: auto;
-      padding-bottom: 2rem;
-    }
-
-    .menu.active {
-      transform: translate(0, 0);
-    }
-
-    .menu-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(4px);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.4s ease;
-      z-index: 1040;
-    }
-
-    .menu-overlay.show {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .menu ul {
-      list-style: none;
-      padding: 5rem 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      margin: 0;
-    }
-
-    .menu ul li {
-      margin: 0;
-      padding: 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    .menu-link {
-      display: block;
-      text-decoration: none;
-      color: #ddd;
-      font-size: 1rem;
-      font-weight: 500;
-      padding: 0.9rem 0.7rem;
-      border-radius: 6px;
-      transition: all 0.22s ease;
-    }
-
-    .menu-link:hover {
-      color: #25D366;
-      background: rgba(37, 211, 102, 0.06);
-    }
-
-    .admin-link {
-      background: rgba(37, 211, 102, 0.1);
-      border: 1px solid #25D366;
-      color: #25D366;
-    }
-
-    /* Cabeçalho Principal */
-    .header-main {
-      text-align: center;
-      margin-top: 5rem;
-      padding: 2rem 1rem;
-    }
-
-    .header-main h1 {
-      font-size: 2.4rem;
-      margin-bottom: 0.8rem;
-      color: #fff;
-    }
-
-    .header-main p {
-      color: #aaa;
-      margin-bottom: 2rem;
-    }
-
-    /* Busca */
-    .busca-container {
-      margin-top: 1rem;
-      margin-bottom: 3rem;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .busca-container input {
-      width: 280px;
-      padding: 0.6rem 1rem;
-      border-radius: 30px;
-      border: 2px solid #25D366;
-      background: #1a1a1a;
-      color: #fff;
-      outline: none;
-      font-size: 0.95rem;
-      transition: all 0.3s ease;
-    }
-
-    .busca-container input:focus {
-      background: #222;
-      box-shadow: 0 0 12px rgba(37, 211, 102, 0.5);
-      border-color: #1ebe5f;
-    }
-
-    /* Galeria */
-    .galeria {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      width: 90%;
-      max-width: 1200px;
-      margin-bottom: 6rem;
-    }
-
-    .item {
-      background: #181818;
-      border-radius: 1rem;
-      overflow: hidden;
-      transform: scale(0.98);
-      opacity: 0;
-      animation: fadeIn 0.6s forwards;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .item:hover {
-      transform: scale(1.03);
-      box-shadow: 0 0 25px rgba(255, 255, 255, 0.08);
-    }
-
-    .item img {
-      width: 100%;
-      height: auto;
-      max-height: 450px;
-      object-fit: contain;
-      transition: transform 0.4s ease;
-    }
-
-    .item:hover img { 
-      transform: scale(1.1); 
-    }
-
-    .info { 
-      padding: 1rem; 
-      text-align: center; 
-    }
-    
-    .info h2 { 
-      font-size: 1.1rem; 
-      margin-bottom: 0.3rem; 
-      color: #fff;
-    }
-    
-    .info p { 
-      color: #bbb; 
-      font-size: 0.9rem; 
-      margin-bottom: 0.5rem; 
-    }
-
-    .open-modal-btn {
-      background: linear-gradient(90deg, #25D366, #1ebe5f);
-      color: #fff;
-      border: none;
-      padding: 0.7rem 1.4rem;
-      border-radius: 30px;
-      cursor: pointer;
-      font-size: 0.95rem;
-      letter-spacing: 0.5px;
-      transition: all 0.3s ease;
-      box-shadow: 0 0 10px rgba(37, 211, 102, 0.3);
-    }
-
-    .open-modal-btn:hover {
-      transform: translateY(-3px) scale(1.05);
-      box-shadow: 0 0 20px rgba(37, 211, 102, 0.6);
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.9); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    #nenhumProduto {
-      color: #888;
-      text-align: center;
-      margin-top: 2rem;
-      font-size: 1rem;
-      display: none;
-    }
-
-    footer {
-      padding: 2rem;
-      color: #777;
-      font-size: 0.9rem;
-      text-align: center;
-    }
-
-    @media (max-width: 768px) {
-      .menu {
-        width: 220px;
-      }
-      
-      .menu ul {
-        padding: 4rem 1rem;
-      }
-      
-      .galeria {
-        grid-template-columns: 1fr;
-      }
-      
-      .header-main {
-        margin-top: 4rem;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/src/styles.css">
 </head>
 <body>
   <!-- Menu Hamburguer -->
@@ -367,58 +82,28 @@
 
   <footer>© 2025 • Canecas Personalizadas — Todos os direitos reservados</footer>
 
-  <script>
-    // Sistema de busca
-    const buscaInput = document.getElementById('buscaId');
-    const nenhumProdutoMsg = document.getElementById('nenhumProduto');
+  <!-- Modal para detalhes do produto -->
+  <div class="modal" id="produtoModal">
+    <div class="modal-content">
+      <span class="close-button">&times;</span>
+      <div class="modal-body">
+        <div class="modal-image-container">
+          <img id="modalImage" src="" alt="Imagem do Produto">
+        </div>
+        <div class="modal-details">
+          <h2 id="modalTitle">Nome do Produto</h2>
+          <p id="modalSpecs">Descrição do produto...</p>
+          <div class="model-options" id="modalOptions">
+            <!-- Opções de modelo serão inseridas aqui via JavaScript -->
+          </div>
+          <div class="modal-price" id="modalPrice">R$ 0,00</div>
+          <button class="buy-button" id="buyButton">🛒 Comprar no WhatsApp</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    buscaInput.addEventListener('input', () => {
-      const termo = buscaInput.value.trim().toLowerCase();
-      const produtos = document.querySelectorAll('.item');
-      let visiveis = 0;
-
-      produtos.forEach(prod => {
-        const nome = prod.querySelector('h2')?.textContent.toLowerCase() || '';
-        const idTexto = prod.querySelector('.info p')?.textContent.toLowerCase() || '';
-        const exibir = nome.includes(termo) || idTexto.includes(termo) || termo === '';
-        prod.style.display = exibir ? 'block' : 'none';
-        if (exibir) visiveis++;
-      });
-
-      nenhumProdutoMsg.style.display = visiveis === 0 ? 'block' : 'none';
-    });
-
-    // Menu Hamburguer
-    const menuToggle = document.getElementById('menuToggle');
-    const menu = document.getElementById('menu');
-    const menuOverlay = document.getElementById('menuOverlay');
-
-    menuToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      menuToggle.classList.toggle('active');
-      menu.classList.toggle('active');
-      menuOverlay.classList.toggle('show');
-      document.body.style.overflow = menu.classList.contains('active') ? 'hidden' : 'auto';
-    });
-
-    menuOverlay.addEventListener('click', () => {
-      menu.classList.remove('active');
-      menuToggle.classList.remove('active');
-      menuOverlay.classList.remove('show');
-      document.body.style.overflow = 'auto';
-    });
-
-    // Fechar menu ao clicar em link
-    document.querySelectorAll('.menu-link').forEach(link => {
-      link.addEventListener('click', () => {
-        menu.classList.remove('active');
-        menuToggle.classList.remove('active');
-        menuOverlay.classList.remove('show');
-        document.body.style.overflow = 'auto';
-      });
-    });
-
-    console.log('✅ Site principal carregado com CSS embutido!');
-  </script>
+  <script src="/src/script.js"></script>
 </body>
 </html>
+[file content end]
