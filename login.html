@@ -4,12 +4,47 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Admin Canecas</title>
+  
+  <!-- Firebase SDK Versão 9 (Modular) -->
+  <script type="module">
+    // 🔥 SUAS CREDENCIAIS FIREBASE - JÁ CONFIGURADAS!
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCMsa3SDt1ACXY3_S5Rx_xPq0_zUvwAzq0",
+      authDomain: "canecas-personalizadas-5c03c.firebaseapp.com",
+      projectId: "canecas-personalizadas-5c03c",
+      storageBucket: "canecas-personalizadas-5c03c.firebasestorage.app",
+      messagingSenderId: "756307896848",
+      appId: "1:756307896848:web:77f3b76aafc0b374d7b895"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    
+    // Torna global para outras funções
+    window.firebaseAuth = auth;
+    window.firebaseGoogleAuth = GoogleAuthProvider;
+    window.firebaseSignIn = signInWithPopup;
+    window.firebaseSignOut = signOut;
+    window.firebaseOnAuthState = onAuthStateChanged;
+    
+    console.log('✅ Firebase configurado com sucesso!');
+    document.getElementById('firebaseStatus').textContent = 'Conectado';
+    document.getElementById('firebaseStatus').style.color = '#25D366';
+    
+    // Inicializa sistema de auth
+    initializeAuthSystem();
+  </script>
+  
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
     }
     
     body {
@@ -32,61 +67,137 @@
       border-radius: 15px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.3);
       border: 1px solid #333;
+      text-align: center;
     }
     
     .login-title {
-      text-align: center;
       color: #25D366;
-      margin-bottom: 1.5rem;
+      margin-bottom: 0.5rem;
       font-size: 1.8rem;
     }
     
-    .login-input {
-      width: 100%;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      border: 1px solid #333;
-      border-radius: 8px;
-      background: #1a1a1a;
-      color: white;
+    .login-subtitle {
+      color: #aaa;
+      margin-bottom: 2rem;
       font-size: 1rem;
     }
     
-    .login-input:focus {
-      border-color: #25D366;
-      outline: none;
-    }
-    
-    .login-btn {
+    .firebase-btn {
       width: 100%;
       padding: 1rem;
-      background: #25D366;
+      background: #4285f4;
       color: white;
       border: none;
       border-radius: 8px;
       font-size: 1rem;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+    }
+    
+    .firebase-btn:hover {
+      background: #3367d6;
+      transform: translateY(-2px);
+    }
+    
+    .firebase-btn:disabled {
+      background: #666;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .google-icon {
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #4285f4;
+      font-size: 0.9rem;
+    }
+    
+    .user-info {
+      background: rgba(37, 211, 102, 0.1);
+      border: 1px solid #25D366;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      text-align: left;
+    }
+    
+    .user-info h4 {
+      color: #25D366;
+      margin: 0 0 0.5rem 0;
+    }
+    
+    .user-email {
+      color: #fff;
+      font-weight: bold;
+      margin: 0.3rem 0;
+    }
+    
+    .logout-btn {
+      background: #ff4444;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
       margin-top: 0.5rem;
     }
     
-    .login-btn:hover {
-      background: #1ebe5f;
+    .logout-btn:hover {
+      background: #cc3333;
     }
-
-    .login-btn:disabled {
-      background: #666;
-      cursor: not-allowed;
+    
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 1rem 0;
+    }
+    
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #25D366;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
     
     .error-msg {
       color: #ff4444;
       text-align: center;
-      margin-top: 1rem;
+      margin: 1rem 0;
       display: none;
-      padding: 0.5rem;
+      padding: 0.8rem;
       background: rgba(255, 68, 68, 0.1);
       border-radius: 5px;
+      border: 1px solid #ff4444;
+    }
+    
+    .success-msg {
+      color: #25D366;
+      text-align: center;
+      margin: 1rem 0;
+      display: none;
+      padding: 0.8rem;
+      background: rgba(37, 211, 102, 0.1);
+      border-radius: 5px;
+      border: 1px solid #25D366;
     }
     
     .back-link {
@@ -100,47 +211,24 @@
     .back-link:hover {
       color: #25D366;
     }
-
-    .loading {
-      display: none;
-      text-align: center;
-      margin: 1rem 0;
-    }
-
-    .spinner {
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #25D366;
-      border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .success-msg {
-      color: #25D366;
-      text-align: center;
-      margin-top: 1rem;
-      display: none;
-      padding: 0.5rem;
+    
+    .dev-info {
       background: rgba(37, 211, 102, 0.1);
-      border-radius: 5px;
-    }
-
-    .warning-msg {
-      color: #ffa500;
-      text-align: center;
+      border: 1px solid #25D366;
+      border-radius: 8px;
+      padding: 1rem;
       margin-top: 1rem;
-      display: none;
-      padding: 0.5rem;
-      background: rgba(255, 165, 0, 0.1);
-      border-radius: 5px;
-      font-size: 0.9rem;
+      font-size: 0.8rem;
+    }
+    
+    .dev-info h4 {
+      color: #25D366;
+      margin: 0 0 0.5rem 0;
+    }
+    
+    .dev-info p {
+      margin: 0.3rem 0;
+      color: #ccc;
     }
   </style>
 </head>
@@ -148,382 +236,252 @@
   <div class="login-container">
     <div class="login-box">
       <h1 class="login-title">🔐 Área Admin</h1>
+      <p class="login-subtitle">Autenticação segura com Google</p>
       
-      <form id="loginForm">
-        <input type="text" class="login-input" id="username" placeholder="Usuário" required>
-        <input type="password" class="login-input" id="password" placeholder="Senha" required>
-        
-        <div class="loading" id="loadingSpinner">
-          <div class="spinner"></div>
-          <p style="color: #25D366; margin-top: 0.5rem;">Verificando credenciais...</p>
-        </div>
-        
-        <button type="submit" class="login-btn" id="submitBtn">Entrar no Dashboard</button>
-      </form>
+      <!-- Botão Firebase Google Auth -->
+      <button class="firebase-btn" id="googleLoginBtn" onclick="loginWithGoogle()">
+        <div class="google-icon">G</div>
+        Entrar com Google
+      </button>
       
-      <div class="error-msg" id="errorMsg">Usuário ou senha incorretos!</div>
-      <div class="warning-msg" id="warningMsg">API não disponível. Usando modo desenvolvimento.</div>
-      <div class="success-msg" id="successMsg">Login realizado com sucesso! Redirecionando...</div>
+      <!-- Informações do usuário logado -->
+      <div class="user-info" id="userInfo" style="display: none;">
+        <h4>✅ Logado como:</h4>
+        <div class="user-email" id="userEmail"></div>
+        <button class="logout-btn" onclick="logout()">Sair</button>
+      </div>
       
-      <a href="index.html" class="back-link">← Voltar ao Site Principal</a>
-
-      <div style="text-align: center; margin-top: 2rem; color: #666; font-size: 0.8rem;">
-        <p>🔒 Sistema seguro com autenticação serverless</p>
-        <p style="margin-top: 0.5rem; font-size: 0.7rem; color: #888;">
-          Configure ADMIN_USERNAME e ADMIN_PASSWORD no Vercel
+      <div class="loading" id="loadingSpinner">
+        <div class="spinner"></div>
+        <p style="color: #25D366; margin-top: 0.5rem;">Conectando com Google...</p>
+      </div>
+      
+      <div class="error-msg" id="errorMsg"></div>
+      <div class="success-msg" id="successMsg"></div>
+      
+      <!-- Informações para desenvolvimento -->
+      <div class="dev-info">
+        <h4>🚀 Firebase Authentication</h4>
+        <p><strong>Status:</strong> <span id="firebaseStatus">Configurando...</span></p>
+        <p style="margin-top: 0.5rem; color: #888; font-size: 0.7rem;">
+          Sistema profissional de autenticação
         </p>
       </div>
+      
+      <a href="index.html" class="back-link">← Voltar ao Site Principal</a>
     </div>
   </div>
 
   <script>
-    // Sistema de autenticação CORRIGIDO para lidar com erros de API
-    console.log('🔐 Sistema de login carregado!');
+    // Sistema de Autenticação com Firebase
+    let authSystem = null;
 
-    class AuthSystem {
+    function initializeAuthSystem() {
+      authSystem = new FirebaseAuthSystem();
+      console.log('✅ Sistema de autenticação inicializado!');
+    }
+
+    class FirebaseAuthSystem {
       constructor() {
         this.tokenKey = 'admin_token_canecas';
-        this.apiUrl = '/api/auth';
-        this.apiAvailable = true; // Assume que a API está disponível inicialmente
+        this.setupAuthListener();
         this.checkAuth();
       }
 
-      // Verifica se está autenticado
+      // Escuta mudanças de autenticação
+      setupAuthListener() {
+        window.firebaseOnAuthState(window.firebaseAuth, (user) => {
+          if (user) {
+            console.log('✅ Usuário logado:', user.email);
+            this.handleUserLogin(user);
+          } else {
+            console.log('🚫 Usuário deslogado');
+            this.handleUserLogout();
+          }
+        });
+      }
+
+      // Login com Google
+      async loginWithGoogle() {
+        try {
+          showLoading();
+          const provider = new window.firebaseGoogleAuth();
+          
+          console.log('🔐 Iniciando autenticação Google...');
+          const result = await window.firebaseSignIn(window.firebaseAuth, provider);
+          
+          console.log('✅ Login bem-sucedido:', result.user.email);
+          return result;
+          
+        } catch (error) {
+          console.error('❌ Erro no login Google:', error);
+          hideLoading();
+          
+          let errorMessage = 'Erro ao fazer login com Google';
+          if (error.code === 'auth/popup-blocked') {
+            errorMessage = 'Popup bloqueado. Permita popups para este site.';
+          } else if (error.code === 'auth/popup-closed-by-user') {
+            errorMessage = 'Login cancelado.';
+          } else if (error.code === 'auth/network-request-failed') {
+            errorMessage = 'Erro de conexão. Verifique sua internet.';
+          } else if (error.code === 'auth/unauthorized-domain') {
+            errorMessage = 'Domínio não autorizado. Configure no Firebase.';
+          }
+          
+          showError(errorMessage);
+          throw error;
+        }
+      }
+
+      // Logout
+      async logout() {
+        try {
+          await window.firebaseSignOut(window.firebaseAuth);
+          console.log('👋 Logout realizado');
+        } catch (error) {
+          console.error('❌ Erro no logout:', error);
+        }
+      }
+
+      // Manipula login bem-sucedido
+      handleUserLogin(user) {
+        const userInfo = document.getElementById('userInfo');
+        const userEmail = document.getElementById('userEmail');
+        const loginBtn = document.getElementById('googleLoginBtn');
+        
+        userEmail.textContent = user.email;
+        userInfo.style.display = 'block';
+        loginBtn.style.display = 'none';
+        hideLoading();
+        showSuccess(`Bem-vindo, ${user.email.split('@')[0]}!`);
+        
+        // Salva token personalizado
+        this.saveCustomToken(user);
+        
+        // Redireciona após breve delay
+        setTimeout(() => {
+          if (window.location.pathname.includes('login.html')) {
+            window.location.href = 'dashboard.html';
+          }
+        }, 1500);
+      }
+
+      // Manipula logout
+      handleUserLogout() {
+        const userInfo = document.getElementById('userInfo');
+        const loginBtn = document.getElementById('googleLoginBtn');
+        
+        userInfo.style.display = 'none';
+        loginBtn.style.display = 'flex';
+        localStorage.removeItem(this.tokenKey);
+      }
+
+      // Salva token personalizado para verificação
+      saveCustomToken(user) {
+        const tokenData = {
+          timestamp: Date.now(),
+          email: user.email,
+          uid: user.uid,
+          name: user.displayName,
+          provider: 'firebase_google'
+        };
+        const token = btoa(JSON.stringify(tokenData));
+        localStorage.setItem(this.tokenKey, token);
+      }
+
+      // Verifica se está autenticado (para outras páginas)
       isAuthenticated() {
         const token = localStorage.getItem(this.tokenKey);
-        if (!token) {
-          console.log('❌ Não autenticado - token não encontrado');
-          return false;
-        }
+        if (!token) return false;
         
         try {
-          // Verifica se o token é válido (24 horas)
           const tokenData = JSON.parse(atob(token));
           const tokenTime = tokenData.timestamp;
           const now = Date.now();
-          const isValid = (now - tokenTime) < (24 * 60 * 60 * 1000);
-          
-          console.log('🔍 Verificando token:', isValid ? '✅ Válido' : '❌ Expirado');
-          return isValid;
+          return (now - tokenTime) < (24 * 60 * 60 * 1000); // 24 horas
         } catch (error) {
-          console.error('💥 Erro ao verificar token:', error);
           this.logout();
           return false;
         }
       }
 
-      // Gera token seguro
-      generateToken() {
-        const tokenData = {
-          timestamp: Date.now(),
-          random: Math.random().toString(36).substring(2),
-          origin: 'canecas_admin',
-          env: this.isProduction() ? 'production' : 'development'
-        };
-        const token = btoa(JSON.stringify(tokenData));
-        console.log('🔑 Token gerado para:', tokenData.env);
-        return token;
-      }
-
-      // Verifica se está em produção
-      isProduction() {
-        return window.location.hostname.includes('vercel.app') && 
-               !window.location.hostname.includes('localhost');
-      }
-
-      // Faz login - tenta API primeiro, depois fallback
-      async login(username, password) {
-        console.log('🔐 Tentando login para:', username);
-        
-        // Se a API estava disponível, tenta primeiro
-        if (this.apiAvailable) {
-          console.log('🌐 Tentando API primeiro...');
-          const apiResult = await this.tryApiLogin(username, password);
-          
-          if (apiResult.success) {
-            return apiResult;
-          }
-          
-          // Se API falhou mas não foi erro de rede, marca como indisponível
-          if (!apiResult.networkError) {
-            this.apiAvailable = false;
-            console.log('🚫 API marcada como indisponível');
-          }
-        }
-        
-        // Se API não disponível ou falhou, usa fallback
-        console.log('🛠️ Usando fallback de desenvolvimento');
-        return await this.fallbackLogin(username, password);
-      }
-
-      // Tenta login via API
-      async tryApiLogin(username, password) {
-        try {
-          console.log('📡 Chamando API:', this.apiUrl);
-          const response = await fetch(this.apiUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              username: username.trim(),
-              password: password
-            })
-          });
-
-          console.log('📨 Status da resposta:', response.status);
-          
-          // Verifica se a resposta é JSON
-          const contentType = response.headers.get('content-type');
-          if (!contentType || !contentType.includes('application/json')) {
-            console.error('❌ API retornou não-JSON:', contentType);
-            const textResponse = await response.text();
-            console.error('📄 Conteúdo da resposta:', textResponse.substring(0, 200));
-            throw new Error('API retornou formato inválido');
-          }
-          
-          const data = await response.json();
-          console.log('📨 Resposta JSON da API:', data);
-          
-          if (data.success) {
-            console.log('✅ Login autorizado via API');
-            const token = this.generateToken();
-            localStorage.setItem(this.tokenKey, token);
-            return { 
-              success: true, 
-              message: 'Login realizado com sucesso!',
-              source: 'api'
-            };
-          } else {
-            console.log('❌ Login recusado pela API:', data.error);
-            return { 
-              success: false, 
-              message: data.error || 'Credenciais inválidas',
-              source: 'api'
-            };
-          }
-          
-        } catch (error) {
-          console.error('💥 Erro na comunicação com API:', error);
-          return { 
-            success: false, 
-            message: 'API indisponível. Usando modo desenvolvimento.',
-            networkError: true,
-            source: 'api_error'
-          };
-        }
-      }
-
-      // Fallback para desenvolvimento
-      async fallbackLogin(username, password) {
-        console.log('🔧 Modo desenvolvimento ativo');
-        
-        // Credenciais padrão para desenvolvimento
-        const devCredentials = [
-          { user: 'admin', pass: 'canecas123' },
-          { user: 'test', pass: 'test123' }
-        ];
-        
-        const validCredential = devCredentials.find(cred => 
-          cred.user === username.trim() && cred.pass === password
-        );
-        
-        if (validCredential) {
-          console.log('✅ Login via fallback de desenvolvimento');
-          const token = this.generateToken();
-          localStorage.setItem(this.tokenKey, token);
-          return { 
-            success: true, 
-            message: 'Login realizado (modo desenvolvimento)',
-            source: 'fallback'
-          };
-        }
-        
-        console.log('❌ Credenciais inválidas no fallback');
-        return { 
-          success: false, 
-          message: 'Usuário ou senha incorretos',
-          source: 'fallback'
-        };
-      }
-
-      // Faz logout
-      logout() {
-        console.log('👋 Realizando logout');
-        localStorage.removeItem(this.tokenKey);
-        window.location.href = 'login.html';
-      }
-
       // Verifica autenticação e redireciona
       checkAuth() {
         const currentPage = window.location.pathname;
-        console.log('🔍 Verificando autenticação para:', currentPage);
+        const user = window.firebaseAuth.currentUser;
         
-        // Se está no dashboard sem autenticação, redireciona
-        if (currentPage.includes('dashboard.html') || 
-            currentPage.includes('adicionar-produto.html') ||
-            currentPage.includes('gerenciar-produtos.html')) {
-          if (!this.isAuthenticated()) {
+        if (user || this.isAuthenticated()) {
+          // Se já está logado e está na página de login, redireciona
+          if (currentPage.includes('login.html')) {
+            console.log('✅ Usuário já autenticado - redirecionando...');
+            setTimeout(() => {
+              window.location.href = 'dashboard.html';
+            }, 1000);
+          }
+        } else {
+          // Se não está logado e está em página admin, redireciona para login
+          if ((currentPage.includes('dashboard.html') || 
+               currentPage.includes('adicionar-produto.html') ||
+               currentPage.includes('gerenciar-produtos.html'))) {
             console.log('🚫 Acesso negado - redirecionando para login');
             window.location.href = 'login.html';
           }
         }
-        
-        // Se está no login já autenticado, redireciona para dashboard
-        if (currentPage.includes('login.html') && this.isAuthenticated()) {
-          console.log('✅ Usuário já autenticado - redirecionando para dashboard');
-          window.location.href = 'dashboard.html';
-        }
       }
     }
 
-    // Inicializa sistema de auth
-    let auth;
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('🚀 Página login.html carregada!');
-      auth = new AuthSystem();
-      setupLoginForm();
-    });
-
-    // Configura o formulário de login
-    function setupLoginForm() {
-      const loginForm = document.getElementById('loginForm');
-      const errorMsg = document.getElementById('errorMsg');
-      const warningMsg = document.getElementById('warningMsg');
-      const successMsg = document.getElementById('successMsg');
-      const loadingSpinner = document.getElementById('loadingSpinner');
-      const submitBtn = document.getElementById('submitBtn');
-      
-      if (!loginForm) {
-        console.error('❌ Formulário de login não encontrado!');
-        return;
-      }
-
-      console.log('✅ Formulário de login configurado');
-
-      loginForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        console.log('📝 Formulário submetido');
-        
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        
-        // Validação básica
-        if (!username || !password) {
-          showError('Por favor, preencha todos os campos');
-          return;
-        }
-
-        // Mostra loading
-        showLoading();
-        
-        try {
-          const result = await auth.login(username, password);
-          
-          if (result.success) {
-            // Mostra mensagem específica baseada na fonte
-            if (result.source === 'fallback') {
-              showWarning(result.message);
-            } else {
-              showSuccess(result.message);
-            }
-            
-            console.log('✅ Login bem-sucedido, redirecionando...');
-            
-            // Redireciona após breve delay
-            setTimeout(() => {
-              window.location.href = 'dashboard.html';
-            }, 1500);
-            
-          } else {
-            // Mostra mensagem de aviso se API não está disponível
-            if (result.source === 'api_error') {
-              showWarning(result.message);
-            } else {
-              showError(result.message);
-            }
-            console.log('❌ Login falhou:', result.message);
-          }
-        } catch (error) {
-          console.error('💥 Erro durante o login:', error);
-          showError('Erro inesperado. Tente novamente.');
-        } finally {
-          hideLoading();
-        }
-      });
-    }
-
-    // Funções auxiliares para UI
+    // Funções de UI
     function showLoading() {
-      const loadingSpinner = document.getElementById('loadingSpinner');
-      const submitBtn = document.getElementById('submitBtn');
-      const errorMsg = document.getElementById('errorMsg');
-      const warningMsg = document.getElementById('warningMsg');
-      const successMsg = document.getElementById('successMsg');
-      
-      if (loadingSpinner) loadingSpinner.style.display = 'block';
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Verificando...';
-      }
-      if (errorMsg) errorMsg.style.display = 'none';
-      if (warningMsg) warningMsg.style.display = 'none';
-      if (successMsg) successMsg.style.display = 'none';
+      document.getElementById('loadingSpinner').style.display = 'block';
+      document.getElementById('googleLoginBtn').disabled = true;
+      document.getElementById('errorMsg').style.display = 'none';
+      document.getElementById('successMsg').style.display = 'none';
     }
 
     function hideLoading() {
-      const loadingSpinner = document.getElementById('loadingSpinner');
-      const submitBtn = document.getElementById('submitBtn');
-      
-      if (loadingSpinner) loadingSpinner.style.display = 'none';
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Entrar no Dashboard';
-      }
+      document.getElementById('loadingSpinner').style.display = 'none';
+      document.getElementById('googleLoginBtn').disabled = false;
     }
 
     function showError(message) {
-      const errorMsg = document.getElementById('errorMsg');
-      if (errorMsg) {
-        errorMsg.textContent = message;
-        errorMsg.style.display = 'block';
-        errorMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-
-    function showWarning(message) {
-      const warningMsg = document.getElementById('warningMsg');
-      if (warningMsg) {
-        warningMsg.textContent = message;
-        warningMsg.style.display = 'block';
-        warningMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      const el = document.getElementById('errorMsg');
+      el.textContent = message;
+      el.style.display = 'block';
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function showSuccess(message) {
-      const successMsg = document.getElementById('successMsg');
-      if (successMsg) {
-        successMsg.textContent = message;
-        successMsg.style.display = 'block';
-      }
+      const el = document.getElementById('successMsg');
+      el.textContent = message;
+      el.style.display = 'block';
     }
 
-    // Função global para logout
+    // Funções globais
+    window.loginWithGoogle = function() {
+      if (authSystem) {
+        authSystem.loginWithGoogle();
+      } else {
+        showError('Sistema de autenticação não carregado');
+      }
+    };
+
     window.logout = function() {
-      if (auth) {
-        auth.logout();
+      if (authSystem) {
+        authSystem.logout();
       } else {
         localStorage.removeItem('admin_token_canecas');
         window.location.href = 'login.html';
       }
     };
 
-    // Debug info
-    window.addEventListener('load', function() {
-      console.log('✅ Página completamente carregada');
-      console.log('📍 URL atual:', window.location.href);
-      console.log('🌐 Ambiente:', window.location.hostname.includes('vercel.app') ? 'Production' : 'Development');
-    });
+    // Fallback se Firebase não carregar
+    setTimeout(() => {
+      if (!authSystem) {
+        console.warn('⚠️ Firebase não carregou - usando fallback');
+        document.getElementById('firebaseStatus').textContent = 'Erro - Recarregue a página';
+        document.getElementById('firebaseStatus').style.color = '#ff4444';
+      }
+    }, 5000);
   </script>
 </body>
 </html>
