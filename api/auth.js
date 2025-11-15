@@ -205,7 +205,7 @@
     class AuthSystem {
       constructor() {
         this.tokenKey = 'admin_token_canecas';
-        this.apiUrl = 'api/auth.js';
+        this.apiUrl = 'api/auth';
         this.apiAvailable = true;
         this.checkAuth();
       }
