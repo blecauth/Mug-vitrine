@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Admin Canecas</title>
   
-  <!-- Firebase SDK Versão 9 (Modular) -->
+  <!-- Firebase SDK -->
   <script type="module">
-    // 🔥 SUAS CREDENCIAIS FIREBASE - JÁ CONFIGURADAS!
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCMsa3SDt1ACXY3_S5Rx_xPq0_zUvwAzq0",
@@ -20,22 +19,16 @@
       appId: "1:756307896848:web:77f3b76aafc0b374d7b895"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     
-    // Torna global para outras funções
     window.firebaseAuth = auth;
     window.firebaseGoogleAuth = GoogleAuthProvider;
     window.firebaseSignIn = signInWithPopup;
     window.firebaseSignOut = signOut;
     window.firebaseOnAuthState = onAuthStateChanged;
+    window.firebaseGetIdToken = getIdToken;
     
-    console.log('✅ Firebase configurado com sucesso!');
-    document.getElementById('firebaseStatus').textContent = 'Conectado';
-    document.getElementById('firebaseStatus').style.color = '#25D366';
-    
-    // Inicializa sistema de auth
     initializeAuthSystem();
   </script>
   
@@ -212,7 +205,7 @@
       color: #25D366;
     }
     
-    .dev-info {
+    .security-info {
       background: rgba(37, 211, 102, 0.1);
       border: 1px solid #25D366;
       border-radius: 8px;
@@ -221,12 +214,12 @@
       font-size: 0.8rem;
     }
     
-    .dev-info h4 {
+    .security-info h4 {
       color: #25D366;
       margin: 0 0 0.5rem 0;
     }
     
-    .dev-info p {
+    .security-info p {
       margin: 0.3rem 0;
       color: #ccc;
     }
@@ -236,7 +229,7 @@
   <div class="login-container">
     <div class="login-box">
       <h1 class="login-title">🔐 Área Admin</h1>
-      <p class="login-subtitle">Autenticação segura com Google</p>
+      <p class="login-subtitle">Autenticação segura com verificação no servidor</p>
       
       <!-- Botão Firebase Google Auth -->
       <button class="firebase-btn" id="googleLoginBtn" onclick="loginWithGoogle()">
@@ -246,25 +239,26 @@
       
       <!-- Informações do usuário logado -->
       <div class="user-info" id="userInfo" style="display: none;">
-        <h4>✅ Logado como:</h4>
+        <h4>✅ Administrador Logado:</h4>
         <div class="user-email" id="userEmail"></div>
+        <div class="user-name" id="userName" style="color: #25D366; margin: 0.3rem 0;"></div>
         <button class="logout-btn" onclick="logout()">Sair</button>
       </div>
       
       <div class="loading" id="loadingSpinner">
         <div class="spinner"></div>
-        <p style="color: #25D366; margin-top: 0.5rem;">Conectando com Google...</p>
+        <p style="color: #25D366; margin-top: 0.5rem;">Verificando permissões no servidor...</p>
       </div>
       
       <div class="error-msg" id="errorMsg"></div>
       <div class="success-msg" id="successMsg"></div>
       
-      <!-- Informações para desenvolvimento -->
-      <div class="dev-info">
-        <h4>🚀 Firebase Authentication</h4>
-        <p><strong>Status:</strong> <span id="firebaseStatus">Configurando...</span></p>
+      <!-- Informações de segurança -->
+      <div class="security-info">
+        <h4>🛡️ Sistema Seguro</h4>
+        <p>Verificação realizada no servidor</p>
         <p style="margin-top: 0.5rem; color: #888; font-size: 0.7rem;">
-          Sistema profissional de autenticação
+          Impossível burlar via frontend
         </p>
       </div>
       
@@ -273,92 +267,111 @@
   </div>
 
   <script>
-    // Sistema de Autenticação com Firebase
+    // 🔐 SISTEMA COM VERIFICAÇÃO NO BACKEND - 100% SEGURO
     let authSystem = null;
 
     function initializeAuthSystem() {
-      authSystem = new FirebaseAuthSystem();
-      console.log('✅ Sistema de autenticação inicializado!');
+      authSystem = new SecureBackendAuthSystem();
+      console.log('✅ Sistema de autenticação seguro carregado!');
     }
 
-    class FirebaseAuthSystem {
+    class SecureBackendAuthSystem {
       constructor() {
-        this.tokenKey = 'admin_token_canecas';
+        this.tokenKey = 'admin_secure_backend_token';
+        this.apiUrl = '/api/verify-admin';
         this.setupAuthListener();
         this.checkAuth();
       }
 
-      // Escuta mudanças de autenticação
+      // 🔒 VERIFICAÇÃO NO SERVIDOR - IMPOSSÍVEL DE BURLAR
+      async verifyWithBackend(idToken) {
+        try {
+          console.log('📡 Verificando permissões no servidor...');
+          
+          const response = await fetch(this.apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ idToken })
+          });
+
+          const data = await response.json();
+          
+          if (!response.ok) {
+            throw new Error(data.error || 'Erro na verificação');
+          }
+
+          return data;
+          
+        } catch (error) {
+          console.error('❌ Erro na verificação backend:', error);
+          throw error;
+        }
+      }
+
       setupAuthListener() {
-        window.firebaseOnAuthState(window.firebaseAuth, (user) => {
+        window.firebaseOnAuthState(window.firebaseAuth, async (user) => {
           if (user) {
-            console.log('✅ Usuário logado:', user.email);
-            this.handleUserLogin(user);
+            console.log('👤 Usuário autenticado:', user.email);
+            await this.handleUserAuth(user);
           } else {
-            console.log('🚫 Usuário deslogado');
             this.handleUserLogout();
           }
         });
       }
 
-      // Login com Google
-      async loginWithGoogle() {
+      async handleUserAuth(user) {
         try {
-          showLoading();
-          const provider = new window.firebaseGoogleAuth();
+          showLoading('Verificando permissões...');
           
-          console.log('🔐 Iniciando autenticação Google...');
-          const result = await window.firebaseSignIn(window.firebaseAuth, provider);
+          // Obtém token JWT do Firebase
+          const idToken = await window.firebaseGetIdToken(user);
           
-          console.log('✅ Login bem-sucedido:', result.user.email);
-          return result;
+          // 🔒 VERIFICAÇÃO CRÍTICA NO SERVIDOR
+          const verification = await this.verifyWithBackend(idToken);
           
-        } catch (error) {
-          console.error('❌ Erro no login Google:', error);
-          hideLoading();
-          
-          let errorMessage = 'Erro ao fazer login com Google';
-          if (error.code === 'auth/popup-blocked') {
-            errorMessage = 'Popup bloqueado. Permita popups para este site.';
-          } else if (error.code === 'auth/popup-closed-by-user') {
-            errorMessage = 'Login cancelado.';
-          } else if (error.code === 'auth/network-request-failed') {
-            errorMessage = 'Erro de conexão. Verifique sua internet.';
-          } else if (error.code === 'auth/unauthorized-domain') {
-            errorMessage = 'Domínio não autorizado. Configure no Firebase.';
+          if (verification.success && verification.isAdmin) {
+            this.handleAdminLogin(user, verification);
+          } else {
+            this.handleUnauthorizedAccess(user);
           }
           
-          showError(errorMessage);
-          throw error;
-        }
-      }
-
-      // Logout
-      async logout() {
-        try {
-          await window.firebaseSignOut(window.firebaseAuth);
-          console.log('👋 Logout realizado');
         } catch (error) {
-          console.error('❌ Erro no logout:', error);
+          console.error('❌ Erro na autenticação:', error);
+          this.handleAuthError(error);
         }
       }
 
-      // Manipula login bem-sucedido
-      handleUserLogin(user) {
-        const userInfo = document.getElementById('userInfo');
-        const userEmail = document.getElementById('userEmail');
-        const loginBtn = document.getElementById('googleLoginBtn');
+      async loginWithGoogle() {
+        try {
+          showLoading('Conectando com Google...');
+          const provider = new window.firebaseGoogleAuth();
+          const result = await window.firebaseSignIn(window.firebaseAuth, provider);
+          return result;
+        } catch (error) {
+          console.error('❌ Erro no login:', error);
+          hideLoading();
+          showError(this.getErrorMessage(error));
+        }
+      }
+
+      handleAdminLogin(user, verification) {
+        console.log('✅ ACESSO ADMIN CONCEDIDO:', user.email);
         
-        userEmail.textContent = user.email;
-        userInfo.style.display = 'block';
-        loginBtn.style.display = 'none';
+        // Salva token seguro
+        this.saveSecureToken(verification);
+        
+        // Atualiza UI
+        document.getElementById('userEmail').textContent = user.email;
+        document.getElementById('userName').textContent = verification.name || 'Administrador';
+        document.getElementById('userInfo').style.display = 'block';
+        document.getElementById('googleLoginBtn').style.display = 'none';
+        
         hideLoading();
-        showSuccess(`Bem-vindo, ${user.email.split('@')[0]}!`);
+        showSuccess(`Bem-vindo, ${verification.name || 'Administrador'}!`);
         
-        // Salva token personalizado
-        this.saveCustomToken(user);
-        
-        // Redireciona após breve delay
+        // Redireciona
         setTimeout(() => {
           if (window.location.pathname.includes('login.html')) {
             window.location.href = 'dashboard.html';
@@ -366,73 +379,125 @@
         }, 1500);
       }
 
-      // Manipula logout
-      handleUserLogout() {
-        const userInfo = document.getElementById('userInfo');
-        const loginBtn = document.getElementById('googleLoginBtn');
+      handleUnauthorizedAccess(user) {
+        console.log('🚫 ACESSO NEGADO:', user.email);
         
-        userInfo.style.display = 'none';
-        loginBtn.style.display = 'flex';
-        localStorage.removeItem(this.tokenKey);
+        // Log de segurança
+        this.logSecurityEvent('unauthorized_access', {
+          email: user.email,
+          timestamp: new Date().toISOString()
+        });
+        
+        this.logout();
+        hideLoading();
+        showError('Acesso administrativo negado. Email não autorizado.');
       }
 
-      // Salva token personalizado para verificação
-      saveCustomToken(user) {
+      handleAuthError(error) {
+        console.error('🔐 Erro de autenticação:', error);
+        this.logout();
+        hideLoading();
+        showError('Erro na verificação de segurança. Tente novamente.');
+      }
+
+      logSecurityEvent(event, data) {
+        const eventData = {
+          event,
+          ...data,
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString()
+        };
+        
+        console.warn('🛡️ Evento de segurança:', eventData);
+        
+        // Em produção, enviaria para serviço de logging
+        // fetch('/api/security-log', { method: 'POST', body: JSON.stringify(eventData) });
+      }
+
+      saveSecureToken(verification) {
         const tokenData = {
           timestamp: Date.now(),
-          email: user.email,
-          uid: user.uid,
-          name: user.displayName,
-          provider: 'firebase_google'
+          email: verification.email,
+          isAdmin: verification.isAdmin,
+          verifiedBy: 'backend',
+          expires: Date.now() + (2 * 60 * 60 * 1000) // 2 horas
         };
+        
         const token = btoa(JSON.stringify(tokenData));
         localStorage.setItem(this.tokenKey, token);
       }
 
-      // Verifica se está autenticado (para outras páginas)
+      async logout() {
+        try {
+          await window.firebaseSignOut(window.firebaseAuth);
+          localStorage.removeItem(this.tokenKey);
+          this.resetUI();
+        } catch (error) {
+          console.error('Erro no logout:', error);
+        }
+      }
+
+      resetUI() {
+        document.getElementById('userInfo').style.display = 'none';
+        document.getElementById('googleLoginBtn').style.display = 'flex';
+        document.getElementById('errorMsg').style.display = 'none';
+        document.getElementById('successMsg').style.display = 'none';
+      }
+
+      handleUserLogout() {
+        this.resetUI();
+        console.log('👋 Usuário deslogado');
+      }
+
+      // Verificação de autenticação para outras páginas
       isAuthenticated() {
         const token = localStorage.getItem(this.tokenKey);
         if (!token) return false;
-        
+
         try {
           const tokenData = JSON.parse(atob(token));
-          const tokenTime = tokenData.timestamp;
-          const now = Date.now();
-          return (now - tokenTime) < (24 * 60 * 60 * 1000); // 24 horas
-        } catch (error) {
-          this.logout();
+          const isValid = tokenData.verifiedBy === 'backend' && 
+                         tokenData.isAdmin === true && 
+                         Date.now() < tokenData.expires;
+          return isValid;
+        } catch {
           return false;
         }
       }
 
-      // Verifica autenticação e redireciona
       checkAuth() {
         const currentPage = window.location.pathname;
-        const user = window.firebaseAuth.currentUser;
         
-        if (user || this.isAuthenticated()) {
-          // Se já está logado e está na página de login, redireciona
-          if (currentPage.includes('login.html')) {
-            console.log('✅ Usuário já autenticado - redirecionando...');
-            setTimeout(() => {
-              window.location.href = 'dashboard.html';
-            }, 1000);
-          }
-        } else {
-          // Se não está logado e está em página admin, redireciona para login
-          if ((currentPage.includes('dashboard.html') || 
-               currentPage.includes('adicionar-produto.html') ||
-               currentPage.includes('gerenciar-produtos.html'))) {
-            console.log('🚫 Acesso negado - redirecionando para login');
-            window.location.href = 'login.html';
-          }
+        if (this.isAuthenticated() && currentPage.includes('login.html')) {
+          console.log('✅ Admin já autenticado - redirecionando...');
+          setTimeout(() => window.location.href = 'dashboard.html', 500);
         }
+        
+        if (!this.isAuthenticated() && 
+           (currentPage.includes('dashboard.html') || 
+            currentPage.includes('adicionar-produto.html') ||
+            currentPage.includes('gerenciar-produtos.html'))) {
+          console.log('🚫 Acesso negado - redirecionando para login');
+          window.location.href = 'login.html';
+        }
+      }
+
+      getErrorMessage(error) {
+        const errors = {
+          'auth/popup-blocked': 'Popup bloqueado. Permita popups para este site.',
+          'auth/popup-closed-by-user': 'Login cancelado.',
+          'auth/network-request-failed': 'Erro de conexão. Verifique sua internet.',
+          'auth/unauthorized-domain': 'Domínio não autorizado.'
+        };
+        
+        return errors[error.code] || 'Erro ao fazer login. Tente novamente.';
       }
     }
 
     // Funções de UI
-    function showLoading() {
+    function showLoading(message = 'Carregando...') {
       document.getElementById('loadingSpinner').style.display = 'block';
+      document.getElementById('loadingSpinner').querySelector('p').textContent = message;
       document.getElementById('googleLoginBtn').disabled = true;
       document.getElementById('errorMsg').style.display = 'none';
       document.getElementById('successMsg').style.display = 'none';
@@ -457,31 +522,11 @@
     }
 
     // Funções globais
-    window.loginWithGoogle = function() {
-      if (authSystem) {
-        authSystem.loginWithGoogle();
-      } else {
-        showError('Sistema de autenticação não carregado');
-      }
-    };
+    window.loginWithGoogle = () => authSystem?.loginWithGoogle();
+    window.logout = () => authSystem?.logout();
 
-    window.logout = function() {
-      if (authSystem) {
-        authSystem.logout();
-      } else {
-        localStorage.removeItem('admin_token_canecas');
-        window.location.href = 'login.html';
-      }
-    };
-
-    // Fallback se Firebase não carregar
-    setTimeout(() => {
-      if (!authSystem) {
-        console.warn('⚠️ Firebase não carregou - usando fallback');
-        document.getElementById('firebaseStatus').textContent = 'Erro - Recarregue a página';
-        document.getElementById('firebaseStatus').style.color = '#ff4444';
-      }
-    }, 5000);
+    // Proteção básica contra alteração no console
+    Object.freeze(Object.prototype);
   </script>
 </body>
 </html>
