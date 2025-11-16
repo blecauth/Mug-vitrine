@@ -59,7 +59,7 @@
         }
         
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
         }
@@ -80,43 +80,24 @@
         }
         
         .search-box {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
+            position: relative;
+            max-width: 500px;
+            margin: 0 auto;
         }
         
         .search-input {
-            flex: 1;
-            padding: 0.8rem;
-            border-radius: 5px;
-            border: 1px solid #333;
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 25px;
+            border: 2px solid #25D366;
             background: #1a1a1a;
             color: white;
             font-size: 1rem;
-        }
-        
-        .search-input:focus {
-            border-color: #25D366;
             outline: none;
         }
         
-        .search-btn {
-            background: #25D366;
-            color: white;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-        
-        .search-btn:hover {
-            background: #1ebe5f;
-        }
-        
-        .search-btn:disabled {
-            background: #666;
-            cursor: not-allowed;
+        .search-input:focus {
+            box-shadow: 0 0 10px rgba(37, 211, 102, 0.3);
         }
         
         .search-info {
@@ -125,26 +106,27 @@
             margin-top: 0.5rem;
         }
         
-        .product-result {
-            background: #181818;
-            padding: 2rem;
-            border-radius: 10px;
-            border: 1px solid #333;
-            margin-bottom: 2rem;
-            display: none;
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
         }
         
         .product-card {
-            display: grid;
-            grid-template-columns: 200px 1fr;
-            gap: 1.5rem;
-            align-items: start;
+            background: #181818;
+            border: 1px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            border-color: #25D366;
         }
         
         .product-image {
-            width: 200px;
             height: 200px;
-            border-radius: 10px;
             overflow: hidden;
         }
         
@@ -154,27 +136,27 @@
             object-fit: cover;
         }
         
-        .product-details {
-            flex: 1;
+        .product-content {
+            padding: 1rem;
         }
         
         .product-title {
             color: #25D366;
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             margin-bottom: 0.5rem;
         }
         
         .product-tags {
             display: flex;
             gap: 0.5rem;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             flex-wrap: wrap;
         }
         
         .product-tag {
             background: #333;
             color: #ccc;
-            padding: 0.3rem 0.6rem;
+            padding: 0.2rem 0.5rem;
             border-radius: 10px;
             font-size: 0.8rem;
         }
@@ -187,31 +169,32 @@
         .product-price {
             color: #25D366;
             font-weight: bold;
-            font-size: 1.4rem;
-            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
         }
         
         .product-description {
             color: #ccc;
-            margin-bottom: 1.5rem;
-            line-height: 1.5;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
         }
         
         .product-actions {
-            display: flex;
-            gap: 1rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
         }
         
         .action-btn {
             background: #25D366;
             color: white;
             border: none;
-            padding: 0.8rem 1.5rem;
+            padding: 0.5rem;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             transition: background 0.3s;
-            flex: 1;
         }
         
         .action-edit {
@@ -230,6 +213,7 @@
             text-align: center;
             padding: 3rem;
             color: #888;
+            grid-column: 1 / -1;
         }
         
         .empty-state h3 {
@@ -239,14 +223,9 @@
         
         .loading-state {
             text-align: center;
-            padding: 2rem;
+            padding: 3rem;
             color: #25D366;
-        }
-        
-        .error-state {
-            text-align: center;
-            padding: 2rem;
-            color: #ff4444;
+            grid-column: 1 / -1;
         }
 
         /* MODAL DE EDIÇÃO */
@@ -420,23 +399,14 @@
                 padding: 1rem;
             }
             
-            .search-box {
-                flex-direction: column;
-            }
-            
-            .product-card {
+            .products-grid {
                 grid-template-columns: 1fr;
-                text-align: center;
             }
             
-            .product-image {
-                width: 100%;
-                max-width: 200px;
-                margin: 0 auto;
-            }
-            
-            .product-actions {
+            .header-content {
                 flex-direction: column;
+                gap: 1rem;
+                text-align: center;
             }
             
             .form-buttons {
@@ -448,7 +418,7 @@
 <body>
     <header class="header">
         <div class="header-content">
-            <h1>🔍 Gerenciar Produto</h1>
+            <h1>🔍 Gerenciar Produtos</h1>
             <div>
                 <a href="dashboard.html" class="btn btn-back">← Voltar</a>
                 <a href="adicionar-produto.html" class="btn">➕ Novo Produto</a>
@@ -458,16 +428,18 @@
 
     <main class="container">
         <section class="search-section">
-            <h2 class="search-title">Pesquisar Produto</h2>
+            <h2 class="search-title">Pesquisar Produtos</h2>
             <div class="search-box">
-                <input type="text" id="searchInput" class="search-input" placeholder="Digite o nome ou ID do produto...">
-                <button class="search-btn" onclick="searchProduct()">🔍 Pesquisar</button>
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 Digite para buscar produtos...">
             </div>
-            <p class="search-info">Digite o nome completo ou ID exato do produto que deseja gerenciar</p>
+            <p class="search-info">Digite o nome, ID ou categoria do produto - resultados aparecem automaticamente</p>
         </section>
 
-        <div id="searchResult">
-            <!-- Resultado da pesquisa aparecerá aqui -->
+        <div id="productsContainer">
+            <div class="loading-state">
+                <h3>⏳ Carregando produtos do site...</h3>
+                <p>Aguarde enquanto buscamos os produtos</p>
+            </div>
         </div>
     </main>
 
@@ -517,77 +489,40 @@
     </div>
 
     <script>
-        // 🔧 SISTEMA DE PESQUISA E EDIÇÃO INDIVIDUAL
+        // 🔧 SISTEMA DE PESQUISA EM TEMPO REAL
         class ProductManager {
             constructor() {
+                this.allProducts = [];
                 this.currentProduct = null;
-                this.originalProduct = null;
                 this.IMGBB_API_KEY = 'bb49178e11dff4322b7a699167535e57';
                 this.init();
             }
 
-            init() {
-                this.setupEventListeners();
+            async init() {
+                await this.loadProductsFromSite();
+                this.setupSearch();
             }
 
-            setupEventListeners() {
-                // Enter na pesquisa
-                document.getElementById('searchInput').addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        this.searchProduct();
-                    }
-                });
-
-                // Submit do formulário de edição
-                document.getElementById('editForm').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.applyChanges();
-                });
-            }
-
-            // 🔍 PESQUISA NO SITE
-            async searchProduct() {
-                const searchTerm = document.getElementById('searchInput').value.trim();
-                const resultContainer = document.getElementById('searchResult');
-                const searchBtn = document.querySelector('.search-btn');
-
-                if (!searchTerm) {
-                    this.showError('Digite um nome ou ID para pesquisar');
-                    return;
-                }
-
+            // 🌐 CARREGA PRODUTOS DO SITE
+            async loadProductsFromSite() {
                 try {
-                    searchBtn.disabled = true;
-                    searchBtn.textContent = '🔍 Pesquisando...';
-                    resultContainer.innerHTML = this.getLoadingHTML();
-
-                    // Busca o index.html
+                    console.log('🌐 Carregando produtos do site...');
+                    
                     const response = await fetch('index.html');
                     const html = await response.text();
                     
-                    // Extrai todos os produtos
-                    const products = this.extractProductsFromHTML(html);
+                    this.allProducts = this.extractProductsFromHTML(html);
                     
-                    // Filtra pelo termo de pesquisa
-                    const filteredProducts = products.filter(product => 
-                        product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        product.id.toLowerCase().includes(searchTerm.toLowerCase())
-                    );
-
-                    if (filteredProducts.length === 0) {
-                        this.showNoResults(searchTerm);
-                    } else if (filteredProducts.length === 1) {
-                        this.showProductResult(filteredProducts[0]);
+                    if (this.allProducts.length > 0) {
+                        this.displayProducts(this.allProducts);
+                        console.log('✅ Produtos carregados:', this.allProducts.length);
                     } else {
-                        this.showMultipleResults(filteredProducts, searchTerm);
+                        this.showNoProducts();
                     }
-
+                    
                 } catch (error) {
-                    console.error('❌ Erro na pesquisa:', error);
-                    this.showError('Erro ao pesquisar produtos. Verifique a conexão.');
-                } finally {
-                    searchBtn.disabled = false;
-                    searchBtn.textContent = '🔍 Pesquisar';
+                    console.error('❌ Erro ao carregar produtos:', error);
+                    this.showError('Erro ao carregar produtos do site');
                 }
             }
 
@@ -650,79 +585,90 @@
                 };
             }
 
-            // 🎴 MOSTRA RESULTADO ÚNICO
-            showProductResult(product) {
-                this.currentProduct = product;
-                this.originalProduct = JSON.parse(JSON.stringify(product)); // Cópia profunda
+            // 🔍 CONFIGURA PESQUISA EM TEMPO REAL
+            setupSearch() {
+                const searchInput = document.getElementById('searchInput');
                 
-                const resultContainer = document.getElementById('searchResult');
-                resultContainer.innerHTML = this.createProductCardHTML(product);
+                searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase().trim();
+                    
+                    if (searchTerm === '') {
+                        this.displayProducts(this.allProducts);
+                        return;
+                    }
+
+                    const filteredProducts = this.allProducts.filter(product => 
+                        product.nome.toLowerCase().includes(searchTerm) ||
+                        product.id.toLowerCase().includes(searchTerm) ||
+                        product.categoria.toLowerCase().includes(searchTerm) ||
+                        (product.descricao && product.descricao.toLowerCase().includes(searchTerm))
+                    );
+                    
+                    this.displayProducts(filteredProducts);
+                });
+            }
+
+            // 🎴 EXIBE PRODUTOS NA TELA
+            displayProducts(products) {
+                const container = document.getElementById('productsContainer');
+                
+                if (products.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h3>🔍 Nenhum produto encontrado</h3>
+                            <p>Nenhum produto corresponde à sua busca</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="products-grid">
+                        ${products.map(product => this.createProductCard(product)).join('')}
+                    </div>
+                `;
             }
 
             // 🎴 CRIA CARD DO PRODUTO
-            createProductCardHTML(product) {
+            createProductCard(product) {
                 const primeiroModelo = product.modelos && product.modelos.length > 0 ? product.modelos[0] : null;
                 
                 return `
-                    <div class="product-result" style="display: block;">
-                        <div class="product-card">
-                            <div class="product-image">
-                                <img src="${product.imageUrl}" alt="${product.nome}" 
-                                     onerror="this.src='https://via.placeholder.com/200x200/1a1a1a/666666?text=Imagem'">
-                            </div>
-                            <div class="product-details">
-                                <h3 class="product-title">${product.nome}</h3>
-                                <div class="product-tags">
-                                    <span class="product-tag">ID: ${product.id}</span>
-                                    <span class="product-tag product-category">${product.categoria}</span>
-                                    <span class="product-tag">${product.modelos ? product.modelos.length : 0} modelos</span>
-                                </div>
-                                <div class="product-price">R$ ${primeiroModelo ? parseFloat(primeiroModelo.price).toFixed(2) : '0.00'}</div>
-                                <p class="product-description">${product.descricao || 'Sem descrição'}</p>
-                                <div class="product-actions">
-                                    <button class="action-btn action-edit" onclick="productManager.openEditModal()">
-                                        ✏️ Editar Produto
-                                    </button>
-                                    <button class="action-btn action-delete" onclick="productManager.deleteProduct()">
-                                        🗑️ Excluir Produto
-                                    </button>
-                                </div>
-                            </div>
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="${product.imageUrl}" alt="${product.nome}" 
+                                 onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem'">
                         </div>
-                    </div>
-                `;
-            }
-
-            // ❌ MOSTRA SEM RESULTADOS
-            showNoResults(searchTerm) {
-                const resultContainer = document.getElementById('searchResult');
-                resultContainer.innerHTML = `
-                    <div class="empty-state">
-                        <h3>🔍 Nenhum produto encontrado</h3>
-                        <p>Nenhum produto corresponde a: "${searchTerm}"</p>
-                        <p style="margin-top: 1rem; color: #ccc;">Verifique se digitou o nome ou ID corretamente.</p>
-                    </div>
-                `;
-            }
-
-            // 🔢 MOSTRA MÚLTIPLOS RESULTADOS
-            showMultipleResults(products, searchTerm) {
-                const resultContainer = document.getElementById('searchResult');
-                resultContainer.innerHTML = `
-                    <div class="empty-state">
-                        <h3>🔍 Múltiplos produtos encontrados</h3>
-                        <p>Encontrados ${products.length} produtos para: "${searchTerm}"</p>
-                        <p style="margin-top: 1rem; color: #ccc;">Digite um termo mais específico ou o ID exato do produto.</p>
-                        <div style="margin-top: 1rem; text-align: left; max-width: 300px; margin: 1rem auto;">
-                            ${products.map(p => `<div style="padding: 0.5rem; border-bottom: 1px solid #333;">${p.nome} (ID: ${p.id})</div>`).join('')}
+                        <div class="product-content">
+                            <h3 class="product-title">${product.nome}</h3>
+                            <div class="product-tags">
+                                <span class="product-tag">ID: ${product.id}</span>
+                                <span class="product-tag product-category">${product.categoria}</span>
+                                <span class="product-tag">${product.modelos ? product.modelos.length : 0} modelos</span>
+                            </div>
+                            <div class="product-price">R$ ${primeiroModelo ? parseFloat(primeiroModelo.price).toFixed(2) : '0.00'}</div>
+                            <p class="product-description">${product.descricao || 'Sem descrição'}</p>
+                            <div class="product-actions">
+                                <button class="action-btn action-edit" onclick="productManager.openEditModal('${product.id}')">
+                                    ✏️ Editar
+                                </button>
+                                <button class="action-btn action-delete" onclick="productManager.deleteProduct('${product.id}')">
+                                    🗑️ Excluir
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
             }
 
             // ✏️ ABRE MODAL DE EDIÇÃO
-            openEditModal() {
-                if (!this.currentProduct) return;
+            openEditModal(productId) {
+                this.currentProduct = this.allProducts.find(p => p.id === productId);
+                
+                if (!this.currentProduct) {
+                    this.showError('Produto não encontrado');
+                    return;
+                }
 
                 // Preenche o formulário
                 document.getElementById('editName').value = this.currentProduct.nome;
@@ -815,9 +761,6 @@
             selectModel(index) {
                 document.querySelectorAll('.model-option').forEach(opt => opt.classList.remove('selected'));
                 document.querySelectorAll('.model-option')[index].classList.add('selected');
-                
-                // Atualiza o modelo selecionado no produto atual
-                this.currentProduct.modelos[index].selected = true;
             }
 
             // 💾 APLICA ALTERAÇÕES
@@ -835,13 +778,12 @@
                     this.currentProduct.descricao = document.getElementById('editDescription').value;
 
                     // TODO: Implementar atualização no GitHub
-                    // Por enquanto, apenas mostra sucesso
                     
                     this.showSuccess('✅ Alterações aplicadas com sucesso!');
                     this.closeEditModal();
                     
-                    // Atualiza a exibição
-                    this.showProductResult(this.currentProduct);
+                    // Recarrega os produtos para refletir mudanças
+                    await this.loadProductsFromSite();
 
                 } catch (error) {
                     console.error('❌ Erro ao aplicar alterações:', error);
@@ -853,16 +795,17 @@
             }
 
             // 🗑️ EXCLUIR PRODUTO
-            deleteProduct() {
-                if (!this.currentProduct) return;
+            deleteProduct(productId) {
+                const product = this.allProducts.find(p => p.id === productId);
+                
+                if (!product) return;
 
-                if (confirm(`🗑️ TEM CERTEZA que deseja excluir o produto?\n\n"${this.currentProduct.nome}" (ID: ${this.currentProduct.id})\n\n⚠️ Esta ação não pode ser desfeita!`)) {
+                if (confirm(`🗑️ TEM CERTEZA que deseja excluir o produto?\n\n"${product.nome}" (ID: ${product.id})\n\n⚠️ Esta ação não pode ser desfeita!`)) {
                     // TODO: Implementar exclusão no GitHub
                     this.showSuccess('✅ Produto excluído com sucesso!');
                     
-                    // Limpa a pesquisa
-                    document.getElementById('searchInput').value = '';
-                    document.getElementById('searchResult').innerHTML = '';
+                    // Recarrega os produtos
+                    this.loadProductsFromSite();
                 }
             }
 
@@ -872,17 +815,23 @@
             }
 
             // 🎯 FUNÇÕES DE UI
-            getLoadingHTML() {
-                return `<div class="loading-state"><h3>⏳ Pesquisando...</h3><p>Aguarde enquanto buscamos no site</p></div>`;
+            showNoProducts() {
+                const container = document.getElementById('productsContainer');
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>📦 Nenhum produto no site</h3>
+                        <p>Nenhum produto foi encontrado no index.html</p>
+                        <a href="adicionar-produto.html" class="btn" style="margin-top: 1rem;">➕ Adicionar Primeiro Produto</a>
+                    </div>
+                `;
             }
 
             showError(message) {
-                const resultContainer = document.getElementById('searchResult');
-                resultContainer.innerHTML = `<div class="error-state"><h3>❌ Erro</h3><p>${message}</p></div>`;
+                alert(`❌ ${message}`);
             }
 
             showSuccess(message) {
-                alert(message);
+                alert(`✅ ${message}`);
             }
         }
 
@@ -895,7 +844,7 @@
             
             // Inicializa gerenciador
             productManager = new ProductManager();
-            console.log('✅ Sistema de pesquisa individual inicializado!');
+            console.log('✅ Sistema de gerenciamento inicializado!');
         });
 
         // 🔐 VERIFICAÇÃO DE SEGURANÇA
@@ -929,12 +878,6 @@
         }
 
         // 🌐 FUNÇÕES GLOBAIS
-        function searchProduct() {
-            if (productManager) {
-                productManager.searchProduct();
-            }
-        }
-
         function handleImageUpload(input) {
             if (productManager) {
                 productManager.handleImageUpload(input);
