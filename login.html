@@ -267,16 +267,10 @@
   </div>
 
   <script>
-  // 🔐 SISTEMA SEGURO PARA GITHUB PAGES - VERSÃO CORRIGIDA
-// ⚠️ CONFIGURAÇÃO - SUBSTITUA PELO SEU EMAIL!
+    // 🔐 SISTEMA SEGURO - VERSÃO SIMPLIFICADA E FUNCIONAL
 const ADMIN_CONFIG = {
-  // ⚠️ SUBSTITUA PELO SEU EMAIL REAL!
   allowedEmails: ['andre.matioli92@gmail.com'],
-  
-  // Chave de criptografia (pode ser qualquer string)
   encryptionKey: 'canecas_admin_2024_secure_system',
-  
-  // Tempo de expiração do token (2 horas)
   tokenExpiry: 2 * 60 * 60 * 1000
 };
 
@@ -284,124 +278,33 @@ let authSystem = null;
 
 function initializeAuthSystem() {
   authSystem = new SecureFrontendAuthSystem();
-  console.log('✅ Sistema de autenticação seguro carregado!');
+  console.log('✅ Sistema de autenticação carregado!');
 }
 
 class SecureFrontendAuthSystem {
   constructor() {
     this.tokenKey = 'admin_secure_token_v2';
     this.config = ADMIN_CONFIG;
+    this.isManualLogout = false; // 🔥 NOVA FLAG
+    
     this.setupAuthListener();
     this.checkAuth();
-    
-    // Protege a configuração contra alteração
-    this.protectConfig();
   }
 
-  // 🔒 PROTEÇÃO CONTRA ALTERAÇÃO NO CONSOLE
-  protectConfig() {
-    Object.defineProperty(window, 'ADMIN_CONFIG', {
-      value: Object.freeze({...this.config}),
-      writable: false,
-      configurable: false
-    });
-    
-    // Torna métodos privados
-    this.encryptData = this.encryptData.bind(this);
-    this.decryptData = this.decryptData.bind(this);
-  }
-
-  // 🔐 CRIPTOGRAFIA SIMPLES PARA DIFICULTAR BURLAS
-  encryptData(data) {
-    try {
-      const jsonString = JSON.stringify(data);
-      const encoded = btoa(unescape(encodeURIComponent(jsonString + this.config.encryptionKey)));
-      return btoa(encoded).split('').reverse().join('');
-    } catch (error) {
-      console.error('Erro na criptografia:', error);
-      return null;
-    }
-  }
-
-  decryptData(encryptedData) {
-    try {
-      const reversed = encryptedData.split('').reverse().join('');
-      const decoded = atob(reversed);
-      const jsonString = decodeURIComponent(escape(atob(decoded)));
-      return JSON.parse(jsonString.replace(this.config.encryptionKey, ''));
-    } catch (error) {
-      console.error('Erro na descriptografia:', error);
-      return null;
-    }
-  }
-
-  // ✅ VERIFICAÇÃO SEGURA DO USUÁRIO
-  async verifyUserAccess(user) {
-    try {
-      // 1️⃣ Verificação básica do email
-      if (!this.config.allowedEmails.includes(user.email)) {
-        return false;
-      }
-
-      // 2️⃣ Verificação do token JWT do Firebase
-      const idToken = await window.firebaseGetIdToken(user);
-      const tokenData = this.decodeJWT(idToken);
-      
-      if (!tokenData || !this.isValidJWT(tokenData)) {
-        return false;
-      }
-
-      // 3️⃣ Verificação de expiração
-      if (this.isJWTExpired(tokenData)) {
-        return false;
-      }
-
-      // 4️⃣ Verificação de domínio/assinatura
-      if (!this.isValidFirebaseToken(tokenData)) {
-        return false;
-      }
-
-      return true;
-
-    } catch (error) {
-      console.error('❌ Erro na verificação:', error);
-      return false;
-    }
-  }
-
-  // Decodifica JWT (apenas payload)
-  decodeJWT(token) {
-    try {
-      const payload = token.split('.')[1];
-      return JSON.parse(atob(payload));
-    } catch {
-      return null;
-    }
-  }
-
-  isValidJWT(tokenData) {
-    return tokenData && 
-           tokenData.iss && 
-           tokenData.email &&
-           tokenData.exp;
-  }
-
-  isJWTExpired(tokenData) {
-    return Date.now() >= tokenData.exp * 1000;
-  }
-
-  isValidFirebaseToken(tokenData) {
-    return tokenData.iss.includes('google.com') ||
-           tokenData.iss.includes('firebase');
-  }
-
-  // 🔥 CORREÇÃO: Auth listener com controle de logout
+  // 🔥 MÉTODO SIMPLIFICADO - Ignora auto-redirect se foi logout manual
   setupAuthListener() {
     window.firebaseOnAuthState(window.firebaseAuth, async (user) => {
-      // 🔥 NOVA VERIFICAÇÃO: Checa se veio de um logout
-      const isLogoutAction = sessionStorage.getItem('firebase_logout_action');
+      console.log('🔄 Estado auth:', user ? user.email : 'null');
+      console.log('🔧 Logout manual?', this.isManualLogout);
       
-      if (user && !isLogoutAction) {
+      // Se foi logout manual, IGNORA usuário logado
+      if (this.isManualLogout) {
+        console.log('🚫 Ignorando usuário logado (logout manual)');
+        this.isManualLogout = false; // Reseta para próxima vez
+        return;
+      }
+      
+      if (user) {
         console.log('🔐 Verificando acesso para:', user.email);
         
         const hasAccess = await this.verifyUserAccess(user);
@@ -411,21 +314,47 @@ class SecureFrontendAuthSystem {
         } else {
           this.handleUnauthorizedAccess(user);
         }
-        
       } else {
-        // Limpa o flag de logout para próximos logins
-        sessionStorage.removeItem('firebase_logout_action');
         this.handleUserLogout();
       }
     });
+  }
+
+  async verifyUserAccess(user) {
+    try {
+      if (!this.config.allowedEmails.includes(user.email)) {
+        return false;
+      }
+
+      const idToken = await window.firebaseGetIdToken(user);
+      const tokenData = this.decodeJWT(idToken);
+      
+      return tokenData && !this.isJWTExpired(tokenData);
+    } catch (error) {
+      console.error('❌ Erro na verificação:', error);
+      return false;
+    }
+  }
+
+  decodeJWT(token) {
+    try {
+      const payload = token.split('.')[1];
+      return JSON.parse(atob(payload));
+    } catch {
+      return null;
+    }
+  }
+
+  isJWTExpired(tokenData) {
+    return Date.now() >= tokenData.exp * 1000;
   }
 
   async loginWithGoogle() {
     try {
       showLoading('Conectando com Google...');
       
-      // 🔥 LIMPA FLAG DE LOGOUT ANTES DO LOGIN
-      sessionStorage.removeItem('firebase_logout_action');
+      // 🔥 RESETA FLAG ANTES DO LOGIN
+      this.isManualLogout = false;
       
       const provider = new window.firebaseGoogleAuth();
       const result = await window.firebaseSignIn(window.firebaseAuth, provider);
@@ -440,7 +369,6 @@ class SecureFrontendAuthSystem {
   async handleAdminLogin(user) {
     console.log('✅ ACESSO ADMIN CONCEDIDO:', user.email);
     
-    // Salva token criptografado
     this.saveSecureToken(user);
     
     // Atualiza UI
@@ -452,38 +380,19 @@ class SecureFrontendAuthSystem {
     hideLoading();
     showSuccess(`Bem-vindo, ${user.displayName || 'Administrador'}!`);
     
-    // Redireciona
-    setTimeout(() => {
-      if (window.location.pathname.includes('login.html')) {
+    // Redireciona APENAS se está na página de login
+    if (window.location.pathname.includes('login.html')) {
+      setTimeout(() => {
         window.location.href = 'dashboard.html';
-      }
-    }, 1500);
+      }, 1500);
+    }
   }
 
   handleUnauthorizedAccess(user) {
     console.log('🚫 ACESSO NEGADO:', user.email);
-    
-    // Log de segurança
-    this.logSecurityEvent('unauthorized_access', user.email);
-    
     this.logout();
     hideLoading();
     showError('Acesso administrativo negado. Email não autorizado.');
-    
-    setTimeout(() => {
-      alert(`🚫 ACESSO NEGADO\n\nEmail: ${user.email}\n\nEste email não tem permissão para acessar o painel administrativo.`);
-    }, 500);
-  }
-
-  logSecurityEvent(event, email) {
-    const eventData = {
-      event,
-      email,
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent
-    };
-    
-    console.warn('🛡️ Evento de segurança:', eventData);
   }
 
   saveSecureToken(user) {
@@ -502,23 +411,50 @@ class SecureFrontendAuthSystem {
     }
   }
 
-  // 🔥 CORREÇÃO: Logout com controle de sessão
+  encryptData(data) {
+    try {
+      const jsonString = JSON.stringify(data);
+      const encoded = btoa(unescape(encodeURIComponent(jsonString + this.config.encryptionKey)));
+      return btoa(encoded).split('').reverse().join('');
+    } catch (error) {
+      console.error('Erro na criptografia:', error);
+      return null;
+    }
+  }
+
+  // 🔥 MÉTODO DE LOGOT CORRIGIDO
   async logout() {
     try {
-      // 🔥 MARCA COMO LOGOUT ANTES DE DESLOGAR
-      sessionStorage.setItem('firebase_logout_action', 'true');
+      console.log('🚪 Iniciando logout...');
       
-      await window.firebaseSignOut(window.firebaseAuth);
+      // 🔥 MARCA COMO LOGOUT MANUAL
+      this.isManualLogout = true;
+      
+      // Limpa tokens primeiro
       localStorage.removeItem(this.tokenKey);
+      localStorage.removeItem('admin_token_canecas');
+      
+      // Faz logout do Firebase
+      await window.firebaseSignOut(window.firebaseAuth);
+      
+      // Reseta UI
       this.resetUI();
       
-      console.log('👋 Logout realizado com sucesso');
+      console.log('✅ Logout realizado com sucesso');
+      
+      // Se está na página de login, recarrega para limpar estado
+      if (window.location.pathname.includes('login.html')) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
       
     } catch (error) {
       console.error('Erro no logout:', error);
-      // Garante que limpa mesmo com erro
-      sessionStorage.setItem('firebase_logout_action', 'true');
+      // Garante limpeza mesmo com erro
+      this.isManualLogout = true;
       localStorage.removeItem(this.tokenKey);
+      localStorage.removeItem('admin_token_canecas');
       this.resetUI();
     }
   }
@@ -529,6 +465,7 @@ class SecureFrontendAuthSystem {
     document.getElementById('errorMsg').style.display = 'none';
     document.getElementById('successMsg').style.display = 'none';
     document.getElementById('googleLoginBtn').disabled = false;
+    document.getElementById('loadingSpinner').style.display = 'none';
   }
 
   handleUserLogout() {
@@ -536,34 +473,38 @@ class SecureFrontendAuthSystem {
     console.log('👋 Usuário deslogado');
   }
 
-  // ✅ VERIFICAÇÃO SEGURA PARA OUTRAS PÁGINAS
   isAuthenticated() {
     const encryptedToken = localStorage.getItem(this.tokenKey);
     if (!encryptedToken) return false;
 
     try {
       const tokenData = this.decryptData(encryptedToken);
-      if (!tokenData) return false;
-
-      const isValid = tokenData.isAdmin === true && 
-                     tokenData.verified === true && 
-                     Date.now() < tokenData.expires &&
-                     this.config.allowedEmails.includes(tokenData.email);
-
-      return isValid;
+      return tokenData && 
+             tokenData.isAdmin === true && 
+             tokenData.verified === true && 
+             Date.now() < tokenData.expires &&
+             this.config.allowedEmails.includes(tokenData.email);
     } catch {
       return false;
+    }
+  }
+
+  decryptData(encryptedData) {
+    try {
+      const reversed = encryptedData.split('').reverse().join('');
+      const decoded = atob(reversed);
+      const jsonString = decodeURIComponent(escape(atob(decoded)));
+      return JSON.parse(jsonString.replace(this.config.encryptionKey, ''));
+    } catch (error) {
+      console.error('Erro na descriptografia:', error);
+      return null;
     }
   }
 
   checkAuth() {
     const currentPage = window.location.pathname;
     
-    if (this.isAuthenticated() && currentPage.includes('login.html')) {
-      console.log('✅ Admin já autenticado - redirecionando...');
-      setTimeout(() => window.location.href = 'dashboard.html', 500);
-    }
-    
+    // 🔥 NÃO REDIRECIONA AUTOMATICAMENTE - deixa o auth listener lidar
     if (!this.isAuthenticated() && 
        (currentPage.includes('dashboard.html') || 
         currentPage.includes('adicionar-produto.html') ||
@@ -604,7 +545,6 @@ function showError(message) {
   const el = document.getElementById('errorMsg');
   el.textContent = message;
   el.style.display = 'block';
-  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function showSuccess(message) {
@@ -616,10 +556,6 @@ function showSuccess(message) {
 // Funções globais
 window.loginWithGoogle = () => authSystem?.loginWithGoogle();
 window.logout = () => authSystem?.logout();
-
-// Proteções adicionais
-Object.freeze(Object.prototype);
-console.log('🛡️ Sistema de segurança inicializado');
   </script>
 </body>
 </html>
