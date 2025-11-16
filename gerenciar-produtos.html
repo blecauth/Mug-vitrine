@@ -230,6 +230,36 @@
             font-weight: bold;
         }
 
+        .sync-section {
+            background: rgba(37, 211, 102, 0.1);
+            border: 1px solid #25D366;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .sync-btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+
+        .sync-btn:hover {
+            background: #1ebe5f;
+        }
+
+        .sync-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
@@ -256,7 +286,7 @@
 <body>
     <header class="header">
         <div class="header-content">
-            <h1>🛠️ Gerenciar Produtos</h1>
+            <h1>🛠️ Gerenciar Produtos do Site</h1>
             <div>
                 <a href="dashboard.html" class="btn btn-back">← Voltar</a>
                 <a href="adicionar-produto.html" class="btn">➕ Novo Produto</a>
@@ -265,12 +295,23 @@
     </header>
 
     <main class="container">
+        <div class="sync-section">
+            <h3 style="color: #25D366; margin-bottom: 0.5rem;">🌐 Produtos do Site Atual</h3>
+            <p style="color: #ccc; margin-bottom: 1rem;">Estes são os produtos que estão atualmente visíveis no site principal (index.html)</p>
+            <button class="sync-btn" onclick="productManager.syncFromSite()">
+                🔄 Sincronizar com Site
+            </button>
+        </div>
+
         <div class="stats-bar">
             <div class="stats-info">
-                Total de produtos: <span class="stats-highlight" id="totalProducts">0</span>
+                Produtos no site: <span class="stats-highlight" id="totalProducts">0</span>
             </div>
             <div class="stats-info">
                 Categorias: <span class="stats-highlight" id="totalCategories">0</span>
+            </div>
+            <div class="stats-info">
+                Última sincronização: <span class="stats-highlight" id="lastSync">-</span>
             </div>
         </div>
 
@@ -280,93 +321,194 @@
 
         <div id="productsContainer">
             <div class="loading-state">
-                <h3>⏳ Carregando produtos...</h3>
-                <p>Aguarde enquanto buscamos seus produtos</p>
+                <h3>⏳ Carregando produtos do site...</h3>
+                <p>Aguarde enquanto extraímos os produtos do index.html</p>
             </div>
         </div>
     </main>
 
     <script>
-        // 🔧 SISTEMA DE GERENCIAMENTO DE PRODUTOS - CORRIGIDO
+        // 🔧 SISTEMA DE GERENCIAMENTO DE PRODUTOS DO SITE REAL
         class ProductManager {
             constructor() {
-                this.productsKey = 'canecas_products';
+                this.productsKey = 'canecas_site_products';
                 this.products = [];
                 this.init();
             }
 
             init() {
-                this.loadProducts();
+                this.loadProductsFromSite();
                 this.setupSearch();
-                this.updateStats();
             }
 
-            // 📦 CARREGA PRODUTOS DO LOCALSTORAGE
-            loadProducts() {
+            // 🌐 EXTRAI PRODUTOS DIRETAMENTE DO INDEX.HTML
+            async loadProductsFromSite() {
                 try {
-                    const stored = localStorage.getItem(this.productsKey);
-                    this.products = stored ? JSON.parse(stored) : [];
+                    console.log('🌐 Carregando produtos do site...');
                     
-                    // Se não há produtos, carrega os padrões
-                    if (this.products.length === 0) {
-                        this.products = this.getDefaultProducts();
-                        this.saveProducts();
+                    // Tenta carregar do cache primeiro
+                    const cachedProducts = this.getCachedProducts();
+                    if (cachedProducts.length > 0) {
+                        this.products = cachedProducts;
+                        this.displayProducts(this.products);
+                        this.updateStats();
+                        console.log('📦 Produtos carregados do cache:', this.products.length);
                     }
+
+                    // Sempre tenta sincronizar com o site atual
+                    await this.syncFromSite();
                     
-                    this.displayProducts(this.products);
                 } catch (error) {
                     console.error('❌ Erro ao carregar produtos:', error);
-                    this.products = this.getDefaultProducts();
-                    this.displayProducts(this.products);
+                    this.showError('Erro ao carregar produtos do site');
                 }
             }
 
-            // 🎯 PRODUTOS PADRÃO DO SISTEMA
-            getDefaultProducts() {
-                return [
-                    {
-                        id: "0001",
-                        nome: "Caneca Teste Floral",
-                        categoria: "floral",
-                        preco: 32.00,
-                        descricao: "Caneca de teste com design floral",
-                        imageUrl: "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg",
-                        dataCriacao: new Date().toISOString(),
-                        origem: "site"
-                    },
-                    {
-                        id: "CN0001",
-                        nome: "Caneca Orgulho Negro",
-                        categoria: "personalizada", 
-                        preco: 30.00,
-                        descricao: "Caneca de cerâmica com estampa exclusiva",
-                        imageUrl: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg",
-                        dataCriacao: new Date().toISOString(),
-                        origem: "site"
-                    },
-                    {
-                        id: "CN0002",
-                        nome: "Caneca Personalizada Azul",
-                        categoria: "colorida",
-                        preco: 28.00,
-                        descricao: "Caneca azul com design moderno",
-                        imageUrl: "https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem+Azul",
-                        dataCriacao: new Date().toISOString(),
-                        origem: "dashboard"
-                    }
-                ];
-            }
-
-            // 💾 SALVA PRODUTOS NO LOCALSTORAGE
-            saveProducts() {
+            // 🔄 SINCRONIZA COM O SITE ATUAL
+            async syncFromSite() {
                 try {
-                    localStorage.setItem(this.productsKey, JSON.stringify(this.products));
-                    this.updateStats();
-                    console.log('💾 Produtos salvos:', this.products.length);
+                    console.log('🔄 Sincronizando com site...');
+                    this.showLoading('Sincronizando com site...');
+                    
+                    // Busca o index.html
+                    const response = await fetch('index.html');
+                    const html = await response.text();
+                    
+                    // Extrai os produtos do HTML
+                    const extractedProducts = this.extractProductsFromHTML(html);
+                    
+                    if (extractedProducts.length > 0) {
+                        this.products = extractedProducts;
+                        this.saveToCache();
+                        this.displayProducts(this.products);
+                        this.updateStats();
+                        console.log('✅ Sincronização concluída:', this.products.length, 'produtos');
+                        this.showSuccess(`Sincronizado! ${this.products.length} produtos encontrados no site.`);
+                    } else {
+                        console.warn('⚠️ Nenhum produto encontrado no site');
+                        this.showError('Nenhum produto encontrado no site. Verifique o index.html');
+                    }
+                    
                 } catch (error) {
-                    console.error('❌ Erro ao salvar produtos:', error);
-                    alert('Erro ao salvar produtos. Verifique o console.');
+                    console.error('❌ Erro na sincronização:', error);
+                    this.showError('Erro ao sincronizar com o site. Verifique a conexão.');
+                } finally {
+                    this.hideLoading();
                 }
+            }
+
+            // 🎯 EXTRAI PRODUTOS DO HTML DO SITE
+            extractProductsFromHTML(html) {
+                const products = [];
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Encontra todos os elementos de produto
+                const productElements = doc.querySelectorAll('.item');
+                
+                console.log('🔍 Encontrados elementos .item:', productElements.length);
+                
+                productElements.forEach((element, index) => {
+                    try {
+                        const product = this.parseProductElement(element);
+                        if (product) {
+                            products.push(product);
+                        }
+                    } catch (error) {
+                        console.error(`❌ Erro ao parsear produto ${index}:`, error);
+                    }
+                });
+                
+                return products;
+            }
+
+            // 📝 PARSEIA UM ELEMENTO DE PRODUTO
+            parseProductElement(element) {
+                // Extrai informações básicas
+                const image = element.querySelector('img');
+                const info = element.querySelector('.info');
+                const button = element.querySelector('.open-modal-btn');
+                
+                if (!info || !button) {
+                    console.warn('⚠️ Elemento de produto inválido:', element);
+                    return null;
+                }
+
+                const title = info.querySelector('h2');
+                const paragraphs = info.querySelectorAll('p');
+                
+                // Extrai dados do botão modal
+                const name = button.getAttribute('data-name');
+                const id = button.getAttribute('data-id');
+                const imageUrl = button.getAttribute('data-image');
+                const specs = button.getAttribute('data-specs');
+                const optionsJson = button.getAttribute('data-options');
+                
+                // Parse das opções para obter preço
+                let preco = 0;
+                try {
+                    const options = JSON.parse(optionsJson);
+                    if (options && options.length > 0) {
+                        preco = parseFloat(options[0].price) || 0;
+                    }
+                } catch (e) {
+                    console.warn('❌ Erro ao parsear opções:', e);
+                }
+
+                // Tenta obter categoria do data attribute ou classe
+                const categoria = element.getAttribute('data-categoria') || 'personalizada';
+
+                const product = {
+                    id: id || `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    nome: name || (title ? title.textContent : 'Produto sem nome'),
+                    categoria: categoria,
+                    preco: preco,
+                    descricao: specs || 'Sem descrição',
+                    imageUrl: imageUrl || (image ? image.src : ''),
+                    dataCriacao: new Date().toISOString(),
+                    origem: 'site',
+                    elementoOriginal: this.cleanElementInfo(element)
+                };
+
+                console.log('📦 Produto extraído:', product);
+                return product;
+            }
+
+            // 🧹 LIMPA INFORMAÇÕES DO ELEMENTO PARA LOG
+            cleanElementInfo(element) {
+                return {
+                    tagName: element.tagName,
+                    className: element.className,
+                    innerHTML: element.innerHTML.substring(0, 100) + '...'
+                };
+            }
+
+            // 💾 CACHE DE PRODUTOS
+            saveToCache() {
+                try {
+                    const cacheData = {
+                        products: this.products,
+                        lastSync: new Date().toISOString()
+                    };
+                    localStorage.setItem(this.productsKey, JSON.stringify(cacheData));
+                } catch (error) {
+                    console.error('❌ Erro ao salvar cache:', error);
+                }
+            }
+
+            getCachedProducts() {
+                try {
+                    const cached = localStorage.getItem(this.productsKey);
+                    if (cached) {
+                        const data = JSON.parse(cached);
+                        document.getElementById('lastSync').textContent = 
+                            new Date(data.lastSync).toLocaleString('pt-BR');
+                        return data.products || [];
+                    }
+                } catch (error) {
+                    console.error('❌ Erro ao carregar cache:', error);
+                }
+                return [];
             }
 
             // 🎴 EXIBE PRODUTOS NA TELA
@@ -376,9 +518,11 @@
                 if (productsToShow.length === 0) {
                     container.innerHTML = `
                         <div class="empty-state">
-                            <h3>📦 Nenhum produto encontrado</h3>
-                            <p>Nenhum produto corresponde à sua busca</p>
-                            <a href="adicionar-produto.html" class="btn" style="margin-top: 1rem;">➕ Adicionar Primeiro Produto</a>
+                            <h3>📦 Nenhum produto no site</h3>
+                            <p>Nenhum produto foi encontrado no index.html</p>
+                            <button class="sync-btn" onclick="productManager.syncFromSite()" style="margin-top: 1rem;">
+                                🔄 Tentar Novamente
+                            </button>
                         </div>
                     `;
                     return;
@@ -404,18 +548,18 @@
                             <div class="product-tags">
                                 <span class="product-tag">ID: ${product.id}</span>
                                 <span class="product-tag product-category">${product.categoria}</span>
-                                <span class="product-tag" style="background: ${product.origem === 'site' ? '#007bff' : '#25D366'} !important;">
-                                    ${product.origem === 'site' ? '🌐 Site' : '💾 Local'}
+                                <span class="product-tag" style="background: #007bff !important;">
+                                    🌐 Site
                                 </span>
                             </div>
                             <div class="product-price">R$ ${typeof product.preco === 'number' ? product.preco.toFixed(2) : parseFloat(product.preco).toFixed(2)}</div>
                             <p class="product-description">${product.descricao || 'Sem descrição'}</p>
                             <div class="product-actions">
                                 <button class="action-btn action-edit" onclick="productManager.editProduct('${product.id}')">
-                                    ✏️ Editar
+                                    ✏️ Editar no GitHub
                                 </button>
-                                <button class="action-btn action-delete" onclick="productManager.deleteProduct('${product.id}')">
-                                    🗑️ Excluir
+                                <button class="action-btn action-delete" onclick="productManager.showDeleteInfo('${product.id}')">
+                                    🗑️ Informações
                                 </button>
                             </div>
                         </div>
@@ -445,40 +589,19 @@
                 });
             }
 
-            // ✏️ EDITAR PRODUTO
+            // ✏️ EDITAR PRODUTO (REDIRECIONA PARA GITHUB)
             editProduct(productId) {
                 const product = this.products.find(p => p.id === productId);
                 if (product) {
-                    alert(`✏️ Editando produto: ${product.nome} (ID: ${product.id})\n\nEm breve: Editor completo integrado com GitHub`);
-                    // Futuramente: redirecionar para página de edição
-                } else {
-                    alert('❌ Produto não encontrado!');
+                    alert(`✏️ Editando: ${product.nome}\n\nPara editar este produto, você precisa:\n\n1. Acessar o repositório GitHub\n2. Editar o arquivo index.html\n3. Fazer commit das alterações\n\nApós isso, clique em "Sincronizar com Site" para ver as mudanças.`);
                 }
             }
 
-            // 🗑️ EXCLUIR PRODUTO - CORRIGIDO
-            deleteProduct(productId) {
+            // 🗑️ INFORMAÇÕES SOBRE EXCLUSÃO
+            showDeleteInfo(productId) {
                 const product = this.products.find(p => p.id === productId);
-                
-                if (!product) {
-                    alert('❌ Produto não encontrado!');
-                    return;
-                }
-
-                if (confirm(`🗑️ TEM CERTEZA que deseja excluir o produto?\n\n"${product.nome}" (ID: ${product.id})\n\n⚠️ Esta ação não pode ser desfeita!`)) {
-                    // Remove o produto do array
-                    this.products = this.products.filter(p => p.id !== productId);
-                    
-                    // Salva no localStorage
-                    this.saveProducts();
-                    
-                    // Recarrega a exibição
-                    this.displayProducts(this.products);
-                    
-                    // Mensagem de sucesso
-                    alert(`✅ Produto "${product.nome}" excluído com sucesso!`);
-                    
-                    console.log('🗑️ Produto excluído:', productId);
+                if (product) {
+                    alert(`🗑️ Para excluir "${product.nome}":\n\n1. Acesse o arquivo index.html no GitHub\n2. Remova o bloco HTML deste produto\n3. Faça commit das alterações\n4. Volte aqui e clique em "Sincronizar com Site"\n\n⚠️ A exclusão é feita diretamente no código do site!`);
                 }
             }
 
@@ -490,23 +613,27 @@
                 document.getElementById('totalCategories').textContent = categories.length;
             }
 
-            // 🔄 ADICIONAR PRODUTO (para uso externo)
-            addProduct(productData) {
-                // Verifica se ID já existe
-                if (this.products.find(p => p.id === productData.id)) {
-                    alert('❌ Já existe um produto com este ID!');
-                    return false;
-                }
+            // 🎯 FUNÇÕES DE UI
+            showLoading(message) {
+                const container = document.getElementById('productsContainer');
+                container.innerHTML = `
+                    <div class="loading-state">
+                        <h3>⏳ ${message}</h3>
+                        <p>Aguarde enquanto processamos...</p>
+                    </div>
+                `;
+            }
 
-                this.products.push({
-                    ...productData,
-                    dataCriacao: new Date().toISOString(),
-                    origem: 'dashboard'
-                });
+            hideLoading() {
+                // O displayProducts já cuida disso
+            }
 
-                this.saveProducts();
-                this.displayProducts(this.products);
-                return true;
+            showSuccess(message) {
+                alert(`✅ ${message}`);
+            }
+
+            showError(message) {
+                alert(`❌ ${message}`);
             }
         }
 
@@ -519,7 +646,7 @@
             
             // Inicializa gerenciador de produtos
             productManager = new ProductManager();
-            console.log('✅ Gerenciador de produtos inicializado!');
+            console.log('✅ Gerenciador de produtos do site inicializado!');
         });
 
         // 🔐 SISTEMA DE VERIFICAÇÃO DE SEGURANÇA
