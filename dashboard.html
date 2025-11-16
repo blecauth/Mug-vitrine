@@ -362,17 +362,17 @@
         }
 
         function logout() {
-            if (confirm('Tem certeza que deseja sair do sistema?')) {
-                console.log('👋 Logout solicitado pelo usuário');
-                
-                // Limpa todos os tokens
-                localStorage.removeItem('admin_secure_token_v2');
-                localStorage.removeItem('admin_token_canecas');
-                
-                // Redireciona para login
-                window.location.href = 'login.html';
-            }
-        }
+    if (confirm('Tem certeza que deseja sair do sistema?')) {
+        console.log('👋 Logout solicitado pelo usuário');
+        
+        // Limpa todos os tokens
+        localStorage.removeItem('admin_secure_token_v2');
+        localStorage.removeItem('admin_token_canecas');
+        
+        // Força redirecionamento imediato
+        window.location.href = 'login.html';
+    }
+}
 
         // Funções do dashboard
         function showStats() {
