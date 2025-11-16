@@ -361,7 +361,7 @@
             window.location.href = 'login.html';
         }
 
-        function logout() {
+ function logout() {
     if (confirm('Tem certeza que deseja sair do sistema?')) {
         console.log('👋 Logout solicitado pelo usuário');
         
@@ -369,7 +369,7 @@
         localStorage.removeItem('admin_secure_token_v2');
         localStorage.removeItem('admin_token_canecas');
         
-        // Força redirecionamento imediato
+        // Força redirecionamento imediato SEM esperar Firebase
         window.location.href = 'login.html';
     }
 }
