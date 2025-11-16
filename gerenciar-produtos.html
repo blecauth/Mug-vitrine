@@ -221,11 +221,15 @@
             color: #25D366;
         }
         
-        .loading-state {
+        .initial-state {
             text-align: center;
             padding: 3rem;
+            color: #888;
+        }
+        
+        .initial-state h3 {
+            margin-bottom: 1rem;
             color: #25D366;
-            grid-column: 1 / -1;
         }
 
         /* MODAL DE EDIÇÃO */
@@ -318,15 +322,6 @@
             margin-bottom: 1rem;
         }
 
-        .upload-btn {
-            background: #25D366;
-            color: white;
-            border: none;
-            padding: 0.6rem 1.2rem;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
         .model-options {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -349,11 +344,20 @@
             background: rgba(37, 211, 102, 0.1);
         }
 
-        .model-price {
-            display: block;
-            color: #25D366;
-            font-weight: bold;
+        .model-price-input {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 5px;
+            border: 1px solid #333;
+            background: #1a1a1a;
+            color: white;
+            text-align: center;
             margin-top: 0.5rem;
+        }
+
+        .model-price-input:focus {
+            border-color: #25D366;
+            outline: none;
         }
 
         .form-buttons {
@@ -436,9 +440,9 @@
         </section>
 
         <div id="productsContainer">
-            <div class="loading-state">
-                <h3>⏳ Carregando produtos do site...</h3>
-                <p>Aguarde enquanto buscamos os produtos</p>
+            <div class="initial-state">
+                <h3>🔍 Pesquise um produto</h3>
+                <p>Digite no campo acima para buscar produtos do site</p>
             </div>
         </div>
     </main>
@@ -501,6 +505,7 @@
             async init() {
                 await this.loadProductsFromSite();
                 this.setupSearch();
+                this.showInitialState();
             }
 
             // 🌐 CARREGA PRODUTOS DO SITE
@@ -512,13 +517,7 @@
                     const html = await response.text();
                     
                     this.allProducts = this.extractProductsFromHTML(html);
-                    
-                    if (this.allProducts.length > 0) {
-                        this.displayProducts(this.allProducts);
-                        console.log('✅ Produtos carregados:', this.allProducts.length);
-                    } else {
-                        this.showNoProducts();
-                    }
+                    console.log('✅ Produtos carregados:', this.allProducts.length);
                     
                 } catch (error) {
                     console.error('❌ Erro ao carregar produtos:', error);
@@ -593,7 +592,7 @@
                     const searchTerm = e.target.value.toLowerCase().trim();
                     
                     if (searchTerm === '') {
-                        this.displayProducts(this.allProducts);
+                        this.showInitialState();
                         return;
                     }
 
@@ -661,6 +660,17 @@
                 `;
             }
 
+            // 🏠 MOSTRA ESTADO INICIAL
+            showInitialState() {
+                const container = document.getElementById('productsContainer');
+                container.innerHTML = `
+                    <div class="initial-state">
+                        <h3>🔍 Pesquise um produto</h3>
+                        <p>Digite no campo acima para buscar produtos do site</p>
+                    </div>
+                `;
+            }
+
             // ✏️ ABRE MODAL DE EDIÇÃO
             openEditModal(productId) {
                 this.currentProduct = this.allProducts.find(p => p.id === productId);
@@ -687,7 +697,7 @@
                 document.getElementById('editModal').style.display = 'flex';
             }
 
-            // 🎨 PREENCHE OPÇÕES DE MODELOS
+            // 🎨 PREENCHE OPÇÕES DE MODELOS COM INPUTS DE PREÇO
             populateModelOptions() {
                 const container = document.getElementById('modelOptions');
                 
@@ -697,11 +707,24 @@
                 }
 
                 container.innerHTML = this.currentProduct.modelos.map((modelo, index) => `
-                    <div class="model-option ${index === 0 ? 'selected' : ''}" onclick="productManager.selectModel(${index})">
+                    <div class="model-option">
                         <strong>${modelo.model}</strong>
-                        <span class="model-price">R$ ${parseFloat(modelo.price).toFixed(2)}</span>
+                        <input type="number" 
+                               class="model-price-input" 
+                               value="${parseFloat(modelo.price).toFixed(2)}" 
+                               step="0.01"
+                               min="0"
+                               onchange="productManager.updateModelPrice(${index}, this.value)">
                     </div>
                 `).join('');
+            }
+
+            // 💰 ATUALIZA PREÇO DO MODELO
+            updateModelPrice(index, newPrice) {
+                if (this.currentProduct && this.currentProduct.modelos) {
+                    this.currentProduct.modelos[index].price = parseFloat(newPrice);
+                    console.log(`💰 Preço atualizado: ${this.currentProduct.modelos[index].model} - R$ ${newPrice}`);
+                }
             }
 
             // 🖼️ MANIPULA UPLOAD DE IMAGEM
@@ -757,12 +780,6 @@
                 }
             }
 
-            // 🎯 SELECIONA MODELO
-            selectModel(index) {
-                document.querySelectorAll('.model-option').forEach(opt => opt.classList.remove('selected'));
-                document.querySelectorAll('.model-option')[index].classList.add('selected');
-            }
-
             // 💾 APLICA ALTERAÇÕES
             async applyChanges() {
                 const applyBtn = document.getElementById('applyBtn');
@@ -777,7 +794,8 @@
                     this.currentProduct.id = document.getElementById('editId').value;
                     this.currentProduct.descricao = document.getElementById('editDescription').value;
 
-                    // TODO: Implementar atualização no GitHub
+                    // 🔥 AGORA AS ALTERAÇÕES SÃO SALVAS
+                    await this.saveChangesToGitHub();
                     
                     this.showSuccess('✅ Alterações aplicadas com sucesso!');
                     this.closeEditModal();
@@ -787,11 +805,68 @@
 
                 } catch (error) {
                     console.error('❌ Erro ao aplicar alterações:', error);
-                    this.showError('❌ Erro ao aplicar alterações');
+                    this.showError('❌ Erro ao aplicar alterações: ' + error.message);
                 } finally {
                     applyBtn.disabled = false;
                     applyBtn.textContent = originalText;
                 }
+            }
+
+            // 🔥 SALVA ALTERAÇÕES NO GITHUB
+            async saveChangesToGitHub() {
+                try {
+                    console.log('🚀 Salvando alterações no GitHub...');
+                    
+                    // Gera o novo HTML do produto
+                    const novoHTML = this.generateUpdatedHTML();
+                    
+                    const response = await fetch('/api/github-update', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            htmlCode: novoHTML,
+                            commitMessage: `✏️ Atualizar produto: ${this.currentProduct.nome} (ID: ${this.currentProduct.id})`
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        console.log('✅ Alterações salvas no GitHub');
+                        return true;
+                    } else {
+                        throw new Error(data.error || 'Erro do GitHub');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Erro ao salvar no GitHub:', error);
+                    throw error;
+                }
+            }
+
+            // 🎯 GERA HTML ATUALIZADO
+            generateUpdatedHTML() {
+                const opcoesJSON = JSON.stringify(this.currentProduct.modelos).replace(/'/g, "&#39;");
+                
+                return `
+        <div class="item" data-categoria="${this.currentProduct.categoria}">
+            <img src="${this.currentProduct.imageUrl}" alt="${this.currentProduct.nome}" loading="lazy">
+            <div class="info">
+                <h2>${this.currentProduct.nome}</h2>
+                <p>ID: ${this.currentProduct.id}</p>
+                <p>R$ ${this.currentProduct.modelos[0].price.toFixed(2)}</p>
+                <button class="open-modal-btn"
+                    data-name="${this.currentProduct.nome}"
+                    data-id="${this.currentProduct.id}"
+                    data-image="${this.currentProduct.imageUrl}"
+                    data-specs="${this.currentProduct.descricao}"
+                    data-options='${opcoesJSON}'>
+                    Ver Detalhes
+                </button>
+            </div>
+        </div>`.trim();
             }
 
             // 🗑️ EXCLUIR PRODUTO
@@ -815,17 +890,6 @@
             }
 
             // 🎯 FUNÇÕES DE UI
-            showNoProducts() {
-                const container = document.getElementById('productsContainer');
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <h3>📦 Nenhum produto no site</h3>
-                        <p>Nenhum produto foi encontrado no index.html</p>
-                        <a href="adicionar-produto.html" class="btn" style="margin-top: 1rem;">➕ Adicionar Primeiro Produto</a>
-                    </div>
-                `;
-            }
-
             showError(message) {
                 alert(`❌ ${message}`);
             }
