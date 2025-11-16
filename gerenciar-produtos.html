@@ -331,6 +331,37 @@
             loadProducts();
             console.log('✅ Página de gerenciamento carregada!');
         });
+
+// Sistema de verificação para gerenciar-produtos.html
+function checkAdminAuth() {
+    const tokenKey = 'admin_secure_token_v2';
+    const encryptedToken = localStorage.getItem(tokenKey);
+    
+    if (!encryptedToken) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    try {
+        const reversed = encryptedToken.split('').reverse().join('');
+        const decoded = atob(reversed);
+        const jsonString = decodeURIComponent(escape(atob(decoded)));
+        const tokenData = JSON.parse(jsonString.replace('canecas_admin_2024_secure_system', ''));
+        
+        const isValid = tokenData && 
+                       tokenData.isAdmin === true && 
+                       tokenData.verified === true &&
+                       Date.now() < tokenData.expires;
+
+        if (!isValid) {
+            window.location.href = 'login.html';
+        }
+    } catch (error) {
+        window.location.href = 'login.html';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', checkAdminAuth);
     </script>
 </body>
 </html>
