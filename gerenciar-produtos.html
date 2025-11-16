@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciar Produtos - Admin</title>
+    <title>Gerenciar Produtos - Admin Canecas</title>
     <style>
         * {
             margin: 0;
@@ -47,6 +47,7 @@
             text-decoration: none;
             display: inline-block;
             margin-left: 0.5rem;
+            transition: background 0.3s;
         }
         
         .btn-back {
@@ -81,6 +82,11 @@
             font-size: 1rem;
         }
         
+        .search-box input:focus {
+            border-color: #25D366;
+            outline: none;
+        }
+        
         .products-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -92,7 +98,7 @@
             border: 1px solid #333;
             border-radius: 10px;
             overflow: hidden;
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, border-color 0.3s ease;
         }
         
         .product-card:hover {
@@ -152,6 +158,7 @@
             color: #ccc;
             margin-bottom: 1rem;
             font-size: 0.9rem;
+            line-height: 1.4;
         }
         
         .product-actions {
@@ -168,6 +175,7 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 0.8rem;
+            transition: background 0.3s;
         }
         
         .action-edit {
@@ -176,6 +184,10 @@
         
         .action-delete {
             background: #ff4444;
+        }
+        
+        .action-btn:hover {
+            opacity: 0.9;
         }
         
         .empty-state {
@@ -190,6 +202,34 @@
             color: #25D366;
         }
         
+        .loading-state {
+            text-align: center;
+            padding: 3rem;
+            color: #25D366;
+            grid-column: 1 / -1;
+        }
+        
+        .stats-bar {
+            background: #181818;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #333;
+        }
+        
+        .stats-info {
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+        
+        .stats-highlight {
+            color: #25D366;
+            font-weight: bold;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
@@ -202,6 +242,12 @@
             .header-content {
                 flex-direction: column;
                 gap: 1rem;
+                text-align: center;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 0.5rem;
                 text-align: center;
             }
         }
@@ -219,12 +265,21 @@
     </header>
 
     <main class="container">
+        <div class="stats-bar">
+            <div class="stats-info">
+                Total de produtos: <span class="stats-highlight" id="totalProducts">0</span>
+            </div>
+            <div class="stats-info">
+                Categorias: <span class="stats-highlight" id="totalCategories">0</span>
+            </div>
+        </div>
+
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="🔍 Buscar produtos por nome, ID ou categoria...">
+            <input type="text" id="searchInput" placeholder="🔍 Buscar produtos por nome, ID, categoria ou descrição...">
         </div>
 
         <div id="productsContainer">
-            <div class="empty-state">
+            <div class="loading-state">
                 <h3>⏳ Carregando produtos...</h3>
                 <p>Aguarde enquanto buscamos seus produtos</p>
             </div>
@@ -232,136 +287,273 @@
     </main>
 
     <script>
-        // Produtos de exemplo - Em produção viria do GitHub
-        const sampleProducts = [
-            {
-                id: "CN0001",
-                nome: "Caneca Orgulho Negro",
-                categoria: "personalizada",
-                preco: 30.00,
-                descricao: "Caneca de cerâmica com estampa exclusiva",
-                imageUrl: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"
-            },
-            {
-                id: "0001",
-                nome: "Caneca Teste Floral",
-                categoria: "floral",
-                preco: 32.00,
-                descricao: "Caneca de teste com design floral",
-                imageUrl: "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg"
-            },
-            {
-                id: "CN0002",
-                nome: "Caneca Personalizada Azul",
-                categoria: "colorida",
-                preco: 28.00,
-                descricao: "Caneca azul com design moderno",
-                imageUrl: "https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem+Azul"
+        // 🔧 SISTEMA DE GERENCIAMENTO DE PRODUTOS - CORRIGIDO
+        class ProductManager {
+            constructor() {
+                this.productsKey = 'canecas_products';
+                this.products = [];
+                this.init();
             }
-        ];
 
-        function loadProducts(products = sampleProducts) {
-            const container = document.getElementById('productsContainer');
-            
-            if (products.length === 0) {
+            init() {
+                this.loadProducts();
+                this.setupSearch();
+                this.updateStats();
+            }
+
+            // 📦 CARREGA PRODUTOS DO LOCALSTORAGE
+            loadProducts() {
+                try {
+                    const stored = localStorage.getItem(this.productsKey);
+                    this.products = stored ? JSON.parse(stored) : [];
+                    
+                    // Se não há produtos, carrega os padrões
+                    if (this.products.length === 0) {
+                        this.products = this.getDefaultProducts();
+                        this.saveProducts();
+                    }
+                    
+                    this.displayProducts(this.products);
+                } catch (error) {
+                    console.error('❌ Erro ao carregar produtos:', error);
+                    this.products = this.getDefaultProducts();
+                    this.displayProducts(this.products);
+                }
+            }
+
+            // 🎯 PRODUTOS PADRÃO DO SISTEMA
+            getDefaultProducts() {
+                return [
+                    {
+                        id: "0001",
+                        nome: "Caneca Teste Floral",
+                        categoria: "floral",
+                        preco: 32.00,
+                        descricao: "Caneca de teste com design floral",
+                        imageUrl: "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg",
+                        dataCriacao: new Date().toISOString(),
+                        origem: "site"
+                    },
+                    {
+                        id: "CN0001",
+                        nome: "Caneca Orgulho Negro",
+                        categoria: "personalizada", 
+                        preco: 30.00,
+                        descricao: "Caneca de cerâmica com estampa exclusiva",
+                        imageUrl: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg",
+                        dataCriacao: new Date().toISOString(),
+                        origem: "site"
+                    },
+                    {
+                        id: "CN0002",
+                        nome: "Caneca Personalizada Azul",
+                        categoria: "colorida",
+                        preco: 28.00,
+                        descricao: "Caneca azul com design moderno",
+                        imageUrl: "https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem+Azul",
+                        dataCriacao: new Date().toISOString(),
+                        origem: "dashboard"
+                    }
+                ];
+            }
+
+            // 💾 SALVA PRODUTOS NO LOCALSTORAGE
+            saveProducts() {
+                try {
+                    localStorage.setItem(this.productsKey, JSON.stringify(this.products));
+                    this.updateStats();
+                    console.log('💾 Produtos salvos:', this.products.length);
+                } catch (error) {
+                    console.error('❌ Erro ao salvar produtos:', error);
+                    alert('Erro ao salvar produtos. Verifique o console.');
+                }
+            }
+
+            // 🎴 EXIBE PRODUTOS NA TELA
+            displayProducts(productsToShow) {
+                const container = document.getElementById('productsContainer');
+                
+                if (productsToShow.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h3>📦 Nenhum produto encontrado</h3>
+                            <p>Nenhum produto corresponde à sua busca</p>
+                            <a href="adicionar-produto.html" class="btn" style="margin-top: 1rem;">➕ Adicionar Primeiro Produto</a>
+                        </div>
+                    `;
+                    return;
+                }
+
                 container.innerHTML = `
-                    <div class="empty-state">
-                        <h3>📦 Nenhum produto encontrado</h3>
-                        <p>Nenhum produto corresponde à sua busca</p>
-                        <a href="adicionar-produto.html" class="btn" style="margin-top: 1rem;">➕ Adicionar Primeiro Produto</a>
+                    <div class="products-grid">
+                        ${productsToShow.map(product => this.createProductCard(product)).join('')}
                     </div>
                 `;
+            }
+
+            // 🎴 CRIA CARD DO PRODUTO
+            createProductCard(product) {
+                return `
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="${product.imageUrl}" alt="${product.nome}" 
+                                 onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem+Não+Encontrada'">
+                        </div>
+                        <div class="product-content">
+                            <h3 class="product-title">${product.nome}</h3>
+                            <div class="product-tags">
+                                <span class="product-tag">ID: ${product.id}</span>
+                                <span class="product-tag product-category">${product.categoria}</span>
+                                <span class="product-tag" style="background: ${product.origem === 'site' ? '#007bff' : '#25D366'} !important;">
+                                    ${product.origem === 'site' ? '🌐 Site' : '💾 Local'}
+                                </span>
+                            </div>
+                            <div class="product-price">R$ ${typeof product.preco === 'number' ? product.preco.toFixed(2) : parseFloat(product.preco).toFixed(2)}</div>
+                            <p class="product-description">${product.descricao || 'Sem descrição'}</p>
+                            <div class="product-actions">
+                                <button class="action-btn action-edit" onclick="productManager.editProduct('${product.id}')">
+                                    ✏️ Editar
+                                </button>
+                                <button class="action-btn action-delete" onclick="productManager.deleteProduct('${product.id}')">
+                                    🗑️ Excluir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 🔍 CONFIGURA BUSCA EM TEMPO REAL
+            setupSearch() {
+                const searchInput = document.getElementById('searchInput');
+                searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase().trim();
+                    
+                    if (searchTerm === '') {
+                        this.displayProducts(this.products);
+                        return;
+                    }
+
+                    const filteredProducts = this.products.filter(product => 
+                        product.nome.toLowerCase().includes(searchTerm) ||
+                        product.id.toLowerCase().includes(searchTerm) ||
+                        product.categoria.toLowerCase().includes(searchTerm) ||
+                        (product.descricao && product.descricao.toLowerCase().includes(searchTerm))
+                    );
+                    
+                    this.displayProducts(filteredProducts);
+                });
+            }
+
+            // ✏️ EDITAR PRODUTO
+            editProduct(productId) {
+                const product = this.products.find(p => p.id === productId);
+                if (product) {
+                    alert(`✏️ Editando produto: ${product.nome} (ID: ${product.id})\n\nEm breve: Editor completo integrado com GitHub`);
+                    // Futuramente: redirecionar para página de edição
+                } else {
+                    alert('❌ Produto não encontrado!');
+                }
+            }
+
+            // 🗑️ EXCLUIR PRODUTO - CORRIGIDO
+            deleteProduct(productId) {
+                const product = this.products.find(p => p.id === productId);
+                
+                if (!product) {
+                    alert('❌ Produto não encontrado!');
+                    return;
+                }
+
+                if (confirm(`🗑️ TEM CERTEZA que deseja excluir o produto?\n\n"${product.nome}" (ID: ${product.id})\n\n⚠️ Esta ação não pode ser desfeita!`)) {
+                    // Remove o produto do array
+                    this.products = this.products.filter(p => p.id !== productId);
+                    
+                    // Salva no localStorage
+                    this.saveProducts();
+                    
+                    // Recarrega a exibição
+                    this.displayProducts(this.products);
+                    
+                    // Mensagem de sucesso
+                    alert(`✅ Produto "${product.nome}" excluído com sucesso!`);
+                    
+                    console.log('🗑️ Produto excluído:', productId);
+                }
+            }
+
+            // 📊 ATUALIZA ESTATÍSTICAS
+            updateStats() {
+                const categories = [...new Set(this.products.map(p => p.categoria))];
+                
+                document.getElementById('totalProducts').textContent = this.products.length;
+                document.getElementById('totalCategories').textContent = categories.length;
+            }
+
+            // 🔄 ADICIONAR PRODUTO (para uso externo)
+            addProduct(productData) {
+                // Verifica se ID já existe
+                if (this.products.find(p => p.id === productData.id)) {
+                    alert('❌ Já existe um produto com este ID!');
+                    return false;
+                }
+
+                this.products.push({
+                    ...productData,
+                    dataCriacao: new Date().toISOString(),
+                    origem: 'dashboard'
+                });
+
+                this.saveProducts();
+                this.displayProducts(this.products);
+                return true;
+            }
+        }
+
+        // 🚀 INICIALIZAÇÃO
+        let productManager;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificação de segurança
+            checkAdminAuth();
+            
+            // Inicializa gerenciador de produtos
+            productManager = new ProductManager();
+            console.log('✅ Gerenciador de produtos inicializado!');
+        });
+
+        // 🔐 SISTEMA DE VERIFICAÇÃO DE SEGURANÇA
+        function checkAdminAuth() {
+            const tokenKey = 'admin_secure_token_v2';
+            const encryptedToken = localStorage.getItem(tokenKey);
+            
+            if (!encryptedToken) {
+                window.location.href = 'login.html';
                 return;
             }
 
-            container.innerHTML = `
-                <div class="products-grid">
-                    ${products.map(product => `
-                        <div class="product-card">
-                            <div class="product-image">
-                                <img src="${product.imageUrl}" alt="${product.nome}" 
-                                     onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem'">
-                            </div>
-                            <div class="product-content">
-                                <h3 class="product-title">${product.nome}</h3>
-                                <div class="product-tags">
-                                    <span class="product-tag">ID: ${product.id}</span>
-                                    <span class="product-tag product-category">${product.categoria}</span>
-                                </div>
-                                <div class="product-price">R$ ${product.preco.toFixed(2)}</div>
-                                <p class="product-description">${product.descricao}</p>
-                                <div class="product-actions">
-                                    <button class="action-btn action-edit" onclick="editProduct('${product.id}')">✏️ Editar</button>
-                                    <button class="action-btn action-delete" onclick="deleteProduct('${product.id}')">🗑️ Excluir</button>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
+            try {
+                const reversed = encryptedToken.split('').reverse().join('');
+                const decoded = atob(reversed);
+                const jsonString = decodeURIComponent(escape(atob(decoded)));
+                const tokenData = JSON.parse(jsonString.replace('canecas_admin_2024_secure_system', ''));
+                
+                const isValid = tokenData && 
+                               tokenData.isAdmin === true && 
+                               tokenData.verified === true &&
+                               Date.now() < tokenData.expires;
 
-        function editProduct(productId) {
-            alert(`✏️ Editando produto: ${productId}\n\nEm breve: Editor completo integrado com GitHub`);
-            // Futuramente: abrir modal de edição com conexão GitHub
-        }
-
-        function deleteProduct(productId) {
-            if (confirm(`🗑️ Tem certeza que deseja excluir o produto ${productId}?\n\nEsta ação removerá o produto do site.`)) {
-                alert(`✅ Produto ${productId} excluído com sucesso!\n\nEm produção: exclusão real no GitHub`);
-                // Futuramente: exclusão real no GitHub
-                loadProducts(sampleProducts.filter(p => p.id !== productId));
+                if (!isValid) {
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('❌ Erro na verificação:', error);
+                window.location.href = 'login.html';
             }
         }
 
-        // Busca em tempo real
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const filteredProducts = sampleProducts.filter(product => 
-                product.nome.toLowerCase().includes(searchTerm) ||
-                product.id.toLowerCase().includes(searchTerm) ||
-                product.categoria.toLowerCase().includes(searchTerm) ||
-                product.descricao.toLowerCase().includes(searchTerm)
-            );
-            loadProducts(filteredProducts);
-        });
-
-        // Carrega produtos ao iniciar
-        document.addEventListener('DOMContentLoaded', function() {
-            loadProducts();
-            console.log('✅ Página de gerenciamento carregada!');
-        });
-
-// Sistema de verificação para gerenciar-produtos.html
-function checkAdminAuth() {
-    const tokenKey = 'admin_secure_token_v2';
-    const encryptedToken = localStorage.getItem(tokenKey);
-    
-    if (!encryptedToken) {
-        window.location.href = 'login.html';
-        return;
-    }
-
-    try {
-        const reversed = encryptedToken.split('').reverse().join('');
-        const decoded = atob(reversed);
-        const jsonString = decodeURIComponent(escape(atob(decoded)));
-        const tokenData = JSON.parse(jsonString.replace('canecas_admin_2024_secure_system', ''));
-        
-        const isValid = tokenData && 
-                       tokenData.isAdmin === true && 
-                       tokenData.verified === true &&
-                       Date.now() < tokenData.expires;
-
-        if (!isValid) {
-            window.location.href = 'login.html';
-        }
-    } catch (error) {
-        window.location.href = 'login.html';
-    }
-}
-
-document.addEventListener('DOMContentLoaded', checkAdminAuth);
+        // 🌐 EXPORTA PARA USO GLOBAL
+        window.productManager = productManager;
     </script>
 </body>
 </html>
