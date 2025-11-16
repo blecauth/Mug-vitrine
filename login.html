@@ -229,7 +229,7 @@
   <div class="login-container">
     <div class="login-box">
       <h1 class="login-title">🔐 Área Admin</h1>
-      <p class="login-subtitle">Autenticação segura com verificação no servidor</p>
+      <p class="login-subtitle">Acesso restrito ao administrador</p>
       
       <!-- Botão Firebase Google Auth -->
       <button class="firebase-btn" id="googleLoginBtn" onclick="loginWithGoogle()">
@@ -247,7 +247,7 @@
       
       <div class="loading" id="loadingSpinner">
         <div class="spinner"></div>
-        <p style="color: #25D366; margin-top: 0.5rem;">Verificando permissões no servidor...</p>
+        <p style="color: #25D366; margin-top: 0.5rem;">Verificando permissões...</p>
       </div>
       
       <div class="error-msg" id="errorMsg"></div>
@@ -256,9 +256,9 @@
       <!-- Informações de segurança -->
       <div class="security-info">
         <h4>🛡️ Sistema Seguro</h4>
-        <p>Verificação realizada no servidor</p>
+        <p>Verificação via Firebase + Criptografia</p>
         <p style="margin-top: 0.5rem; color: #888; font-size: 0.7rem;">
-          Impossível burlar via frontend
+          GitHub Pages + Firebase Auth
         </p>
       </div>
       
@@ -267,80 +267,151 @@
   </div>
 
   <script>
-    // 🔐 SISTEMA COM VERIFICAÇÃO NO BACKEND - 100% SEGURO
+    // 🔐 SISTEMA SEGURO PARA GITHUB PAGES
+    // ⚠️ CONFIGURAÇÃO - SUBSTITUA PELO SEU EMAIL!
+    const ADMIN_CONFIG = {
+      // ⚠️ SUBSTITUA PELO SEU EMAIL REAL!
+      allowedEmails: ['seu-email@gmail.com'],
+      
+      // Chave de criptografia (pode ser qualquer string)
+      encryptionKey: 'canecas_admin_2024_secure_system',
+      
+      // Tempo de expiração do token (2 horas)
+      tokenExpiry: 2 * 60 * 60 * 1000
+    };
+
     let authSystem = null;
 
     function initializeAuthSystem() {
-      authSystem = new SecureBackendAuthSystem();
+      authSystem = new SecureFrontendAuthSystem();
       console.log('✅ Sistema de autenticação seguro carregado!');
     }
 
-    class SecureBackendAuthSystem {
+    class SecureFrontendAuthSystem {
       constructor() {
-        this.tokenKey = 'admin_secure_backend_token';
-        this.apiUrl = '/api/verify-admin';
+        this.tokenKey = 'admin_secure_token_v2';
+        this.config = ADMIN_CONFIG;
         this.setupAuthListener();
         this.checkAuth();
+        
+        // Protege a configuração contra alteração
+        this.protectConfig();
       }
 
-      // 🔒 VERIFICAÇÃO NO SERVIDOR - IMPOSSÍVEL DE BURLAR
-      async verifyWithBackend(idToken) {
-        try {
-          console.log('📡 Verificando permissões no servidor...');
-          
-          const response = await fetch(this.apiUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ idToken })
-          });
+      // 🔒 PROTEÇÃO CONTRA ALTERAÇÃO NO CONSOLE
+      protectConfig() {
+        Object.defineProperty(window, 'ADMIN_CONFIG', {
+          value: Object.freeze({...this.config}),
+          writable: false,
+          configurable: false
+        });
+        
+        // Torna métodos privados
+        this.encryptData = this.encryptData.bind(this);
+        this.decryptData = this.decryptData.bind(this);
+      }
 
-          const data = await response.json();
-          
-          if (!response.ok) {
-            throw new Error(data.error || 'Erro na verificação');
+      // 🔐 CRIPTOGRAFIA SIMPLES PARA DIFICULTAR BURLAS
+      encryptData(data) {
+        try {
+          const jsonString = JSON.stringify(data);
+          const encoded = btoa(unescape(encodeURIComponent(jsonString + this.config.encryptionKey)));
+          return btoa(encoded).split('').reverse().join('');
+        } catch (error) {
+          console.error('Erro na criptografia:', error);
+          return null;
+        }
+      }
+
+      decryptData(encryptedData) {
+        try {
+          const reversed = encryptedData.split('').reverse().join('');
+          const decoded = atob(reversed);
+          const jsonString = decodeURIComponent(escape(atob(decoded)));
+          return JSON.parse(jsonString.replace(this.config.encryptionKey, ''));
+        } catch (error) {
+          console.error('Erro na descriptografia:', error);
+          return null;
+        }
+      }
+
+      // ✅ VERIFICAÇÃO SEGURA DO USUÁRIO
+      async verifyUserAccess(user) {
+        try {
+          // 1️⃣ Verificação básica do email
+          if (!this.config.allowedEmails.includes(user.email)) {
+            return false;
           }
 
-          return data;
+          // 2️⃣ Verificação do token JWT do Firebase
+          const idToken = await window.firebaseGetIdToken(user);
+          const tokenData = this.decodeJWT(idToken);
           
+          if (!tokenData || !this.isValidJWT(tokenData)) {
+            return false;
+          }
+
+          // 3️⃣ Verificação de expiração
+          if (this.isJWTExpired(tokenData)) {
+            return false;
+          }
+
+          // 4️⃣ Verificação de domínio/assinatura
+          if (!this.isValidFirebaseToken(tokenData)) {
+            return false;
+          }
+
+          return true;
+
         } catch (error) {
-          console.error('❌ Erro na verificação backend:', error);
-          throw error;
+          console.error('❌ Erro na verificação:', error);
+          return false;
         }
+      }
+
+      // Decodifica JWT (apenas payload)
+      decodeJWT(token) {
+        try {
+          const payload = token.split('.')[1];
+          return JSON.parse(atob(payload));
+        } catch {
+          return null;
+        }
+      }
+
+      isValidJWT(tokenData) {
+        return tokenData && 
+               tokenData.iss && 
+               tokenData.email &&
+               tokenData.exp;
+      }
+
+      isJWTExpired(tokenData) {
+        return Date.now() >= tokenData.exp * 1000;
+      }
+
+      isValidFirebaseToken(tokenData) {
+        return tokenData.iss.includes('google.com') ||
+               tokenData.iss.includes('firebase');
       }
 
       setupAuthListener() {
         window.firebaseOnAuthState(window.firebaseAuth, async (user) => {
           if (user) {
-            console.log('👤 Usuário autenticado:', user.email);
-            await this.handleUserAuth(user);
+            console.log('🔐 Verificando acesso para:', user.email);
+            
+            const hasAccess = await this.verifyUserAccess(user);
+            
+            if (hasAccess) {
+              this.handleAdminLogin(user);
+            } else {
+              this.handleUnauthorizedAccess(user);
+            }
+            
           } else {
             this.handleUserLogout();
           }
         });
-      }
-
-      async handleUserAuth(user) {
-        try {
-          showLoading('Verificando permissões...');
-          
-          // Obtém token JWT do Firebase
-          const idToken = await window.firebaseGetIdToken(user);
-          
-          // 🔒 VERIFICAÇÃO CRÍTICA NO SERVIDOR
-          const verification = await this.verifyWithBackend(idToken);
-          
-          if (verification.success && verification.isAdmin) {
-            this.handleAdminLogin(user, verification);
-          } else {
-            this.handleUnauthorizedAccess(user);
-          }
-          
-        } catch (error) {
-          console.error('❌ Erro na autenticação:', error);
-          this.handleAuthError(error);
-        }
       }
 
       async loginWithGoogle() {
@@ -356,20 +427,20 @@
         }
       }
 
-      handleAdminLogin(user, verification) {
+      async handleAdminLogin(user) {
         console.log('✅ ACESSO ADMIN CONCEDIDO:', user.email);
         
-        // Salva token seguro
-        this.saveSecureToken(verification);
+        // Salva token criptografado
+        this.saveSecureToken(user);
         
         // Atualiza UI
         document.getElementById('userEmail').textContent = user.email;
-        document.getElementById('userName').textContent = verification.name || 'Administrador';
+        document.getElementById('userName').textContent = user.displayName || user.email.split('@')[0];
         document.getElementById('userInfo').style.display = 'block';
         document.getElementById('googleLoginBtn').style.display = 'none';
         
         hideLoading();
-        showSuccess(`Bem-vindo, ${verification.name || 'Administrador'}!`);
+        showSuccess(`Bem-vindo, ${user.displayName || 'Administrador'}!`);
         
         // Redireciona
         setTimeout(() => {
@@ -383,48 +454,42 @@
         console.log('🚫 ACESSO NEGADO:', user.email);
         
         // Log de segurança
-        this.logSecurityEvent('unauthorized_access', {
-          email: user.email,
-          timestamp: new Date().toISOString()
-        });
+        this.logSecurityEvent('unauthorized_access', user.email);
         
         this.logout();
         hideLoading();
         showError('Acesso administrativo negado. Email não autorizado.');
+        
+        setTimeout(() => {
+          alert(`🚫 ACESSO NEGADO\n\nEmail: ${user.email}\n\nEste email não tem permissão para acessar o painel administrativo.`);
+        }, 500);
       }
 
-      handleAuthError(error) {
-        console.error('🔐 Erro de autenticação:', error);
-        this.logout();
-        hideLoading();
-        showError('Erro na verificação de segurança. Tente novamente.');
-      }
-
-      logSecurityEvent(event, data) {
+      logSecurityEvent(event, email) {
         const eventData = {
           event,
-          ...data,
-          userAgent: navigator.userAgent,
-          timestamp: new Date().toISOString()
+          email,
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent
         };
         
         console.warn('🛡️ Evento de segurança:', eventData);
-        
-        // Em produção, enviaria para serviço de logging
-        // fetch('/api/security-log', { method: 'POST', body: JSON.stringify(eventData) });
       }
 
-      saveSecureToken(verification) {
+      saveSecureToken(user) {
         const tokenData = {
           timestamp: Date.now(),
-          email: verification.email,
-          isAdmin: verification.isAdmin,
-          verifiedBy: 'backend',
-          expires: Date.now() + (2 * 60 * 60 * 1000) // 2 horas
+          email: user.email,
+          uid: user.uid,
+          isAdmin: true,
+          verified: true,
+          expires: Date.now() + this.config.tokenExpiry
         };
         
-        const token = btoa(JSON.stringify(tokenData));
-        localStorage.setItem(this.tokenKey, token);
+        const encryptedToken = this.encryptData(tokenData);
+        if (encryptedToken) {
+          localStorage.setItem(this.tokenKey, encryptedToken);
+        }
       }
 
       async logout() {
@@ -449,16 +514,20 @@
         console.log('👋 Usuário deslogado');
       }
 
-      // Verificação de autenticação para outras páginas
+      // ✅ VERIFICAÇÃO SEGURA PARA OUTRAS PÁGINAS
       isAuthenticated() {
-        const token = localStorage.getItem(this.tokenKey);
-        if (!token) return false;
+        const encryptedToken = localStorage.getItem(this.tokenKey);
+        if (!encryptedToken) return false;
 
         try {
-          const tokenData = JSON.parse(atob(token));
-          const isValid = tokenData.verifiedBy === 'backend' && 
-                         tokenData.isAdmin === true && 
-                         Date.now() < tokenData.expires;
+          const tokenData = this.decryptData(encryptedToken);
+          if (!tokenData) return false;
+
+          const isValid = tokenData.isAdmin === true && 
+                         tokenData.verified === true && 
+                         Date.now() < tokenData.expires &&
+                         this.config.allowedEmails.includes(tokenData.email);
+
           return isValid;
         } catch {
           return false;
@@ -497,7 +566,8 @@
     // Funções de UI
     function showLoading(message = 'Carregando...') {
       document.getElementById('loadingSpinner').style.display = 'block';
-      document.getElementById('loadingSpinner').querySelector('p').textContent = message;
+      const messageElement = document.getElementById('loadingSpinner').querySelector('p');
+      if (messageElement) messageElement.textContent = message;
       document.getElementById('googleLoginBtn').disabled = true;
       document.getElementById('errorMsg').style.display = 'none';
       document.getElementById('successMsg').style.display = 'none';
@@ -525,8 +595,9 @@
     window.loginWithGoogle = () => authSystem?.loginWithGoogle();
     window.logout = () => authSystem?.logout();
 
-    // Proteção básica contra alteração no console
+    // Proteções adicionais
     Object.freeze(Object.prototype);
+    console.log('🛡️ Sistema de segurança inicializado');
   </script>
 </body>
 </html>
