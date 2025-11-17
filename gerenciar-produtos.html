@@ -535,9 +535,8 @@
         <div class="log-header">📋 Log de Alterações</div>
         <div id="logContainer"></div>
     </div>
-
-    <script>
-// 🔧 SISTEMA DE PESQUISA EM TEMPO REAL - VERSÃO CORRIGIDA
+<script>
+// 🔧 SISTEMA DE PESQUISA EM TEMPO REAL - VERSÃO CORRIGIDA PARA DOMÍNIO EXTERNO
 class ProductManager {
     constructor() {
         this.allProducts = [];
@@ -548,11 +547,10 @@ class ProductManager {
     }
 
     async init() {
-        await this.loadProductsFromSite();
+        await this.loadProducts();
         this.setupSearch();
         this.setupLogSystem();
         this.setupEventListeners();
-        this.debugProducts(); // 🐛 DEBUG - Mostra produtos imediatamente
     }
 
     // 🔥 CONFIGURA EVENT LISTENERS
@@ -599,68 +597,149 @@ class ProductManager {
         }
     }
 
-    // 🌐 CARREGA PRODUTOS DO SITE
-    async loadProductsFromSite() {
+    // 🌐 CARREGA PRODUTOS - MÚLTIPLAS TENTATIVAS
+    async loadProducts() {
+        this.addLog('🚀 Iniciando carregamento de produtos...', 'info');
+        
         try {
-            this.addLog('Carregando produtos do site...', 'info');
-            
-            const response = await fetch('index.html');
-            const html = await response.text();
-            
-            this.allProducts = this.extractProductsFromHTML(html);
-            this.addLog(`✅ ${this.allProducts.length} produtos carregados`, 'success');
-            
+            // Tenta carregar do site principal primeiro
+            await this.loadProductsFromSite();
         } catch (error) {
-            console.error('❌ Erro ao carregar produtos:', error);
-            this.addLog('❌ Erro ao carregar produtos do site', 'error');
+            console.log('❌ Falha ao carregar do site, tentando método alternativo...');
+            this.addLog('❌ Erro ao carregar do site principal', 'error');
+            
+            // Fallback: tenta carregar produtos de exemplo
+            await this.loadSampleProducts();
         }
     }
 
-    // 🎯 EXTRAI PRODUTOS DO HTML - VERSÃO CORRIGIDA
+    // 🌐 TENTA CARREGAR DO SITE PRINCIPAL
+    async loadProductsFromSite() {
+        try {
+            this.addLog('🌐 Conectando com site principal...', 'info');
+            
+            // Usa o domínio completo para evitar CORS
+            const response = await fetch('https://fasublimacoes.shop/index.html', {
+                method: 'GET',
+                mode: 'cors',
+                credentials: 'omit'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const html = await response.text();
+            this.addLog('✅ HTML do site carregado com sucesso', 'success');
+            
+            this.allProducts = this.extractProductsFromHTML(html);
+            this.addLog(`✅ ${this.allProducts.length} produtos extraídos do site`, 'success');
+            
+            // Mostra os produtos carregados
+            this.displayProducts(this.allProducts);
+            
+        } catch (error) {
+            console.error('❌ Erro ao carregar do site:', error);
+            this.addLog(`❌ Falha no carregamento: ${error.message}`, 'error');
+            throw error; // Propaga o erro para o fallback
+        }
+    }
+
+    // 🎯 EXTRAI PRODUTOS DO HTML - VERSÃO ROBUSTA
     extractProductsFromHTML(html) {
         const products = [];
         
         try {
-            // Usa expressão regular para encontrar todos os produtos
-            const productRegex = /<div class="item"[^>]*>[\s\S]*?<\/div>\s*<\/div>/g;
-            const productMatches = html.match(productRegex);
+            // Método 1: Busca por elementos .item
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
             
-            if (!productMatches) {
-                console.log('❌ Nenhum produto encontrado no HTML');
-                return products;
-            }
-
-            console.log(`📦 Encontrados ${productMatches.length} produtos no HTML`);
-
-            productMatches.forEach((productHTML, index) => {
+            const productElements = tempDiv.querySelectorAll('.item');
+            console.log(`🔍 Encontrados ${productElements.length} elementos .item no HTML`);
+            
+            productElements.forEach((element, index) => {
                 try {
-                    const product = this.parseProductElementFromString(productHTML);
-                    if (product) {
+                    const product = this.parseProductElement(element);
+                    if (product && product.id && product.nome) {
                         products.push(product);
-                        console.log(`✅ Produto ${index + 1}: ${product.nome}`);
+                        console.log(`✅ Produto ${index + 1}: ${product.nome} (${product.id})`);
                     }
-                } catch (error) {
-                    console.error(`❌ Erro ao parsear produto ${index}:`, error);
+                } catch (parseError) {
+                    console.warn(`⚠️ Erro ao parsear produto ${index}:`, parseError);
                 }
             });
 
+            // Método 2: Fallback - busca por regex se o primeiro método falhar
+            if (products.length === 0) {
+                this.addLog('🔍 Tentando método alternativo de extração...', 'warning');
+                const regexProducts = this.extractProductsWithRegex(html);
+                products.push(...regexProducts);
+            }
+
         } catch (error) {
-            console.error('❌ Erro na extração de produtos:', error);
-            this.addLog('❌ Erro ao extrair produtos do HTML', 'error');
+            console.error('❌ Erro crítico na extração:', error);
+            this.addLog('❌ Erro crítico na extração de produtos', 'error');
+        }
+        
+        console.log(`📦 Total de produtos extraídos: ${products.length}`);
+        return products;
+    }
+
+    // 🔍 MÉTODO ALTERNATIVO COM REGEX
+    extractProductsWithRegex(html) {
+        const products = [];
+        const productRegex = /<div class="item"[^>]*data-categoria="([^"]*)"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/g;
+        
+        let match;
+        while ((match = productRegex.exec(html)) !== null) {
+            try {
+                const [fullMatch, categoria, content] = match;
+                const product = this.parseProductFromContent(content, categoria);
+                if (product) {
+                    products.push(product);
+                }
+            } catch (error) {
+                console.warn('⚠️ Erro no parse regex:', error);
+            }
         }
         
         return products;
     }
 
-    // 📝 PARSEIA UM ELEMENTO DE PRODUTO A PARTIR DE STRING
-    parseProductElementFromString(htmlString) {
-        try {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(htmlString, 'text/html');
-            const element = doc.querySelector('.item');
-            
-            if (!element) return null;
+    // 📝 PARSEIA PRODUTO DO CONTEÚDO HTML
+    parseProductFromContent(content, categoria) {
+        const nameMatch = content.match(/data-name="([^"]*)"/);
+        const idMatch = content.match(/data-id="([^"]*)"/);
+        const imageMatch = content.match(/data-image="([^"]*)"/);
+        const specsMatch = content.match(/data-specs="([^"]*)"/);
+        const optionsMatch = content.match(/data-options='([^']*)'/);
+        
+        if (!nameMatch || !idMatch) return null;
 
+        let modelos = [];
+        try {
+            if (optionsMatch && optionsMatch[1]) {
+                modelos = JSON.parse(optionsMatch[1].replace(/&#39;/g, "'"));
+            }
+        } catch (e) {
+            console.warn('❌ Erro ao parsear opções:', e);
+        }
+
+        return {
+            id: idMatch[1],
+            nome: nameMatch[1],
+            categoria: categoria || 'personalizada',
+            preco: modelos.length > 0 ? parseFloat(modelos[0].price) : 0,
+            descricao: specsMatch ? specsMatch[1] : '',
+            imageUrl: imageMatch ? imageMatch[1] : '',
+            modelos: modelos,
+            elementoHTML: content
+        };
+    }
+
+    // 📝 PARSEIA UM ELEMENTO DE PRODUTO
+    parseProductElement(element) {
+        try {
             const button = element.querySelector('.open-modal-btn');
             if (!button) return null;
 
@@ -674,9 +753,11 @@ class ProductManager {
             let modelos = [];
             
             try {
-                modelos = JSON.parse(optionsJson);
-                if (modelos && modelos.length > 0) {
-                    preco = parseFloat(modelos[0].price) || 0;
+                if (optionsJson) {
+                    modelos = JSON.parse(optionsJson.replace(/&#39;/g, "'"));
+                    if (modelos && modelos.length > 0) {
+                        preco = parseFloat(modelos[0].price) || 0;
+                    }
                 }
             } catch (e) {
                 console.warn('❌ Erro ao parsear modelos:', e);
@@ -692,16 +773,56 @@ class ProductManager {
                 descricao: specs,
                 imageUrl: imageUrl,
                 modelos: modelos,
-                elementoHTML: htmlString.trim()
+                elementoHTML: element.outerHTML
             };
-            
         } catch (error) {
-            console.error('❌ Erro no parse do produto:', error);
+            console.error('❌ Erro no parse do elemento:', error);
             return null;
         }
     }
 
-    // 🔍 CONFIGURA PESQUISA EM TEMPO REAL - VERSÃO CORRIGIDA
+    // 📦 CARREGA PRODUTOS DE EXEMPLO (FALLBACK)
+    async loadSampleProducts() {
+        this.addLog('📝 Carregando produtos de exemplo...', 'warning');
+        
+        // Produtos de exemplo baseados no seu site
+        this.allProducts = [
+            {
+                id: "0001",
+                nome: "Caneca Teste Floral",
+                categoria: "floral",
+                preco: 32.00,
+                descricao: "Caneca de teste com design floral",
+                imageUrl: "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg",
+                modelos: [
+                    { model: "Branca", price: 32.00, image: "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg" },
+                    { model: "Preta", price: 25.00, image: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" }
+                ]
+            },
+            {
+                id: "CN0001",
+                nome: "Caneca Orgulho Negro",
+                categoria: "personalizada", 
+                preco: 30.00,
+                descricao: "Caneca de cerâmica com estampa exclusiva",
+                imageUrl: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg",
+                modelos: [
+                    { model: "Branca", price: 30.00, image: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" },
+                    { model: "Preta", price: 32.00, image: "https://i.ibb.co/PjX9108/IMG-20251021-WA0002.jpg" }
+                ]
+            }
+        ];
+
+        this.addLog(`✅ ${this.allProducts.length} produtos de exemplo carregados`, 'success');
+        this.displayProducts(this.allProducts);
+        
+        // Mostra aviso sobre usar produtos de exemplo
+        setTimeout(() => {
+            this.addLog('💡 Dica: Os produtos reais do site aparecerão quando o CORS for configurado', 'info');
+        }, 2000);
+    }
+
+    // 🔍 CONFIGURA PESQUISA EM TEMPO REAL
     setupSearch() {
         const searchInput = document.getElementById('searchInput');
         
@@ -713,7 +834,7 @@ class ProductManager {
                 return;
             }
 
-            console.log(`🔍 Buscando: "${searchTerm}"`);
+            console.log(`🔍 Buscando: "${searchTerm}" em ${this.allProducts.length} produtos`);
             
             const filteredProducts = this.allProducts.filter(product => {
                 if (!product) return false;
@@ -735,11 +856,11 @@ class ProductManager {
         });
     }
 
-    // 🎴 EXIBE PRODUTOS NA TELA - COM DEBUG
+    // 🎴 EXIBE PRODUTOS NA TELA
     displayProducts(products) {
         const container = document.getElementById('productsContainer');
         
-        console.log(`🎴 Tentando exibir ${products.length} produtos`);
+        console.log(`🎴 Exibindo ${products.length} produtos`);
         
         if (products.length === 0) {
             container.innerHTML = `
@@ -751,18 +872,11 @@ class ProductManager {
             return;
         }
 
-        const productsHTML = products.map(product => {
-            console.log(`📝 Gerando card para: ${product.nome}`);
-            return this.createProductCard(product);
-        }).join('');
-
         container.innerHTML = `
             <div class="products-grid">
-                ${productsHTML}
+                ${products.map(product => this.createProductCard(product)).join('')}
             </div>
         `;
-        
-        console.log('✅ Produtos exibidos com sucesso');
     }
 
     // 🎴 CRIA CARD DO PRODUTO
@@ -773,7 +887,7 @@ class ProductManager {
             <div class="product-card">
                 <div class="product-image">
                     <img src="${product.imageUrl}" alt="${product.nome}" 
-                         onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem'">
+                         onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem+Não+Encontrada'">
                 </div>
                 <div class="product-content">
                     <h3 class="product-title">${product.nome}</h3>
@@ -806,17 +920,6 @@ class ProductManager {
                 <p>Digite no campo acima para buscar produtos do site</p>
             </div>
         `;
-    }
-
-    // 🐛 FUNÇÃO DE DEBUG - REMOVA DEPOIS DE TESTAR
-    debugProducts() {
-        console.log('🐛 DEBUG - Todos os produtos carregados:');
-        this.allProducts.forEach((product, index) => {
-            console.log(`[${index}] ${product.nome} (ID: ${product.id})`);
-        });
-        
-        // Mostra produtos mesmo sem busca
-        this.displayProducts(this.allProducts);
     }
 
     // ✏️ ABRE MODAL DE EDIÇÃO
@@ -1174,6 +1277,7 @@ function closeEditModal() {
 }
 
 window.productManager = productManager;
-    </script>
+</script>
+  
 </body>
 </html>
