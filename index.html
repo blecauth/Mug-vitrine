@@ -55,64 +55,11 @@
   </section>
 
   <!-- 🖼️ GALERIA -->
-  <section class="galeria">
-    
-    <div class="item" data-categoria="floral">
-      <img src="https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg" alt="Caneca teste">
-      <div class="info">
-        <h2>Caneca teste</h2>
-        <p>ID: 0001</p>
-        <p>R$ 32,00</p>
-        <button class="open-modal-btn"
-          data-name="Caneca teste"
-          data-id="0001"
-          data-image="https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg"
-          data-specs="Gege"
-          data-options='[
-            {"model":"Branca","price":32.00,"image":"https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg"},
-            {"model":"Preta","price":25.00,"image":"https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"}
-          ]'>Ver Detalhes</button>
-      </div>
-    </div>
-
-    <div class="item" data-categoria="floral">
-      <img src="https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" alt="Caneca teste">
-      <div class="info">
-        <h2>Caneca teste</h2>
-        <p>ID: Cn0001</p>
-        <p>R$ 40,00</p>
-        <button class="open-modal-btn"
-          data-name="Caneca teste"
-          data-id="Cn0001"
-          data-image="https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"
-          data-specs="Nznxn"
-          data-options='[
-            {"model":"Branca","price":40.00,"image":"https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"},
-            {"model":"Preta","price":42.00,"image":"https://i.ibb.co/N6c4DxfJ/IMG-20251021-WA0000.jpg"}
-          ]'>Ver Detalhes</button>
-      </div>
-    </div>
-    
-    <div class="item" data-categoria="personalizada">
-      <img src="https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" alt="Caneca Orgulho Negro">
-      <div class="info">
-        <h2>Caneca Orgulho Negro</h2>
-        <p>ID: CN0001</p>
-        <p>R$ 30,00</p>
-        <button class="open-modal-btn"
-          data-name="Caneca Orgulho Negro"
-          data-id="CN0001"
-          data-image="https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"
-          data-specs="Caneca de cerâmica com estampa exclusiva."
-          data-options='[
-            {"model":"Branca","price":30.00,"image":"https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"},
-            {"model":"Preta","price":32.00,"image":"https://i.ibb.co/PjX9108/IMG-20251021-WA0002.jpg"}
-          ]'>Ver Detalhes</button>
-      </div>
-    </div>
+  <section class="galeria" id="galeria">
+    <!-- Os produtos serão carregados dinamicamente via JavaScript -->
   </section>
 
-  <p id="nenhumProduto">Nenhum produto encontrado 🔍</p>
+  <p id="nenhumProduto" style="display: none;">Nenhum produto encontrado 🔍</p>
 
   <div id="produtoModal" class="modal">
     <div class="modal-content">
@@ -136,5 +83,57 @@
   <footer>© 2025 • Canecas Personalizadas — Todos os direitos reservados</footer>
 
   <script src="src/script.js" defer></script>
+  <script>
+    // Carregar produtos do JSON
+    document.addEventListener('DOMContentLoaded', function() {
+      fetch('data/products.json')
+        .then(response => response.json())
+        .then(data => {
+          const galeria = document.getElementById('galeria');
+          const nenhumProduto = document.getElementById('nenhumProduto');
+          
+          if (data.produtos && data.produtos.length > 0) {
+            data.produtos.forEach(produto => {
+              const item = document.createElement('div');
+              item.className = 'item';
+              item.setAttribute('data-categoria', produto.categoria || 'geral');
+              
+              // Usar a primeira opção como imagem principal
+              const primeiraOpcao = produto.opcoes && produto.opcoes.length > 0 ? produto.opcoes[0] : {};
+              
+              item.innerHTML = `
+                <img src="${primeiraOpcao.imagem || produto.imagem || ''}" alt="${produto.nome}">
+                <div class="info">
+                  <h2>${produto.nome}</h2>
+                  <p>ID: ${produto.id}</p>
+                  <p>R$ ${primeiraOpcao.preco ? primeiraOpcao.preco.toFixed(2).replace('.', ',') : '0,00'}</p>
+                  <button class="open-modal-btn"
+                    data-name="${produto.nome}"
+                    data-id="${produto.id}"
+                    data-image="${primeiraOpcao.imagem || produto.imagem || ''}"
+                    data-specs="${produto.especificacoes || ''}"
+                    data-options='${JSON.stringify(produto.opcoes || [])}'>Ver Detalhes</button>
+                </div>
+              `;
+              
+              galeria.appendChild(item);
+            });
+            
+            nenhumProduto.style.display = 'none';
+          } else {
+            nenhumProduto.style.display = 'block';
+          }
+          
+          // Re-inicializar event listeners após carregar os produtos
+          if (typeof initModalListeners === 'function') {
+            initModalListeners();
+          }
+        })
+        .catch(error => {
+          console.error('Erro ao carregar produtos:', error);
+          document.getElementById('nenhumProduto').style.display = 'block';
+        });
+    });
+  </script>
 </body>
 </html>
