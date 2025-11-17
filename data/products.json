@@ -1,0 +1,22 @@
+{
+  "produtos": [
+    {
+      "id": "0001",
+      "nome": "Caneca teste",
+      "categoria": "floral",
+      "especificacoes": "Gege",
+      "opcoes": [
+        {
+          "modelo": "Branca",
+          "preco": 32.00,
+          "imagem": "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg"
+        },
+        {
+          "modelo": "Preta",
+          "preco": 25.00,
+          "imagem": "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg"
+        }
+      ]
+    }
+  ]
+}
