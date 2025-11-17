@@ -83,57 +83,5 @@
   <footer>© 2025 • Canecas Personalizadas — Todos os direitos reservados</footer>
 
   <script src="src/script.js" defer></script>
-  <script>
-    // Carregar produtos do JSON
-    document.addEventListener('DOMContentLoaded', function() {
-      fetch('data/products.json')
-        .then(response => response.json())
-        .then(data => {
-          const galeria = document.getElementById('galeria');
-          const nenhumProduto = document.getElementById('nenhumProduto');
-          
-          if (data.produtos && data.produtos.length > 0) {
-            data.produtos.forEach(produto => {
-              const item = document.createElement('div');
-              item.className = 'item';
-              item.setAttribute('data-categoria', produto.categoria || 'geral');
-              
-              // Usar a primeira opção como imagem principal
-              const primeiraOpcao = produto.opcoes && produto.opcoes.length > 0 ? produto.opcoes[0] : {};
-              
-              item.innerHTML = `
-                <img src="${primeiraOpcao.imagem || produto.imagem || ''}" alt="${produto.nome}">
-                <div class="info">
-                  <h2>${produto.nome}</h2>
-                  <p>ID: ${produto.id}</p>
-                  <p>R$ ${primeiraOpcao.preco ? primeiraOpcao.preco.toFixed(2).replace('.', ',') : '0,00'}</p>
-                  <button class="open-modal-btn"
-                    data-name="${produto.nome}"
-                    data-id="${produto.id}"
-                    data-image="${primeiraOpcao.imagem || produto.imagem || ''}"
-                    data-specs="${produto.especificacoes || ''}"
-                    data-options='${JSON.stringify(produto.opcoes || [])}'>Ver Detalhes</button>
-                </div>
-              `;
-              
-              galeria.appendChild(item);
-            });
-            
-            nenhumProduto.style.display = 'none';
-          } else {
-            nenhumProduto.style.display = 'block';
-          }
-          
-          // Re-inicializar event listeners após carregar os produtos
-          if (typeof initModalListeners === 'function') {
-            initModalListeners();
-          }
-        })
-        .catch(error => {
-          console.error('Erro ao carregar produtos:', error);
-          document.getElementById('nenhumProduto').style.display = 'block';
-        });
-    });
-  </script>
 </body>
 </html>
