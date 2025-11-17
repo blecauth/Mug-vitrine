@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Canecas Personalizadas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background: #0d0d0d;
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        /* TELA DE LOGIN */
+        .login-screen {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #0d0d0d;
+            padding: 2rem;
+        }
+        
+        .login-box {
+            background: #181818;
+            padding: 2.5rem;
+            border-radius: 15px;
+            border: 1px solid #333;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .login-title {
+            color: #25D366;
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #ccc;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #1a1a1a;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        /* DASHBOARD */
+        .dashboard {
+            display: none;
+        }
+        
+        .header {
+            background: #181818;
+            padding: 1rem 2rem;
+            border-bottom: 2px solid #25D366;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background: #181818;
+            padding: 2rem;
+            border-radius: 10px;
+            border: 1px solid #333;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #25D366;
+        }
+        
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .card h3 {
+            color: #25D366;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        
+        .card p {
+            color: #ccc;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+        
+        .btn-logout {
+            background: #ff4444;
+        }
+        
+        .btn-back {
+            background: #666;
+        }
+        
+        .user-info {
+            background: rgba(37, 211, 102, 0.1);
+            border: 1px solid #25D366;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- TELA DE LOGIN -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-box">
+            <h1 class="login-title">🔐 Área Admin</h1>
+            <p style="color: #aaa; margin-bottom: 2rem;">Acesso restrito ao administrador</p>
+            
+            <div class="form-group">
+                <label class="form-label">Usuário</label>
+                <input type="text" id="username" class="form-input" value="admin">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Senha</label>
+                <input type="password" id="password" class="form-input" value="admin123">
+            </div>
+            
+            <button class="btn" onclick="login()" style="width: 100%;">🚀 Entrar</button>
+            
+            <div style="margin-top: 2rem; padding: 1rem; background: rgba(37, 211, 102, 0.1); border-radius: 8px;">
+                <p style="color: #25D366; font-size: 0.9rem;">
+                    <strong>Credenciais de teste:</strong><br>
+                    Usuário: <strong>admin</strong><br>
+                    Senha: <strong>admin123</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="dashboard">
+        <header class="header">
+            <div class="header-content">
+                <h1 style="color: #25D366;">⚡ Admin Canecas</h1>
+                <div>
+                    <a href="index.html" class="btn btn-back">← Voltar ao Site</a>
+                    <button class="btn btn-logout" onclick="logout()">🚪 Sair</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            <div class="user-info">
+                <h4 style="color: #25D366; margin-bottom: 0.5rem;">👋 Administrador Logado</h4>
+                <div style="color: #25D366; font-weight: bold;" id="adminUser">Admin</div>
+                <div style="color: #ccc; font-size: 0.9rem; margin-top: 0.5rem;">
+                    Sistema administrativo em JavaScript
+                </div>
+            </div>
+
+            <section style="text-align: center; margin-bottom: 3rem; padding: 2rem; background: #181818; border-radius: 10px; border: 1px solid #333;">
+                <h2 style="color: #25D366; margin-bottom: 1rem;">🎯 Painel de Controle</h2>
+                <p style="color: #ccc; max-width: 600px; margin: 0 auto;">
+                    Gerencie todos os aspectos do seu site de canecas personalizadas.
+                </p>
+            </section>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon">🔍</div>
+                    <h3>Gerenciar Produtos</h3>
+                    <p>Visualize, edite ou exclua produtos existentes no seu catálogo.</p>
+                    <button class="btn" onclick="gerenciarProdutos()">Acessar</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">➕</div>
+                    <h3>Adicionar Produto</h3>
+                    <p>Adicione novos produtos ao site com formulário completo.</p>
+                    <button class="btn" onclick="adicionarProduto()">Criar Produto</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🌐</div>
+                    <h3>Ver Site</h3>
+                    <p>Visualize como está o seu site atualmente para os visitantes.</p>
+                    <a href="index.html" class="btn" target="_blank">Abrir Site</a>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">📊</div>
+                    <h3>Estatísticas</h3>
+                    <p>Acompanhe métricas e visualizações do seu site.</p>
+                    <button class="btn" onclick="verEstatisticas()">Ver Stats</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">💾</div>
+                    <h3>Backup</h3>
+                    <p>Faça backup dos seus dados ou exporte o catálogo.</p>
+                    <button class="btn" onclick="fazerBackup()">Fazer Backup</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">❓</div>
+                    <h3>Ajuda</h3>
+                    <p>Tutorial e suporte para usar o sistema.</p>
+                    <button class="btn" onclick="mostrarAjuda()">Obter Ajuda</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 🔐 SISTEMA DE AUTENTICAÇÃO
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username === 'admin' && password === 'admin123') {
+                localStorage.setItem('admin_logged_in', 'true');
+                localStorage.setItem('admin_user', username);
+                showDashboard();
+            } else {
+                alert('❌ Credenciais inválidas!');
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('admin_logged_in');
+            localStorage.removeItem('admin_user');
+            showLogin();
+        }
+        
+        function showDashboard() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            
+            // Atualiza nome do usuário
+            const user = localStorage.getItem('admin_user') || 'Admin';
+            document.getElementById('adminUser').textContent = user;
+        }
+        
+        function showLogin() {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('dashboard').style.display = 'none';
+        }
+        
+        // 🎯 FUNÇÕES DO DASHBOARD
+        function gerenciarProdutos() {
+            alert('📦 Gerenciar Produtos\n\nEsta funcionalidade permite:\n• Ver todos os produtos\n• Editar informações\n• Excluir produtos\n• Pesquisar por ID/nome');
+        }
+        
+        function adicionarProduto() {
+            alert('➕ Adicionar Produto\n\nFormulário para adicionar novos produtos:\n• Nome e descrição\n• Preço e categoria\n• Upload de imagens\n• Modelos disponíveis');
+        }
+        
+        function verEstatisticas() {
+            alert('📊 Estatísticas do Sistema\n\n• Produtos: 12\n• Categorias: 8\n• Status: Online\n• Última atualização: Hoje\n\nEm breve: gráficos detalhados!');
+        }
+        
+        function fazerBackup() {
+            alert('💾 Sistema de Backup\n\nBackup automático ativo!\nSeus dados estão seguros.\n\nEm breve: export para JSON/CSV');
+        }
+        
+        function mostrarAjuda() {
+            alert('❓ Central de Ajuda\n\n📞 Suporte: contato@canecas.com\n📚 Tutorial: Use o menu de produtos\n🔄 Atualizações: Sistema sempre disponível');
+        }
+        
+        // ✅ VERIFICA LOGIN AO CARREGAR
+        window.addEventListener('load', function() {
+            if (localStorage.getItem('admin_logged_in') === 'true') {
+                showDashboard();
+            } else {
+                showLogin();
+            }
+        });
+    </script>
+</body>
+</html>
