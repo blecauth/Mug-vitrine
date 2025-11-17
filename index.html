@@ -8,7 +8,7 @@
 </head>
 <body>
 
-  <!-- 🟢 MENU HAMBÚRGUER -->
+  <!-- 🟢 MENU HAMBÚRGUER ATUALIZADO -->
   <header class="menu-header">
     <div class="menu-toggle" id="menuToggle">
       <span></span>
@@ -22,21 +22,22 @@
         <li class="menu-categoria">
           <span class="menu-link categoria-toggle">Categorias ▾</span>
           <ul class="submenu" id="submenuCategorias">
-            <li><a href="#" class="menu-link">Brancas</a></li>
-            <li><a href="#" class="menu-link">Coloridas</a></li>
-            <li><a href="#" class="menu-link">Dia das Mães</a></li>
-            <li><a href="#" class="menu-link">Dia dos Pais</a></li>
-            <li><a href="#" class="menu-link">Dia dos Professores</a></li>
-            <li><a href="#" class="menu-link">Pets</a></li>
-            <li><a href="#" class="menu-link">Heróis</a></li>
-            <li><a href="#" class="menu-link">Animes</a></li>
-            <li><a href="#" class="menu-link">Com Foto</a></li>
-            <li><a href="#" class="menu-link">Futebol</a></li>
+            <li><a href="#floral" class="menu-link">Brancas</a></li>
+            <li><a href="#coloridas" class="menu-link">Coloridas</a></li>
+            <li><a href="#maes" class="menu-link">Dia das Mães</a></li>
+            <li><a href="#pais" class="menu-link">Dia dos Pais</a></li>
+            <li><a href="#professores" class="menu-link">Dia dos Professores</a></li>
+            <li><a href="#pets" class="menu-link">Pets</a></li>
+            <li><a href="#herois" class="menu-link">Heróis</a></li>
+            <li><a href="#animes" class="menu-link">Animes</a></li>
+            <li><a href="#foto" class="menu-link">Com Foto</a></li>
+            <li><a href="#futebol" class="menu-link">Futebol</a></li>
           </ul>
         </li>
         <li><a href="#contatos" class="menu-link">Contatos</a></li>
         <li><a href="#sobre" class="menu-link">Quem Somos</a></li>
-        <li><a href="login.html" class="menu-link">ADMIN</a></li>
+        <!-- 🔐 LINK ATUALIZADO PARA PHP -->
+        <li><a href="admin/login.php" class="menu-link" style="color: #25D366; font-weight: bold;">🔐 ÁREA ADMIN</a></li>
       </ul>
     </nav>
 
@@ -51,6 +52,13 @@
 
     <div class="busca-container">
       <input type="text" id="buscaId" placeholder="Buscar por ID ou nome...">
+    </div>
+
+    <!-- 🔗 LINK RÁPIDO PARA ADMIN -->
+    <div style="text-align: center; margin-top: 1rem;">
+      <a href="admin/login.php" style="color: #25D366; text-decoration: none; font-size: 0.9rem; background: rgba(37, 211, 102, 0.1); padding: 0.5rem 1rem; border-radius: 20px; border: 1px solid #25D366;">
+        🔐 Acesso Administrativo
+      </a>
     </div>
   </section>
 
@@ -114,6 +122,65 @@
 
   <p id="nenhumProduto">Nenhum produto encontrado 🔍</p>
 
+  <!-- 📞 SEÇÃO DE CONTATOS -->
+  <section id="contatos" style="padding: 3rem 1rem; text-align: center; background: #181818; margin: 2rem 0; border-radius: 15px;">
+    <h2 style="color: #25D366; margin-bottom: 1rem;">📞 Entre em Contato</h2>
+    <p style="color: #ccc; margin-bottom: 1.5rem;">Tire suas dúvidas ou faça seu pedido personalizado</p>
+    
+    <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+      <a href="https://wa.me/5519993938752" 
+         style="background: #25D366; color: white; padding: 1rem 2rem; border-radius: 10px; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;"
+         target="_blank">
+        📱 WhatsApp
+      </a>
+      
+      <a href="admin/login.php" 
+         style="background: #007bff; color: white; padding: 1rem 2rem; border-radius: 10px; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+        🔐 Área Admin
+      </a>
+    </div>
+  </section>
+
+  <!-- ℹ️ SEÇÃO QUEM SOMOS -->
+  <section id="sobre" style="padding: 3rem 1rem; text-align: center; max-width: 800px; margin: 0 auto;">
+    <h2 style="color: #25D366; margin-bottom: 1rem;">🏢 Quem Somos</h2>
+    <p style="color: #ccc; line-height: 1.6; margin-bottom: 1.5rem;">
+      Especialistas em canecas personalizadas com designs exclusivos. 
+      Trabalhamos com alta qualidade e entrega rápida para todo o Brasil.
+    </p>
+    
+    <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; margin-top: 2rem;">
+      <div style="text-align: center;">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎨</div>
+        <h3 style="color: #25D366;">Design Exclusivo</h3>
+        <p style="color: #ccc; font-size: 0.9rem;">Estampas únicas e personalizadas</p>
+      </div>
+      
+      <div style="text-align: center;">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🚚</div>
+        <h3 style="color: #25D366;">Entrega Rápida</h3>
+        <p style="color: #ccc; font-size: 0.9rem;">Enviamos para todo o Brasil</p>
+      </div>
+      
+      <div style="text-align: center;">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">⭐</div>
+        <h3 style="color: #25D366;">Alta Qualidade</h3>
+        <p style="color: #ccc; font-size: 0.9rem;">Produtos duráveis e premium</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 🔐 FOOTER COM LINK ADMIN -->
+  <footer style="padding: 2rem; color: #777; font-size: 0.9rem; text-align: center; border-top: 1px solid #333; margin-top: 3rem;">
+    <div>© 2025 • Canecas Personalizadas — Todos os direitos reservados</div>
+    <div style="margin-top: 1rem;">
+      <a href="admin/login.php" style="color: #25D366; text-decoration: none; font-size: 0.8rem;">
+        🔐 Acesso Administrativo
+      </a>
+    </div>
+  </footer>
+
+  <!-- Modal -->
   <div id="produtoModal" class="modal">
     <div class="modal-content">
       <span class="close-button">&times;</span>
@@ -128,12 +195,18 @@
           <div id="modalOptions" class="model-options"></div>
           <div class="modal-price" id="modalPrice"></div>
           <button id="buyButton" class="buy-button">Comprar via WhatsApp</button>
+          
+          <!-- 🔗 LINK ADMIN NO MODAL -->
+          <div style="margin-top: 1rem; text-align: center;">
+            <a href="admin/login.php" 
+               style="color: #25D366; text-decoration: none; font-size: 0.8rem; border: 1px solid #25D366; padding: 0.3rem 0.8rem; border-radius: 15px;">
+              🔐 Admin
+            </a>
+          </div>
         </div>
       </div>
     </div>
   </div>
-
-  <footer>© 2025 • Canecas Personalizadas — Todos os direitos reservados</footer>
 
   <script src="src/script.js" defer></script>
 </body>
