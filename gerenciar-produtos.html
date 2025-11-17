@@ -417,46 +417,43 @@
                 flex-direction: column;
             }
         }
-        
 
+        .log-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            max-height: 300px;
+            background: rgba(0,0,0,0.9);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 1rem;
+            overflow-y: auto;
+            z-index: 1000;
+            font-size: 0.8rem;
+        }
 
+        .log-header {
+            color: #25D366;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
 
-.log-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 400px;
-    max-height: 300px;
-    background: rgba(0,0,0,0.9);
-    border: 1px solid #333;
-    border-radius: 10px;
-    padding: 1rem;
-    overflow-y: auto;
-    z-index: 1000;
-    font-size: 0.8rem;
-}
+        .log-entry {
+            padding: 0.3rem 0;
+            border-bottom: 1px solid #333;
+            font-family: monospace;
+        }
 
-.log-header {
-    color: #25D366;
-    margin-bottom: 0.5rem;
-    font-weight: bold;
-}
+        .log-time {
+            color: #888;
+            font-size: 0.7rem;
+        }
 
-.log-entry {
-    padding: 0.3rem 0;
-    border-bottom: 1px solid #333;
-    font-family: monospace;
-}
-
-.log-time {
-    color: #888;
-    font-size: 0.7rem;
-}
-
-.log-info { color: #ccc; }
-.log-success { color: #25D366; }
-.log-warning { color: #ffa500; }
-.log-error { color: #ff4444; }
+        .log-info { color: #ccc; }
+        .log-success { color: #25D366; }
+        .log-warning { color: #ffa500; }
+        .log-error { color: #ff4444; }
         
     </style>
 </head>
@@ -532,13 +529,15 @@
             </form>
         </div>
     </div>
-<!-- 🔥 CONTAINER DE LOGS -->
-<div class="log-container">
-    <div class="log-header">📋 Log de Alterações</div>
-    <div id="logContainer"></div>
-</div>
+
+    <!-- 🔥 CONTAINER DE LOGS -->
+    <div class="log-container">
+        <div class="log-header">📋 Log de Alterações</div>
+        <div id="logContainer"></div>
+    </div>
+
     <script>
-// 🔧 SISTEMA DE PESQUISA EM TEMPO REAL
+// 🔧 SISTEMA DE PESQUISA EM TEMPO REAL - VERSÃO CORRIGIDA
 class ProductManager {
     constructor() {
         this.allProducts = [];
@@ -551,9 +550,9 @@ class ProductManager {
     async init() {
         await this.loadProductsFromSite();
         this.setupSearch();
-        this.showInitialState();
         this.setupLogSystem();
         this.setupEventListeners();
+        this.debugProducts(); // 🐛 DEBUG - Mostra produtos imediatamente
     }
 
     // 🔥 CONFIGURA EVENT LISTENERS
@@ -617,66 +616,92 @@ class ProductManager {
         }
     }
 
-    // 🎯 EXTRAI PRODUTOS DO HTML
+    // 🎯 EXTRAI PRODUTOS DO HTML - VERSÃO CORRIGIDA
     extractProductsFromHTML(html) {
         const products = [];
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
         
-        const productElements = doc.querySelectorAll('.item');
-        
-        productElements.forEach((element) => {
-            try {
-                const product = this.parseProductElement(element);
-                if (product) {
-                    products.push(product);
-                }
-            } catch (error) {
-                console.error('❌ Erro ao parsear produto:', error);
+        try {
+            // Usa expressão regular para encontrar todos os produtos
+            const productRegex = /<div class="item"[^>]*>[\s\S]*?<\/div>\s*<\/div>/g;
+            const productMatches = html.match(productRegex);
+            
+            if (!productMatches) {
+                console.log('❌ Nenhum produto encontrado no HTML');
+                return products;
             }
-        });
+
+            console.log(`📦 Encontrados ${productMatches.length} produtos no HTML`);
+
+            productMatches.forEach((productHTML, index) => {
+                try {
+                    const product = this.parseProductElementFromString(productHTML);
+                    if (product) {
+                        products.push(product);
+                        console.log(`✅ Produto ${index + 1}: ${product.nome}`);
+                    }
+                } catch (error) {
+                    console.error(`❌ Erro ao parsear produto ${index}:`, error);
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Erro na extração de produtos:', error);
+            this.addLog('❌ Erro ao extrair produtos do HTML', 'error');
+        }
         
         return products;
     }
 
-    // 📝 PARSEIA UM ELEMENTO DE PRODUTO
-    parseProductElement(element) {
-        const button = element.querySelector('.open-modal-btn');
-        if (!button) return null;
-
-        const name = button.getAttribute('data-name');
-        const id = button.getAttribute('data-id');
-        const imageUrl = button.getAttribute('data-image');
-        const specs = button.getAttribute('data-specs');
-        const optionsJson = button.getAttribute('data-options');
-        
-        let preco = 0;
-        let modelos = [];
-        
+    // 📝 PARSEIA UM ELEMENTO DE PRODUTO A PARTIR DE STRING
+    parseProductElementFromString(htmlString) {
         try {
-            modelos = JSON.parse(optionsJson);
-            if (modelos && modelos.length > 0) {
-                preco = parseFloat(modelos[0].price) || 0;
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlString, 'text/html');
+            const element = doc.querySelector('.item');
+            
+            if (!element) return null;
+
+            const button = element.querySelector('.open-modal-btn');
+            if (!button) return null;
+
+            const name = button.getAttribute('data-name');
+            const id = button.getAttribute('data-id');
+            const imageUrl = button.getAttribute('data-image');
+            const specs = button.getAttribute('data-specs');
+            const optionsJson = button.getAttribute('data-options');
+            
+            let preco = 0;
+            let modelos = [];
+            
+            try {
+                modelos = JSON.parse(optionsJson);
+                if (modelos && modelos.length > 0) {
+                    preco = parseFloat(modelos[0].price) || 0;
+                }
+            } catch (e) {
+                console.warn('❌ Erro ao parsear modelos:', e);
             }
-        } catch (e) {
-            console.warn('❌ Erro ao parsear modelos:', e);
+
+            const categoria = element.getAttribute('data-categoria') || 'personalizada';
+
+            return {
+                id: id,
+                nome: name,
+                categoria: categoria,
+                preco: preco,
+                descricao: specs,
+                imageUrl: imageUrl,
+                modelos: modelos,
+                elementoHTML: htmlString.trim()
+            };
+            
+        } catch (error) {
+            console.error('❌ Erro no parse do produto:', error);
+            return null;
         }
-
-        const categoria = element.getAttribute('data-categoria') || 'personalizada';
-
-        return {
-            id: id,
-            nome: name,
-            categoria: categoria,
-            preco: preco,
-            descricao: specs,
-            imageUrl: imageUrl,
-            modelos: modelos,
-            elementoHTML: element.outerHTML
-        };
     }
 
-    // 🔍 CONFIGURA PESQUISA EM TEMPO REAL
+    // 🔍 CONFIGURA PESQUISA EM TEMPO REAL - VERSÃO CORRIGIDA
     setupSearch() {
         const searchInput = document.getElementById('searchInput');
         
@@ -688,36 +713,56 @@ class ProductManager {
                 return;
             }
 
-            const filteredProducts = this.allProducts.filter(product => 
-                product.nome.toLowerCase().includes(searchTerm) ||
-                product.id.toLowerCase().includes(searchTerm) ||
-                product.categoria.toLowerCase().includes(searchTerm) ||
-                (product.descricao && product.descricao.toLowerCase().includes(searchTerm))
-            );
+            console.log(`🔍 Buscando: "${searchTerm}"`);
             
+            const filteredProducts = this.allProducts.filter(product => {
+                if (!product) return false;
+                
+                const searchFields = [
+                    product.nome?.toLowerCase(),
+                    product.id?.toLowerCase(), 
+                    product.categoria?.toLowerCase(),
+                    product.descricao?.toLowerCase()
+                ];
+                
+                return searchFields.some(field => 
+                    field && field.includes(searchTerm)
+                );
+            });
+            
+            console.log(`📊 ${filteredProducts.length} produtos encontrados`);
             this.displayProducts(filteredProducts);
         });
     }
 
-    // 🎴 EXIBE PRODUTOS NA TELA
+    // 🎴 EXIBE PRODUTOS NA TELA - COM DEBUG
     displayProducts(products) {
         const container = document.getElementById('productsContainer');
+        
+        console.log(`🎴 Tentando exibir ${products.length} produtos`);
         
         if (products.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
                     <h3>🔍 Nenhum produto encontrado</h3>
-                    <p>Nenhum produto corresponde à sua busca</p>
+                    <p>Tente buscar por nome, ID ou categoria</p>
                 </div>
             `;
             return;
         }
 
+        const productsHTML = products.map(product => {
+            console.log(`📝 Gerando card para: ${product.nome}`);
+            return this.createProductCard(product);
+        }).join('');
+
         container.innerHTML = `
             <div class="products-grid">
-                ${products.map(product => this.createProductCard(product)).join('')}
+                ${productsHTML}
             </div>
         `;
+        
+        console.log('✅ Produtos exibidos com sucesso');
     }
 
     // 🎴 CRIA CARD DO PRODUTO
@@ -761,6 +806,17 @@ class ProductManager {
                 <p>Digite no campo acima para buscar produtos do site</p>
             </div>
         `;
+    }
+
+    // 🐛 FUNÇÃO DE DEBUG - REMOVA DEPOIS DE TESTAR
+    debugProducts() {
+        console.log('🐛 DEBUG - Todos os produtos carregados:');
+        this.allProducts.forEach((product, index) => {
+            console.log(`[${index}] ${product.nome} (ID: ${product.id})`);
+        });
+        
+        // Mostra produtos mesmo sem busca
+        this.displayProducts(this.allProducts);
     }
 
     // ✏️ ABRE MODAL DE EDIÇÃO
