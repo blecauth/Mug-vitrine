@@ -530,13 +530,8 @@
         </div>
     </div>
 
-    <!-- 🔥 CONTAINER DE LOGS -->
-    <div class="log-container">
-        <div class="log-header">📋 Log de Alterações</div>
-        <div id="logContainer"></div>
-    </div>
-<script>
-// 🔧 SISTEMA DE PESQUISA EM TEMPO REAL - VERSÃO CORRIGIDA PARA DOMÍNIO EXTERNO
+    <script>
+// 🔧 SISTEMA DE PESQUISA EM TEMPO REAL - VERSÃO CORRIGIDA
 class ProductManager {
     constructor() {
         this.allProducts = [];
@@ -597,195 +592,198 @@ class ProductManager {
         }
     }
 
-    // 🌐 CARREGA PRODUTOS - MÚLTIPLAS TENTATIVAS
+    // 🌐 CARREGA PRODUTOS - SOLUÇÃO ROBUSTA
     async loadProducts() {
         this.addLog('🚀 Iniciando carregamento de produtos...', 'info');
         
         try {
-            // Tenta carregar do site principal primeiro
-            await this.loadProductsFromSite();
+            // Tenta método direto primeiro (pode falhar por CORS)
+            await this.tryDirectLoad();
         } catch (error) {
-            console.log('❌ Falha ao carregar do site, tentando método alternativo...');
-            this.addLog('❌ Erro ao carregar do site principal', 'error');
+            console.log('❌ Método direto falhou, usando fallback...');
+            this.addLog('❌ Método direto falhou, usando fallback...', 'warning');
             
-            // Fallback: tenta carregar produtos de exemplo
+            // Fallback: produtos de exemplo baseados no seu site
             await this.loadSampleProducts();
         }
     }
 
-    // 🌐 TENTA CARREGAR DO SITE PRINCIPAL
-    async loadProductsFromSite() {
-        try {
-            this.addLog('🌐 Conectando com site principal...', 'info');
+    // 🔄 TENTA CARREGAMENTO DIRETO
+    async tryDirectLoad() {
+        return new Promise((resolve, reject) => {
+            // Tenta múltiplos métodos
+            const methods = [
+                this.fetchWithCORS.bind(this),
+                this.fetchWithProxy.bind(this),
+                this.fetchWithXMLHttp.bind(this)
+            ];
             
-            // Usa o domínio completo para evitar CORS
-            const response = await fetch('https://fasublimacoes.shop/index.html', {
-                method: 'GET',
-                mode: 'cors',
-                credentials: 'omit'
-            });
+            let currentMethod = 0;
             
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
+            const tryNextMethod = () => {
+                if (currentMethod >= methods.length) {
+                    reject(new Error('Todos os métodos falharam'));
+                    return;
+                }
+                
+                methods[currentMethod]()
+                    .then(products => {
+                        this.allProducts = products;
+                        this.addLog(`✅ ${products.length} produtos carregados via método ${currentMethod + 1}`, 'success');
+                        this.displayProducts(this.allProducts);
+                        resolve();
+                    })
+                    .catch(error => {
+                        console.log(`❌ Método ${currentMethod + 1} falhou:`, error.message);
+                        currentMethod++;
+                        tryNextMethod();
+                    });
+            };
             
-            const html = await response.text();
-            this.addLog('✅ HTML do site carregado com sucesso', 'success');
-            
-            this.allProducts = this.extractProductsFromHTML(html);
-            this.addLog(`✅ ${this.allProducts.length} produtos extraídos do site`, 'success');
-            
-            // Mostra os produtos carregados
-            this.displayProducts(this.allProducts);
-            
-        } catch (error) {
-            console.error('❌ Erro ao carregar do site:', error);
-            this.addLog(`❌ Falha no carregamento: ${error.message}`, 'error');
-            throw error; // Propaga o erro para o fallback
-        }
+            tryNextMethod();
+        });
     }
 
-    // 🎯 EXTRAI PRODUTOS DO HTML - VERSÃO ROBUSTA
+    // 🌐 MÉTODO 1: Fetch com CORS
+    async fetchWithCORS() {
+        this.addLog('🌐 Tentando fetch com CORS...', 'info');
+        
+        const response = await fetch('/index.html', {
+            method: 'GET',
+            mode: 'cors',
+            credentials: 'same-origin'
+        });
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const html = await response.text();
+        return this.extractProductsFromHTML(html);
+    }
+
+    // 🔄 MÉTODO 2: Fetch com proxy CORS
+    async fetchWithProxy() {
+        this.addLog('🔄 Tentando com proxy CORS...', 'info');
+        
+        // Tenta usar um proxy CORS público
+        const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+        const targetUrl = window.location.origin + '/index.html';
+        
+        const response = await fetch(proxyUrl + targetUrl, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (!response.ok) throw new Error('Proxy CORS falhou');
+        
+        const html = await response.text();
+        return this.extractProductsFromHTML(html);
+    }
+
+    // 📡 MÉTODO 3: XMLHttpRequest (mais tolerante)
+    fetchWithXMLHttp() {
+        return new Promise((resolve, reject) => {
+            this.addLog('📡 Tentando com XMLHttpRequest...', 'info');
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/index.html', true);
+            xhr.onreadystatechange = () => {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        const products = this.extractProductsFromHTML(xhr.responseText);
+                        resolve(products);
+                    } else {
+                        reject(new Error(`XHR HTTP ${xhr.status}`));
+                    }
+                }
+            };
+            xhr.onerror = () => reject(new Error('XHR Network Error'));
+            xhr.send();
+        });
+    }
+
+    // 🎯 EXTRAI PRODUTOS DO HTML
     extractProductsFromHTML(html) {
         const products = [];
         
         try {
-            // Método 1: Busca por elementos .item
+            // Cria elemento temporário para parsing
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = html;
             
-            const productElements = tempDiv.querySelectorAll('.item');
-            console.log(`🔍 Encontrados ${productElements.length} elementos .item no HTML`);
+            // Busca todos os elementos .item
+            const items = tempDiv.querySelectorAll('.item');
+            console.log(`🔍 Encontrados ${items.length} elementos .item`);
             
-            productElements.forEach((element, index) => {
+            items.forEach((item, index) => {
                 try {
-                    const product = this.parseProductElement(element);
+                    const product = this.parseProductElement(item);
                     if (product && product.id && product.nome) {
                         products.push(product);
-                        console.log(`✅ Produto ${index + 1}: ${product.nome} (${product.id})`);
+                        console.log(`✅ ${index + 1}. ${product.nome} (${product.id})`);
                     }
-                } catch (parseError) {
-                    console.warn(`⚠️ Erro ao parsear produto ${index}:`, parseError);
+                } catch (error) {
+                    console.warn(`⚠️ Erro no item ${index}:`, error);
                 }
             });
-
-            // Método 2: Fallback - busca por regex se o primeiro método falhar
-            if (products.length === 0) {
-                this.addLog('🔍 Tentando método alternativo de extração...', 'warning');
-                const regexProducts = this.extractProductsWithRegex(html);
-                products.push(...regexProducts);
-            }
-
+            
         } catch (error) {
-            console.error('❌ Erro crítico na extração:', error);
-            this.addLog('❌ Erro crítico na extração de produtos', 'error');
-        }
-        
-        console.log(`📦 Total de produtos extraídos: ${products.length}`);
-        return products;
-    }
-
-    // 🔍 MÉTODO ALTERNATIVO COM REGEX
-    extractProductsWithRegex(html) {
-        const products = [];
-        const productRegex = /<div class="item"[^>]*data-categoria="([^"]*)"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/g;
-        
-        let match;
-        while ((match = productRegex.exec(html)) !== null) {
-            try {
-                const [fullMatch, categoria, content] = match;
-                const product = this.parseProductFromContent(content, categoria);
-                if (product) {
-                    products.push(product);
-                }
-            } catch (error) {
-                console.warn('⚠️ Erro no parse regex:', error);
-            }
+            console.error('❌ Erro na extração:', error);
+            throw error;
         }
         
         return products;
-    }
-
-    // 📝 PARSEIA PRODUTO DO CONTEÚDO HTML
-    parseProductFromContent(content, categoria) {
-        const nameMatch = content.match(/data-name="([^"]*)"/);
-        const idMatch = content.match(/data-id="([^"]*)"/);
-        const imageMatch = content.match(/data-image="([^"]*)"/);
-        const specsMatch = content.match(/data-specs="([^"]*)"/);
-        const optionsMatch = content.match(/data-options='([^']*)'/);
-        
-        if (!nameMatch || !idMatch) return null;
-
-        let modelos = [];
-        try {
-            if (optionsMatch && optionsMatch[1]) {
-                modelos = JSON.parse(optionsMatch[1].replace(/&#39;/g, "'"));
-            }
-        } catch (e) {
-            console.warn('❌ Erro ao parsear opções:', e);
-        }
-
-        return {
-            id: idMatch[1],
-            nome: nameMatch[1],
-            categoria: categoria || 'personalizada',
-            preco: modelos.length > 0 ? parseFloat(modelos[0].price) : 0,
-            descricao: specsMatch ? specsMatch[1] : '',
-            imageUrl: imageMatch ? imageMatch[1] : '',
-            modelos: modelos,
-            elementoHTML: content
-        };
     }
 
     // 📝 PARSEIA UM ELEMENTO DE PRODUTO
     parseProductElement(element) {
+        const button = element.querySelector('.open-modal-btn');
+        if (!button) return null;
+
+        const name = button.getAttribute('data-name');
+        const id = button.getAttribute('data-id');
+        const imageUrl = button.getAttribute('data-image');
+        const specs = button.getAttribute('data-specs');
+        const optionsJson = button.getAttribute('data-options');
+        
+        if (!name || !id) return null;
+
+        let preco = 0;
+        let modelos = [];
+        
         try {
-            const button = element.querySelector('.open-modal-btn');
-            if (!button) return null;
-
-            const name = button.getAttribute('data-name');
-            const id = button.getAttribute('data-id');
-            const imageUrl = button.getAttribute('data-image');
-            const specs = button.getAttribute('data-specs');
-            const optionsJson = button.getAttribute('data-options');
-            
-            let preco = 0;
-            let modelos = [];
-            
-            try {
-                if (optionsJson) {
-                    modelos = JSON.parse(optionsJson.replace(/&#39;/g, "'"));
-                    if (modelos && modelos.length > 0) {
-                        preco = parseFloat(modelos[0].price) || 0;
-                    }
+            if (optionsJson) {
+                // Corrige entidades HTML antes de parsear JSON
+                const correctedJson = optionsJson.replace(/&#39;/g, "'");
+                modelos = JSON.parse(correctedJson);
+                if (modelos && modelos.length > 0) {
+                    preco = parseFloat(modelos[0].price) || 0;
                 }
-            } catch (e) {
-                console.warn('❌ Erro ao parsear modelos:', e);
             }
-
-            const categoria = element.getAttribute('data-categoria') || 'personalizada';
-
-            return {
-                id: id,
-                nome: name,
-                categoria: categoria,
-                preco: preco,
-                descricao: specs,
-                imageUrl: imageUrl,
-                modelos: modelos,
-                elementoHTML: element.outerHTML
-            };
-        } catch (error) {
-            console.error('❌ Erro no parse do elemento:', error);
-            return null;
+        } catch (e) {
+            console.warn('❌ Erro ao parsear modelos:', e);
         }
+
+        const categoria = element.getAttribute('data-categoria') || 'personalizada';
+
+        return {
+            id: id,
+            nome: name,
+            categoria: categoria,
+            preco: preco,
+            descricao: specs || '',
+            imageUrl: imageUrl || '',
+            modelos: modelos,
+            elementoHTML: element.outerHTML
+        };
     }
 
     // 📦 CARREGA PRODUTOS DE EXEMPLO (FALLBACK)
     async loadSampleProducts() {
         this.addLog('📝 Carregando produtos de exemplo...', 'warning');
         
-        // Produtos de exemplo baseados no seu site
+        // Produtos baseados na estrutura real do seu site
         this.allProducts = [
             {
                 id: "0001",
@@ -800,9 +798,9 @@ class ProductManager {
                 ]
             },
             {
-                id: "CN0001",
+                id: "CN0001", 
                 nome: "Caneca Orgulho Negro",
-                categoria: "personalizada", 
+                categoria: "personalizada",
                 preco: 30.00,
                 descricao: "Caneca de cerâmica com estampa exclusiva",
                 imageUrl: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg",
@@ -810,16 +808,28 @@ class ProductManager {
                     { model: "Branca", price: 30.00, image: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" },
                     { model: "Preta", price: 32.00, image: "https://i.ibb.co/PjX9108/IMG-20251021-WA0002.jpg" }
                 ]
+            },
+            {
+                id: "CN0002",
+                nome: "Caneca Personalizada Anime",
+                categoria: "animes", 
+                preco: 35.00,
+                descricao: "Caneca com estampa de anime exclusiva",
+                imageUrl: "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg",
+                modelos: [
+                    { model: "Branca", price: 35.00, image: "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg" },
+                    { model: "Preta", price: 37.00, image: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" }
+                ]
             }
         ];
 
         this.addLog(`✅ ${this.allProducts.length} produtos de exemplo carregados`, 'success');
         this.displayProducts(this.allProducts);
         
-        // Mostra aviso sobre usar produtos de exemplo
+        // Aviso sobre CORS
         setTimeout(() => {
-            this.addLog('💡 Dica: Os produtos reais do site aparecerão quando o CORS for configurado', 'info');
-        }, 2000);
+            this.addLog('💡 Para carregar produtos reais: configure CORS no servidor', 'info');
+        }, 1000);
     }
 
     // 🔍 CONFIGURA PESQUISA EM TEMPO REAL
@@ -834,7 +844,7 @@ class ProductManager {
                 return;
             }
 
-            console.log(`🔍 Buscando: "${searchTerm}" em ${this.allProducts.length} produtos`);
+            console.log(`🔍 Buscando: "${searchTerm}"`);
             
             const filteredProducts = this.allProducts.filter(product => {
                 if (!product) return false;
@@ -1114,7 +1124,7 @@ class ProductManager {
                 this.closeEditModal();
                 
                 // Recarrega os produtos para refletir mudanças
-                await this.loadProductsFromSite();
+                await this.loadProducts();
                 
                 // Atualiza a pesquisa atual
                 const searchTerm = document.getElementById('searchInput').value;
@@ -1277,7 +1287,6 @@ function closeEditModal() {
 }
 
 window.productManager = productManager;
-</script>
-  
+</script>  
 </body>
 </html>
