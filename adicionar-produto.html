@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adicionar Produto - Admin Canecas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background: #0d0d0d;
+            color: #fff;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #181818;
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 1px solid #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #25D366;
+            padding-bottom: 1rem;
+        }
+        
+        .header h1 {
+            color: #25D366;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #ccc;
+            font-weight: bold;
+        }
+        
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #1a1a1a;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            border-color: #25D366;
+            outline: none;
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        /* Modelos Section */
+        .modelos-section {
+            background: #1a1a1a;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #333;
+        }
+        
+        .modelos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .modelo-checkbox {
+            display: none;
+        }
+        
+        .modelo-label {
+            display: block;
+            padding: 0.8rem 0.5rem;
+            background: #252525;
+            border: 2px solid #333;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        
+        .modelo-checkbox:checked + .modelo-label {
+            border-color: #25D366;
+            background: rgba(37, 211, 102, 0.1);
+            color: #25D366;
+        }
+        
+        /* Campos de Modelo */
+        .modelo-campos {
+            display: none;
+            background: #252525;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            border: 1px solid #333;
+        }
+        
+        .modelo-campos.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .campos-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .preview-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #333;
+        }
+        
+        /* Ações */
+        .acoes {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 0.8rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .btn-preview {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-preview:hover {
+            background: #0056b3;
+        }
+        
+        .btn-submit {
+            background: #25D366;
+            color: white;
+        }
+        
+        .btn-submit:hover {
+            background: #1ebe5f;
+        }
+        
+        .btn-cancel {
+            background: #666;
+            color: white;
+        }
+        
+        .btn-cancel:hover {
+            background: #555;
+        }
+        
+        .btn:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+        
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #25D366;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Mensagens */
+        .message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            text-align: center;
+            display: none;
+        }
+        
+        .message.success {
+            background: rgba(37, 211, 102, 0.1);
+            border: 1px solid #25D366;
+            color: #25D366;
+        }
+        
+        .message.error {
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid #ff4444;
+            color: #ff4444;
+        }
+        
+        /* Logs Mobile */
+        #mobileLogs {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.9);
+            color: #25D366;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 11px;
+            max-width: 150px;
+            max-height: 80px;
+            overflow-y: auto;
+            z-index: 10000;
+            display: none;
+            border: 1px solid #25D366;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>➕ Adicionar Produto</h1>
+            <p>Preencha os dados para publicar no site</p>
+        </div>
+        
+        <form id="productForm">
+            <!-- Dados Básicos -->
+            <div class="form-group">
+                <label class="form-label" for="productName">Nome do Produto *</label>
+                <input type="text" class="form-input" id="productName" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="productId">ID do Produto *</label>
+                <input type="text" class="form-input" id="productId" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="productDescription">Descrição *</label>
+                <textarea class="form-textarea" id="productDescription" required></textarea>
+            </div>
+            
+            <!-- Seção de Modelos -->
+            <div class="modelos-section">
+                <h3 style="color: #25D366; margin-bottom: 1rem; font-size: 1.1rem;">🎨 Modelos Disponíveis</h3>
+                
+                <div class="modelos-grid" id="modelosContainer">
+                    <!-- Modelos carregados via JavaScript -->
+                </div>
+                
+                <!-- Campos Dinâmicos -->
+                <div id="modelosCampos"></div>
+            </div>
+            
+            <!-- Mensagens -->
+            <div class="message success" id="successMessage"></div>
+            <div class="message error" id="errorMessage"></div>
+            
+            <!-- Loading -->
+            <div class="loading" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p style="color: #25D366; margin-top: 0.5rem;">Processando...</p>
+            </div>
+            
+            <!-- Ações -->
+            <div class="acoes">
+                <button type="button" class="btn btn-cancel" onclick="voltarDashboard()">← Voltar</button>
+                <button type="button" class="btn btn-preview" onclick="previewProduto()">👁️ Prévia</button>
+                <button type="submit" class="btn btn-submit" id="submitBtn">🚀 Publicar no GitHub</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Área de Logs Mobile -->
+    <div id="mobileLogs"></div>
+
+    <!-- Modal de Prévia -->
+    <div id="previewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; padding: 1rem;">
+        <div style="background: #181818; padding: 1.5rem; border-radius: 15px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="color: #25D366; font-size: 1.2rem;">👁️ Prévia do Produto</h3>
+                <button onclick="fecharPreview()" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">×</button>
+            </div>
+            <div id="previewContent"></div>
+            <div style="text-align: center; margin-top: 1rem;">
+                <button onclick="fecharPreview()" class="btn btn-cancel" style="min-width: 100px;">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // =============================================
+    // 🚀 CÓDIGO PRINCIPAL - COM API GITHUB REAL
+    // =============================================
+    
+    const MODELOS_DISPONIVEIS = [
+        'Branca', 'Preta', 'Vermelha', 'Amarela', 'Rosa', 
+        'Azul Clara', 'Azul', 'Azul Escura', 'Verde Clara', 'Verde', 
+        'Verde Escura', 'Laranja', 'Roxa'
+    ];
+
+    // Função para mostrar logs na tela do mobile
+    function mobileLog(mensagem) {
+        const logs = document.getElementById('mobileLogs');
+        if (logs) {
+            logs.style.display = 'block';
+            logs.innerHTML += '<div>› ' + mensagem + '</div>';
+            // Limita a 3 mensagens
+            if (logs.children.length > 3) {
+                logs.removeChild(logs.children[0]);
+            }
+        }
+        console.log('📱', mensagem);
+    }
+
+    class ProductForm {
+        constructor() {
+            this.modelosSelecionados = new Map();
+            this.init();
+        }
+
+        init() {
+            mobileLog('Iniciando formulário...');
+            this.carregarModelos();
+            this.configurarFormulario();
+            mobileLog('✅ Formulário pronto!');
+        }
+
+        carregarModelos() {
+            const container = document.getElementById('modelosContainer');
+            const camposContainer = document.getElementById('modelosCampos');
+            
+            MODELOS_DISPONIVEIS.forEach(modelo => {
+                const checkboxId = `modelo-${modelo.replace(/\s+/g, '-').toLowerCase()}`;
+                
+                // Checkbox do modelo
+                container.innerHTML += `
+                    <div>
+                        <input type="checkbox" class="modelo-checkbox" id="${checkboxId}" value="${modelo}">
+                        <label class="modelo-label" for="${checkboxId}">${modelo}</label>
+                    </div>
+                `;
+
+                // Campos do modelo
+                camposContainer.innerHTML += `
+                    <div class="modelo-campos" id="campos-${modelo.replace(/\s+/g, '-').toLowerCase()}">
+                        <h4 style="color: #25D366; margin-bottom: 0.5rem; font-size: 1rem;">${modelo}</h4>
+                        <div class="campos-grid">
+                            <div>
+                                <label class="form-label">Preço (R$)</label>
+                                <input type="number" class="form-input" 
+                                       id="preco-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
+                                       step="0.01" min="0" placeholder="Ex: 29.90">
+                            </div>
+                            <div>
+                                <label class="form-label">Imagem</label>
+                                <input type="file" class="form-input" 
+                                       id="imagem-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
+                                       accept="image/*">
+                                <img id="preview-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
+                                     class="preview-image" style="display: none; margin-top: 0.5rem;">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Configurar eventos
+            MODELOS_DISPONIVEIS.forEach(modelo => {
+                const checkbox = document.getElementById(`modelo-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
+                const fileInput = document.getElementById(`imagem-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
+                const precoInput = document.getElementById(`preco-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
+
+                checkbox.addEventListener('change', (e) => {
+                    this.toggleCamposModelo(modelo, e.target.checked);
+                    mobileLog(`${modelo}: ${e.target.checked ? 'selecionado' : 'removido'}`);
+                });
+
+                fileInput.addEventListener('change', (e) => {
+                    this.fazerPreviewImagem(e.target, modelo);
+                    mobileLog(`Imagem ${modelo}: selecionada`);
+                });
+
+                precoInput.addEventListener('input', (e) => {
+                    this.atualizarPrecoModelo(modelo, e.target.value);
+                });
+            });
+        }
+
+        toggleCamposModelo(modelo, mostrar) {
+            const campos = document.getElementById(`campos-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
+            
+            if (mostrar) {
+                campos.classList.add('active');
+                this.modelosSelecionados.set(modelo, {
+                    preco: '',
+                    imagemUrl: '',
+                    imagemFile: null
+                });
+            } else {
+                campos.classList.remove('active');
+                this.modelosSelecionados.delete(modelo);
+            }
+        }
+
+        fazerPreviewImagem(input, modelo) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const previewId = `preview-${modelo.replace(/\s+/g, '-').toLowerCase()}`;
+            const preview = document.getElementById(previewId);
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                
+                const modeloData = this.modelosSelecionados.get(modelo);
+                if (modeloData) {
+                    modeloData.imagemFile = file;
+                    // Para teste, usamos a data URL - em produção seria ImgBB
+                    modeloData.imagemUrl = e.target.result;
+                    this.modelosSelecionados.set(modelo, modeloData);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        atualizarPrecoModelo(modelo, preco) {
+            const modeloData = this.modelosSelecionados.get(modelo);
+            if (modeloData) {
+                modeloData.preco = preco;
+                this.modelosSelecionados.set(modelo, modeloData);
+            }
+        }
+
+        configurarFormulario() {
+            const form = document.getElementById('productForm');
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await this.enviarProduto();
+            });
+        }
+
+        validarFormulario() {
+            const nome = document.getElementById('productName').value.trim();
+            const id = document.getElementById('productId').value.trim();
+            const descricao = document.getElementById('productDescription').value.trim();
+
+            if (!nome || !id || !descricao) {
+                throw new Error('Preencha todos os campos básicos');
+            }
+
+            if (this.modelosSelecionados.size === 0) {
+                throw new Error('Selecione pelo menos um modelo');
+            }
+
+            for (const [modelo, dados] of this.modelosSelecionados) {
+                if (!dados.preco || isNaN(parseFloat(dados.preco))) {
+                    throw new Error(`Preço inválido: ${modelo}`);
+                }
+                if (!dados.imagemFile) {
+                    throw new Error(`Imagem não selecionada: ${modelo}`);
+                }
+            }
+
+            return true;
+        }
+
+        gerarHTMLProduto() {
+            const nome = document.getElementById('productName').value.trim();
+            const id = document.getElementById('productId').value.trim();
+            const descricao = document.getElementById('productDescription').value.trim();
+            
+            // Gerar array de opções para o modal
+            const opcoes = Array.from(this.modelosSelecionados).map(([modelo, dados]) => ({
+                model: modelo,
+                price: parseFloat(dados.preco),
+                image: dados.imagemUrl
+            }));
+
+            const opcoesJSON = JSON.stringify(opcoes).replace(/'/g, "&#39;");
+
+            return `
+    <div class="item" data-categoria="personalizada">
+        <img src="${opcoes[0].image}" alt="${nome}" loading="lazy">
+        <div class="info">
+            <h2>${nome}</h2>
+            <p>ID: ${id}</p>
+            <p>R$ ${opcoes[0].price.toFixed(2)}</p>
+            <button class="open-modal-btn"
+                data-name="${nome}"
+                data-id="${id}"
+                data-image="${opcoes[0].image}"
+                data-specs="${descricao}"
+                data-options='${opcoesJSON}'>
+                Ver Detalhes
+            </button>
+        </div>
+    </div>`.trim();
+        }
+
+        async enviarProduto() {
+            try {
+                this.mostrarLoading(true);
+                this.limparMensagens();
+
+                mobileLog('Validando formulário...');
+                this.validarFormulario();
+
+                // Gerar HTML do produto
+                const htmlProduto = this.gerarHTMLProduto();
+                const nomeProduto = document.getElementById('productName').value.trim();
+
+                mobileLog(`Enviando: ${nomeProduto}`);
+                mobileLog('Conectando GitHub...');
+
+                console.log('📝 HTML Gerado:', htmlProduto);
+
+                // ENVIAR PARA API GITHUB REAL
+                const response = await fetch('/api/github-update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        htmlCode: htmlProduto,
+                        commitMessage: `✨ Adicionar produto: ${nomeProduto}`
+                    })
+                });
+
+                const data = await response.json();
+                console.log('📨 Resposta da API:', data);
+
+                if (data.success) {
+                    this.mostrarMensagem(
+                        `🎉 <strong>"${nomeProduto}"</strong> publicado com sucesso!<br><br>
+                        ✅ Produto adicionado ao repositório GitHub<br>
+                        ⏱️ Site atualizando... (1-2 minutos)<br><br>
+                        <small>O deploy automático da Vercel vai atualizar seu site</small>`,
+                        'success'
+                    );
+                    
+                    this.limparFormulario();
+                    mobileLog('✅ Produto publicado no GitHub!');
+
+                    // Opção para ver o commit
+                    setTimeout(() => {
+                        if (data.commitUrl && confirm('Deseja ver o commit no GitHub?')) {
+                            window.open(data.commitUrl, '_blank');
+                        }
+                    }, 2000);
+                    
+                } else {
+                    throw new Error(data.error || 'Erro desconhecido do GitHub');
+                }
+
+            } catch (error) {
+                console.error('❌ Erro ao publicar produto:', error);
+                mobileLog(`❌ Erro: ${error.message}`);
+                
+                let mensagemErro = error.message;
+                if (error.message.includes('GitHub') || error.message.includes('token')) {
+                    mensagemErro = 'Erro de configuração do GitHub. Verifique as variáveis de ambiente no Vercel.';
+                }
+                
+                this.mostrarMensagem(`❌ ${mensagemErro}`, 'error');
+            } finally {
+                this.mostrarLoading(false);
+            }
+        }
+
+        previewProduto() {
+            try {
+                this.validarFormulario();
+                
+                const nome = document.getElementById('productName').value.trim();
+                const id = document.getElementById('productId').value.trim();
+                const descricao = document.getElementById('productDescription').value.trim();
+                
+                let previewHTML = `
+                    <div style="background: #1a1a1a; padding: 1rem; border-radius: 10px;">
+                        <h4 style="color: #25D366;">${nome}</h4>
+                        <p><strong>ID:</strong> ${id}</p>
+                        <p><strong>Descrição:</strong> ${descricao}</p>
+                        <p><strong>Modelos (${this.modelosSelecionados.size}):</strong></p>
+                        <ul style="margin-left: 1rem;">
+                `;
+                
+                for (const [modelo, dados] of this.modelosSelecionados) {
+                    previewHTML += `<li>${modelo} - R$ ${parseFloat(dados.preco).toFixed(2)}</li>`;
+                }
+                
+                previewHTML += `
+                        </ul>
+                        <p style="color: #25D366; margin-top: 1rem; font-size: 0.9rem;">
+                            ✅ Prévia do card que será publicado no site!
+                        </p>
+                    </div>
+                `;
+                
+                document.getElementById('previewContent').innerHTML = previewHTML;
+                document.getElementById('previewModal').style.display = 'flex';
+                mobileLog('👁️ Prévia gerada');
+                
+            } catch (error) {
+                mobileLog(`❌ Erro na prévia: ${error.message}`);
+                this.mostrarMensagem(`❌ ${error.message}`, 'error');
+            }
+        }
+
+        // Métodos auxiliares
+        mostrarLoading(mostrar) {
+            const spinner = document.getElementById('loadingSpinner');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (spinner) spinner.style.display = mostrar ? 'block' : 'none';
+            if (submitBtn) {
+                submitBtn.disabled = mostrar;
+                submitBtn.textContent = mostrar ? '⏳ Publicando...' : '🚀 Publicar no GitHub';
+            }
+        }
+
+        mostrarMensagem(mensagem, tipo) {
+            const element = document.getElementById(tipo === 'success' ? 'successMessage' : 'errorMessage');
+            if (element) {
+                element.innerHTML = mensagem;
+                element.style.display = 'block';
+                
+                // Scroll para a mensagem
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        limparMensagens() {
+            const successMsg = document.getElementById('successMessage');
+            const errorMsg = document.getElementById('errorMessage');
+            
+            if (successMsg) successMsg.style.display = 'none';
+            if (errorMsg) errorMsg.style.display = 'none';
+        }
+
+        limparFormulario() {
+            document.getElementById('productForm').reset();
+            this.modelosSelecionados.clear();
+            
+            MODELOS_DISPONIVEIS.forEach(modelo => {
+                const campos = document.getElementById(`campos-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
+                if (campos) campos.classList.remove('active');
+                
+                const preview = document.getElementById(`preview-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
+                if (preview) preview.style.display = 'none';
+            });
+            
+            mobileLog('🧹 Formulário limpo');
+        }
+    }
+
+    // Funções globais
+    function fecharPreview() {
+        document.getElementById('previewModal').style.display = 'none';
+        mobileLog('📌 Prévia fechada');
+    }
+
+    function voltarDashboard() {
+        mobileLog('Voltando ao dashboard...');
+        window.location.href = 'dashboard.html';
+    }
+
+    function previewProduto() {
+        if (window.productForm) {
+            window.productForm.previewProduto();
+        }
+    }
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', () => {
+        mobileLog('📄 Página carregada');
+        window.productForm = new ProductForm();
+    });
+    
+// Sistema de verificação para gerenciar-produtos.html
+function checkAdminAuth() {
+    const tokenKey = 'admin_secure_token_v2';
+    const encryptedToken = localStorage.getItem(tokenKey);
+    
+    if (!encryptedToken) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    try {
+        const reversed = encryptedToken.split('').reverse().join('');
+        const decoded = atob(reversed);
+        const jsonString = decodeURIComponent(escape(atob(decoded)));
+        const tokenData = JSON.parse(jsonString.replace('canecas_admin_2024_secure_system', ''));
+        
+        const isValid = tokenData && 
+                       tokenData.isAdmin === true && 
+                       tokenData.verified === true &&
+                       Date.now() < tokenData.expires;
+
+        if (!isValid) {
+            window.location.href = 'login.html';
+        }
+    } catch (error) {
+        window.location.href = 'login.html';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', checkAdminAuth);
+    </script>
+</body>
+</html>
