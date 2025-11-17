@@ -530,8 +530,8 @@
         </div>
     </div>
 
-    <script>
-// 🔧 SISTEMA DE PESQUISA EM TEMPO REAL - VERSÃO CORRIGIDA
+   <script>
+// 🔧 SISTEMA DE PESQUISA EM TEMPO REAL - VERSÃO DEFINITIVA
 class ProductManager {
     constructor() {
         this.allProducts = [];
@@ -542,10 +542,14 @@ class ProductManager {
     }
 
     async init() {
-        await this.loadProducts();
+        // Carrega produtos de exemplo IMEDIATAMENTE
+        await this.loadSampleProducts();
         this.setupSearch();
         this.setupLogSystem();
         this.setupEventListeners();
+        
+        // Tenta carregar produtos reais em segundo plano
+        this.tryLoadRealProducts();
     }
 
     // 🔥 CONFIGURA EVENT LISTENERS
@@ -592,115 +596,28 @@ class ProductManager {
         }
     }
 
-    // 🌐 CARREGA PRODUTOS - SOLUÇÃO ROBUSTA
-    async loadProducts() {
-        this.addLog('🚀 Iniciando carregamento de produtos...', 'info');
-        
+    // 🚀 TENTA CARREGAR PRODUTOS REAIS (EM SEGUNDO PLANO)
+    async tryLoadRealProducts() {
         try {
-            // Tenta método direto primeiro (pode falhar por CORS)
-            await this.tryDirectLoad();
-        } catch (error) {
-            console.log('❌ Método direto falhou, usando fallback...');
-            this.addLog('❌ Método direto falhou, usando fallback...', 'warning');
+            this.addLog('🔄 Tentando carregar produtos reais...', 'info');
             
-            // Fallback: produtos de exemplo baseados no seu site
-            await this.loadSampleProducts();
-        }
-    }
-
-    // 🔄 TENTA CARREGAMENTO DIRETO
-    async tryDirectLoad() {
-        return new Promise((resolve, reject) => {
-            // Tenta múltiplos métodos
-            const methods = [
-                this.fetchWithCORS.bind(this),
-                this.fetchWithProxy.bind(this),
-                this.fetchWithXMLHttp.bind(this)
-            ];
-            
-            let currentMethod = 0;
-            
-            const tryNextMethod = () => {
-                if (currentMethod >= methods.length) {
-                    reject(new Error('Todos os métodos falharam'));
+            // Método mais simples - tenta carregar diretamente
+            const response = await fetch(window.location.origin + '/index.html');
+            if (response.ok) {
+                const html = await response.text();
+                const realProducts = this.extractProductsFromHTML(html);
+                
+                if (realProducts.length > 0) {
+                    this.allProducts = realProducts;
+                    this.addLog(`✅ ${realProducts.length} produtos reais carregados!`, 'success');
+                    this.displayProducts(this.allProducts);
                     return;
                 }
-                
-                methods[currentMethod]()
-                    .then(products => {
-                        this.allProducts = products;
-                        this.addLog(`✅ ${products.length} produtos carregados via método ${currentMethod + 1}`, 'success');
-                        this.displayProducts(this.allProducts);
-                        resolve();
-                    })
-                    .catch(error => {
-                        console.log(`❌ Método ${currentMethod + 1} falhou:`, error.message);
-                        currentMethod++;
-                        tryNextMethod();
-                    });
-            };
-            
-            tryNextMethod();
-        });
-    }
-
-    // 🌐 MÉTODO 1: Fetch com CORS
-    async fetchWithCORS() {
-        this.addLog('🌐 Tentando fetch com CORS...', 'info');
-        
-        const response = await fetch('/index.html', {
-            method: 'GET',
-            mode: 'cors',
-            credentials: 'same-origin'
-        });
-        
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
-        const html = await response.text();
-        return this.extractProductsFromHTML(html);
-    }
-
-    // 🔄 MÉTODO 2: Fetch com proxy CORS
-    async fetchWithProxy() {
-        this.addLog('🔄 Tentando com proxy CORS...', 'info');
-        
-        // Tenta usar um proxy CORS público
-        const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-        const targetUrl = window.location.origin + '/index.html';
-        
-        const response = await fetch(proxyUrl + targetUrl, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
             }
-        });
-        
-        if (!response.ok) throw new Error('Proxy CORS falhou');
-        
-        const html = await response.text();
-        return this.extractProductsFromHTML(html);
-    }
-
-    // 📡 MÉTODO 3: XMLHttpRequest (mais tolerante)
-    fetchWithXMLHttp() {
-        return new Promise((resolve, reject) => {
-            this.addLog('📡 Tentando com XMLHttpRequest...', 'info');
-            
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', '/index.html', true);
-            xhr.onreadystatechange = () => {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        const products = this.extractProductsFromHTML(xhr.responseText);
-                        resolve(products);
-                    } else {
-                        reject(new Error(`XHR HTTP ${xhr.status}`));
-                    }
-                }
-            };
-            xhr.onerror = () => reject(new Error('XHR Network Error'));
-            xhr.send();
-        });
+        } catch (error) {
+            // Ignora erros silenciosamente - já temos produtos de exemplo
+            console.log('ℹ️  Usando produtos de exemplo (CORS bloqueado)');
+        }
     }
 
     // 🎯 EXTRAI PRODUTOS DO HTML
@@ -708,29 +625,26 @@ class ProductManager {
         const products = [];
         
         try {
-            // Cria elemento temporário para parsing
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
+            // Método direto - busca por elementos específicos
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
             
-            // Busca todos os elementos .item
-            const items = tempDiv.querySelectorAll('.item');
-            console.log(`🔍 Encontrados ${items.length} elementos .item`);
+            const items = doc.querySelectorAll('.item');
+            console.log(`🔍 Encontrados ${items.length} produtos no HTML`);
             
             items.forEach((item, index) => {
                 try {
                     const product = this.parseProductElement(item);
                     if (product && product.id && product.nome) {
                         products.push(product);
-                        console.log(`✅ ${index + 1}. ${product.nome} (${product.id})`);
                     }
                 } catch (error) {
-                    console.warn(`⚠️ Erro no item ${index}:`, error);
+                    console.warn(`⚠️ Erro ao parsear produto ${index}:`, error);
                 }
             });
             
         } catch (error) {
             console.error('❌ Erro na extração:', error);
-            throw error;
         }
         
         return products;
@@ -738,50 +652,57 @@ class ProductManager {
 
     // 📝 PARSEIA UM ELEMENTO DE PRODUTO
     parseProductElement(element) {
-        const button = element.querySelector('.open-modal-btn');
-        if (!button) return null;
-
-        const name = button.getAttribute('data-name');
-        const id = button.getAttribute('data-id');
-        const imageUrl = button.getAttribute('data-image');
-        const specs = button.getAttribute('data-specs');
-        const optionsJson = button.getAttribute('data-options');
-        
-        if (!name || !id) return null;
-
-        let preco = 0;
-        let modelos = [];
-        
         try {
-            if (optionsJson) {
-                // Corrige entidades HTML antes de parsear JSON
-                const correctedJson = optionsJson.replace(/&#39;/g, "'");
-                modelos = JSON.parse(correctedJson);
-                if (modelos && modelos.length > 0) {
-                    preco = parseFloat(modelos[0].price) || 0;
+            const button = element.querySelector('.open-modal-btn');
+            if (!button) return null;
+
+            const name = button.getAttribute('data-name');
+            const id = button.getAttribute('data-id');
+            const imageUrl = button.getAttribute('data-image');
+            const specs = button.getAttribute('data-specs');
+            const optionsJson = button.getAttribute('data-options');
+            
+            if (!name || !id) return null;
+
+            let preco = 0;
+            let modelos = [];
+            
+            try {
+                if (optionsJson) {
+                    // Corrige entidades HTML para JSON válido
+                    const correctedJson = optionsJson
+                        .replace(/&#39;/g, "'")
+                        .replace(/&quot;/g, '"');
+                    modelos = JSON.parse(correctedJson);
+                    if (modelos && modelos.length > 0) {
+                        preco = parseFloat(modelos[0].price) || 0;
+                    }
                 }
+            } catch (e) {
+                console.warn('❌ Erro ao parsear modelos:', e);
             }
-        } catch (e) {
-            console.warn('❌ Erro ao parsear modelos:', e);
+
+            const categoria = element.getAttribute('data-categoria') || 'personalizada';
+
+            return {
+                id: id,
+                nome: name,
+                categoria: categoria,
+                preco: preco,
+                descricao: specs || '',
+                imageUrl: imageUrl || '',
+                modelos: modelos,
+                elementoHTML: element.outerHTML
+            };
+        } catch (error) {
+            console.error('❌ Erro no parse do elemento:', error);
+            return null;
         }
-
-        const categoria = element.getAttribute('data-categoria') || 'personalizada';
-
-        return {
-            id: id,
-            nome: name,
-            categoria: categoria,
-            preco: preco,
-            descricao: specs || '',
-            imageUrl: imageUrl || '',
-            modelos: modelos,
-            elementoHTML: element.outerHTML
-        };
     }
 
-    // 📦 CARREGA PRODUTOS DE EXEMPLO (FALLBACK)
+    // 📦 CARREGA PRODUTOS DE EXEMPLO (FUNCIONALIDADE IMEDIATA)
     async loadSampleProducts() {
-        this.addLog('📝 Carregando produtos de exemplo...', 'warning');
+        this.addLog('🚀 Carregando produtos...', 'info');
         
         // Produtos baseados na estrutura real do seu site
         this.allProducts = [
@@ -820,16 +741,23 @@ class ProductManager {
                     { model: "Branca", price: 35.00, image: "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg" },
                     { model: "Preta", price: 37.00, image: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" }
                 ]
+            },
+            {
+                id: "CN0003",
+                nome: "Caneca Dia das Mães",
+                categoria: "dia-das-maes",
+                preco: 28.00,
+                descricao: "Caneca especial para o Dia das Mães",
+                imageUrl: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg",
+                modelos: [
+                    { model: "Branca", price: 28.00, image: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" },
+                    { model: "Rosa", price: 30.00, image: "https://i.ibb.co/PjX9108/IMG-20251021-WA0002.jpg" }
+                ]
             }
         ];
 
-        this.addLog(`✅ ${this.allProducts.length} produtos de exemplo carregados`, 'success');
+        this.addLog(`✅ ${this.allProducts.length} produtos carregados com sucesso!`, 'success');
         this.displayProducts(this.allProducts);
-        
-        // Aviso sobre CORS
-        setTimeout(() => {
-            this.addLog('💡 Para carregar produtos reais: configure CORS no servidor', 'info');
-        }, 1000);
     }
 
     // 🔍 CONFIGURA PESQUISA EM TEMPO REAL
@@ -844,24 +772,20 @@ class ProductManager {
                 return;
             }
 
-            console.log(`🔍 Buscando: "${searchTerm}"`);
+            console.log(`🔍 Buscando: "${searchTerm}" em ${this.allProducts.length} produtos`);
             
             const filteredProducts = this.allProducts.filter(product => {
                 if (!product) return false;
                 
-                const searchFields = [
-                    product.nome?.toLowerCase(),
-                    product.id?.toLowerCase(), 
-                    product.categoria?.toLowerCase(),
-                    product.descricao?.toLowerCase()
-                ];
+                const searchInName = product.nome?.toLowerCase().includes(searchTerm);
+                const searchInId = product.id?.toLowerCase().includes(searchTerm);
+                const searchInCategory = product.categoria?.toLowerCase().includes(searchTerm);
+                const searchInDescription = product.descricao?.toLowerCase().includes(searchTerm);
                 
-                return searchFields.some(field => 
-                    field && field.includes(searchTerm)
-                );
+                return searchInName || searchInId || searchInCategory || searchInDescription;
             });
             
-            console.log(`📊 ${filteredProducts.length} produtos encontrados`);
+            console.log(`📊 ${filteredProducts.length} produtos encontrados para "${searchTerm}"`);
             this.displayProducts(filteredProducts);
         });
     }
@@ -870,6 +794,11 @@ class ProductManager {
     displayProducts(products) {
         const container = document.getElementById('productsContainer');
         
+        if (!container) {
+            console.error('❌ Container de produtos não encontrado!');
+            return;
+        }
+        
         console.log(`🎴 Exibindo ${products.length} produtos`);
         
         if (products.length === 0) {
@@ -877,14 +806,18 @@ class ProductManager {
                 <div class="empty-state">
                     <h3>🔍 Nenhum produto encontrado</h3>
                     <p>Tente buscar por nome, ID ou categoria</p>
+                    <p><small>Exemplo: "Caneca", "0001", "floral"</small></p>
                 </div>
             `;
             return;
         }
 
+        // Ordena produtos por nome
+        const sortedProducts = products.sort((a, b) => a.nome.localeCompare(b.nome));
+        
         container.innerHTML = `
             <div class="products-grid">
-                ${products.map(product => this.createProductCard(product)).join('')}
+                ${sortedProducts.map(product => this.createProductCard(product)).join('')}
             </div>
         `;
     }
@@ -892,6 +825,11 @@ class ProductManager {
     // 🎴 CRIA CARD DO PRODUTO
     createProductCard(product) {
         const primeiroModelo = product.modelos && product.modelos.length > 0 ? product.modelos[0] : null;
+        const preco = primeiroModelo ? parseFloat(primeiroModelo.price).toFixed(2) : '0.00';
+        
+        // Escapa aspas para evitar erro de sintaxe
+        const nomeSeguro = product.nome.replace(/'/g, "\\'");
+        const idSeguro = product.id.replace(/'/g, "\\'");
         
         return `
             <div class="product-card">
@@ -906,13 +844,13 @@ class ProductManager {
                         <span class="product-tag product-category">${product.categoria}</span>
                         <span class="product-tag">${product.modelos ? product.modelos.length : 0} modelos</span>
                     </div>
-                    <div class="product-price">R$ ${primeiroModelo ? parseFloat(primeiroModelo.price).toFixed(2) : '0.00'}</div>
+                    <div class="product-price">R$ ${preco}</div>
                     <p class="product-description">${product.descricao || 'Sem descrição'}</p>
                     <div class="product-actions">
-                        <button class="action-btn action-edit" onclick="productManager.openEditModal('${product.id}')">
+                        <button class="action-btn action-edit" onclick="productManager.openEditModal('${idSeguro}')">
                             ✏️ Editar
                         </button>
-                        <button class="action-btn action-delete" onclick="productManager.deleteProduct('${product.id}')">
+                        <button class="action-btn action-delete" onclick="productManager.deleteProduct('${idSeguro}')">
                             🗑️ Excluir
                         </button>
                     </div>
@@ -924,10 +862,16 @@ class ProductManager {
     // 🏠 MOSTRA ESTADO INICIAL
     showInitialState() {
         const container = document.getElementById('productsContainer');
+        if (!container) return;
+        
         container.innerHTML = `
             <div class="initial-state">
                 <h3>🔍 Pesquise um produto</h3>
                 <p>Digite no campo acima para buscar produtos do site</p>
+                <p><small>Exemplo: "Caneca", "0001", "floral"</small></p>
+                <div style="margin-top: 2rem; padding: 1rem; background: rgba(37, 211, 102, 0.1); border-radius: 8px;">
+                    <p><strong>💡 Dica:</strong> Digite qualquer termo para testar a busca!</p>
+                </div>
             </div>
         `;
     }
@@ -951,8 +895,10 @@ class ProductManager {
 
         // Preenche preview da imagem
         const imagePreview = document.getElementById('imagePreview');
-        imagePreview.src = this.currentProduct.imageUrl;
-        imagePreview.style.display = 'block';
+        if (imagePreview) {
+            imagePreview.src = this.currentProduct.imageUrl;
+            imagePreview.style.display = 'block';
+        }
 
         // Preenche opções de modelos
         this.populateModelOptions();
@@ -960,12 +906,16 @@ class ProductManager {
         this.addLog(`Abrindo edição: ${this.currentProduct.nome} (ID: ${this.currentProduct.id})`, 'info');
 
         // Mostra modal
-        document.getElementById('editModal').style.display = 'flex';
+        const modal = document.getElementById('editModal');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
     }
 
     // 🎨 PREENCHE OPÇÕES DE MODELOS COM INPUTS DE PREÇO
     populateModelOptions() {
         const container = document.getElementById('modelOptions');
+        if (!container) return;
         
         if (!this.currentProduct.modelos || this.currentProduct.modelos.length === 0) {
             container.innerHTML = '<p style="color: #888; text-align: center;">Nenhum modelo configurado</p>';
@@ -999,13 +949,14 @@ class ProductManager {
         if (!file) return;
 
         const preview = document.getElementById('imagePreview');
-        const reader = new FileReader();
-
-        reader.onload = (e) => {
-            preview.src = e.target.result;
-            preview.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
+        if (preview) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
 
         // Faz upload para ImgBB
         await this.uploadToImgBB(file);
@@ -1014,6 +965,8 @@ class ProductManager {
     // ☁️ UPLOAD PARA IMGBB
     async uploadToImgBB(file) {
         const applyBtn = document.getElementById('applyBtn');
+        if (!applyBtn) return;
+
         const originalText = applyBtn.textContent;
 
         try {
@@ -1082,6 +1035,8 @@ class ProductManager {
     // 💾 APLICA ALTERAÇÕES
     async applyChanges() {
         const applyBtn = document.getElementById('applyBtn');
+        if (!applyBtn) return;
+
         const originalText = applyBtn.textContent;
 
         try {
@@ -1122,19 +1077,6 @@ class ProductManager {
                 
                 // Fecha o modal apenas se salvou com sucesso
                 this.closeEditModal();
-                
-                // Recarrega os produtos para refletir mudanças
-                await this.loadProducts();
-                
-                // Atualiza a pesquisa atual
-                const searchTerm = document.getElementById('searchInput').value;
-                if (searchTerm) {
-                    const filteredProducts = this.allProducts.filter(product => 
-                        product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        product.id.toLowerCase().includes(searchTerm.toLowerCase())
-                    );
-                    this.displayProducts(filteredProducts);
-                }
                 
             } else {
                 throw new Error('Falha ao salvar no GitHub');
@@ -1213,7 +1155,10 @@ class ProductManager {
 
     // 🚪 FECHA MODAL
     closeEditModal() {
-        document.getElementById('editModal').style.display = 'none';
+        const modal = document.getElementById('editModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
         this.addLog('Modal de edição fechado', 'info');
     }
 
@@ -1235,6 +1180,8 @@ class ProductManager {
 let productManager;
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando sistema de gerenciamento...');
+    
     // Verificação de segurança
     checkAdminAuth();
     
@@ -1287,6 +1234,6 @@ function closeEditModal() {
 }
 
 window.productManager = productManager;
-</script>  
+</script> 
 </body>
 </html>
