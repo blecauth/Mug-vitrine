@@ -3,20 +3,20 @@ function initModalListeners() {
     const modal = document.getElementById('produtoModal');
     const closeButton = document.querySelector('.close-button');
     
-    console.log('Inicializando modal listeners...');
-    console.log('Botões encontrados:', document.querySelectorAll('.open-modal-btn').length);
-    
+    console.log('🔧 Inicializando listeners do modal...');
+
     // Função para abrir o modal
     function openModal(button) {
-        console.log('Abrindo modal...', button);
+        console.log('🎯 Abrindo modal...', button);
+        
         const name = button.getAttribute('data-name');
         const id = button.getAttribute('data-id');
         const image = button.getAttribute('data-image');
         const specs = button.getAttribute('data-specs');
         const options = JSON.parse(button.getAttribute('data-options') || '[]');
         
-        console.log('Dados do produto:', { name, id, image, specs, options });
-        
+        console.log('📦 Dados do produto:', { name, id, image, specs, options });
+
         // Preencher modal com os dados
         document.getElementById('modalImage').src = image;
         document.getElementById('modalImage').alt = name;
@@ -34,8 +34,8 @@ function initModalListeners() {
                 if (index === 0) optionElement.classList.add('selected');
                 
                 optionElement.innerHTML = `
-                    <img src="${option.imagem}" alt="${option.modelo}">
-                    <span>${option.modelo}</span>
+                    <img src="${option.imagem || option.image}" alt="${option.modelo || option.model}">
+                    <span>${option.modelo || option.model}</span>
                 `;
                 
                 optionElement.addEventListener('click', function() {
@@ -48,11 +48,12 @@ function initModalListeners() {
                     this.classList.add('selected');
                     
                     // Atualizar preço
+                    const price = option.preco || option.price;
                     document.getElementById('modalPrice').textContent = 
-                        `R$ ${option.preco.toFixed(2).replace('.', ',')}`;
+                        `R$ ${parseFloat(price).toFixed(2).replace('.', ',')}`;
                     
                     // Atualizar imagem principal
-                    document.getElementById('modalImage').src = option.imagem;
+                    document.getElementById('modalImage').src = option.imagem || option.image;
                 });
                 
                 modalOptions.appendChild(optionElement);
@@ -60,8 +61,9 @@ function initModalListeners() {
             
             // Definir preço inicial (primeira opção)
             const firstOption = options[0];
+            const firstPrice = firstOption.preco || firstOption.price;
             document.getElementById('modalPrice').textContent = 
-                `R$ ${firstOption.preco.toFixed(2).replace('.', ',')}`;
+                `R$ ${parseFloat(firstPrice).toFixed(2).replace('.', ',')}`;
         }
         
         // Configurar botão do WhatsApp
@@ -84,13 +86,24 @@ function initModalListeners() {
         // Mostrar modal
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
+        
+        console.log('✅ Modal aberto com sucesso!');
     }
     
-    // Adicionar event listeners aos botões - DELEGAÇÃO DE EVENTOS
+    // DELEGAÇÃO DE EVENTOS - Funciona com elementos dinâmicos
     document.addEventListener('click', function(event) {
+        // Verifica se o clique foi em um botão de abrir modal
         if (event.target.classList.contains('open-modal-btn')) {
-            console.log('Botão clicado!', event.target);
+            console.log('🎯 Botão de modal clicado!', event.target);
             openModal(event.target);
+            return;
+        }
+        
+        // Verifica se o clique foi em um elemento dentro do botão
+        if (event.target.closest('.open-modal-btn')) {
+            console.log('🎯 Elemento dentro do botão clicado!');
+            openModal(event.target.closest('.open-modal-btn'));
+            return;
         }
     });
     
@@ -98,6 +111,7 @@ function initModalListeners() {
     closeButton.addEventListener('click', function() {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
+        console.log('❌ Modal fechado');
     });
     
     // Fechar modal clicando fora
@@ -105,9 +119,13 @@ function initModalListeners() {
         if (event.target === modal) {
             modal.style.display = 'none';
             document.body.style.overflow = 'auto';
+            console.log('❌ Modal fechado (clique fora)');
         }
     });
+    
+    console.log('✅ Listeners do modal configurados!');
 }
+
 // Função para inicializar menu hamburguer
 function initMenu() {
     const menuToggle = document.getElementById('menuToggle');
@@ -116,11 +134,14 @@ function initMenu() {
     const categoriaToggle = document.querySelector('.categoria-toggle');
     const submenuCategorias = document.getElementById('submenuCategorias');
     
+    console.log('🔧 Inicializando menu...');
+
     // Menu hamburguer
     menuToggle.addEventListener('click', function() {
         menu.classList.toggle('active');
         menuOverlay.classList.toggle('active');
         document.body.style.overflow = menu.classList.contains('active') ? 'hidden' : 'auto';
+        console.log('🍔 Menu ' + (menu.classList.contains('active') ? 'aberto' : 'fechado'));
     });
     
     // Overlay para fechar menu
@@ -128,6 +149,7 @@ function initMenu() {
         menu.classList.remove('active');
         menuOverlay.classList.remove('active');
         document.body.style.overflow = 'auto';
+        console.log('❌ Menu fechado (overlay)');
     });
     
     // Submenu de categorias
@@ -135,6 +157,7 @@ function initMenu() {
         categoriaToggle.addEventListener('click', function(e) {
             e.preventDefault();
             submenuCategorias.classList.toggle('active');
+            console.log('📂 Submenu categorias ' + (submenuCategorias.classList.contains('active') ? 'aberto' : 'fechado'));
         });
     }
     
@@ -150,24 +173,37 @@ function initMenu() {
             if (submenuCategorias) {
                 submenuCategorias.classList.remove('active');
             }
+            
+            console.log('🔗 Menu fechado (link clicado)');
         });
     });
+    
+    console.log('✅ Menu inicializado!');
 }
 
 // Função para busca
 function initSearch() {
     const buscaInput = document.getElementById('buscaId');
     const galeria = document.querySelector('.galeria');
-    const items = galeria.getElementsByClassName('item');
     const nenhumProduto = document.getElementById('nenhumProduto');
     
+    console.log('🔧 Inicializando busca...');
+
     buscaInput.addEventListener('input', function() {
         const termo = this.value.toLowerCase();
+        const items = galeria.getElementsByClassName('item');
         let encontrados = 0;
         
+        console.log('🔍 Buscando por:', termo);
+
         for (let item of items) {
-            const id = item.querySelector('p').textContent.toLowerCase();
-            const nome = item.querySelector('h2').textContent.toLowerCase();
+            const idElement = item.querySelector('p');
+            const nomeElement = item.querySelector('h2');
+            
+            if (!idElement || !nomeElement) continue;
+            
+            const id = idElement.textContent.toLowerCase();
+            const nome = nomeElement.textContent.toLowerCase();
             
             if (id.includes(termo) || nome.includes(termo)) {
                 item.style.display = 'block';
@@ -178,59 +214,110 @@ function initSearch() {
         }
         
         // Mostrar/ocultar mensagem de nenhum produto
-        nenhumProduto.style.display = encontrados === 0 ? 'block' : 'none';
+        if (nenhumProduto) {
+            nenhumProduto.style.display = encontrados === 0 ? 'block' : 'none';
+        }
+        
+        console.log('📊 Produtos encontrados:', encontrados);
     });
+    
+    console.log('✅ Busca inicializada!');
+}
+
+// Carregar produtos do JSON
+async function loadProducts() {
+    try {
+        console.log('🔄 Carregando produtos do JSON...');
+        
+        const response = await fetch('data/products.json');
+        if (!response.ok) {
+            throw new Error('Erro ao carregar JSON');
+        }
+
+        const data = await response.json();
+        const galeria = document.getElementById('galeria');
+        const nenhumProduto = document.getElementById('nenhumProduto');
+        
+        if (data.produtos && data.produtos.length > 0) {
+            galeria.innerHTML = '';
+            
+            data.produtos.forEach(produto => {
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.setAttribute('data-categoria', produto.categoria || 'geral');
+                
+                // Usar a primeira opção como imagem principal
+                const primeiraOpcao = produto.opcoes && produto.opcoes.length > 0 ? produto.opcoes[0] : {};
+                
+                // Converter opções para o formato esperado pelo modal
+                const opcoesParaModal = produto.opcoes ? produto.opcoes.map(opcao => ({
+                    modelo: opcao.modelo,
+                    preco: opcao.preco,
+                    imagem: opcao.imagem
+                })) : [];
+                
+                item.innerHTML = `
+                    <img src="${primeiraOpcao.imagem || ''}" alt="${produto.nome}" loading="lazy">
+                    <div class="info">
+                        <h2>${produto.nome}</h2>
+                        <p>ID: ${produto.id}</p>
+                        <p>R$ ${primeiraOpcao.preco ? parseFloat(primeiraOpcao.preco).toFixed(2).replace('.', ',') : '0,00'}</p>
+                        <button class="open-modal-btn"
+                            data-name="${produto.nome}"
+                            data-id="${produto.id}"
+                            data-image="${primeiraOpcao.imagem || ''}"
+                            data-specs="${produto.especificacoes || ''}"
+                            data-options='${JSON.stringify(opcoesParaModal)}'>Ver Detalhes</button>
+                    </div>
+                `;
+                
+                galeria.appendChild(item);
+            });
+            
+            if (nenhumProduto) {
+                nenhumProduto.style.display = 'none';
+            }
+            
+            console.log(`✅ ${data.produtos.length} produtos carregados do JSON`);
+            
+        } else {
+            if (nenhumProduto) {
+                nenhumProduto.style.display = 'block';
+            }
+            console.log('📭 Nenhum produto encontrado no JSON');
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar produtos:', error);
+        const nenhumProduto = document.getElementById('nenhumProduto');
+        if (nenhumProduto) {
+            nenhumProduto.style.display = 'block';
+            nenhumProduto.textContent = 'Erro ao carregar produtos 🔧';
+        }
+    }
 }
 
 // Inicializar tudo quando o DOM estiver carregado
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando aplicação...');
+    
+    // Inicializar funcionalidades básicas
     initMenu();
     initSearch();
     
-    // Carregar produtos do JSON
-    fetch('data/products.json')
-        .then(response => response.json())
-        .then(data => {
-            const galeria = document.getElementById('galeria');
-            const nenhumProduto = document.getElementById('nenhumProduto');
-            
-            if (data.produtos && data.produtos.length > 0) {
-                data.produtos.forEach(produto => {
-                    const item = document.createElement('div');
-                    item.className = 'item';
-                    item.setAttribute('data-categoria', produto.categoria || 'geral');
-                    
-                    // Usar a primeira opção como imagem principal
-                    const primeiraOpcao = produto.opcoes && produto.opcoes.length > 0 ? produto.opcoes[0] : {};
-                    
-                    item.innerHTML = `
-                        <img src="${primeiraOpcao.imagem || produto.imagem || ''}" alt="${produto.nome}">
-                        <div class="info">
-                            <h2>${produto.nome}</h2>
-                            <p>ID: ${produto.id}</p>
-                            <p>R$ ${primeiraOpcao.preco ? primeiraOpcao.preco.toFixed(2).replace('.', ',') : '0,00'}</p>
-                            <button class="open-modal-btn"
-                                data-name="${produto.nome}"
-                                data-id="${produto.id}"
-                                data-image="${primeiraOpcao.imagem || produto.imagem || ''}"
-                                data-specs="${produto.especificacoes || ''}"
-                                data-options='${JSON.stringify(produto.opcoes || [])}'>Ver Detalhes</button>
-                        </div>
-                    `;
-                    
-                    galeria.appendChild(item);
-                });
-                
-                nenhumProduto.style.display = 'none';
-                
-                // Inicializar listeners do modal após carregar produtos
-                initModalListeners();
-            } else {
-                nenhumProduto.style.display = 'block';
-            }
-        })
-        .catch(error => {
-            console.error('Erro ao carregar produtos:', error);
-            document.getElementById('nenhumProduto').style.display = 'block';
-        });
+    // Carregar produtos e depois inicializar modal
+    loadProducts().then(() => {
+        console.log('🎯 Inicializando modal após carregar produtos...');
+        initModalListeners();
+    });
+    
+    console.log('✅ Aplicação inicializada!');
 });
+
+// Função global para debug
+window.debugModal = function() {
+    console.log('🔍 Debug do Modal:');
+    console.log('- Botões encontrados:', document.querySelectorAll('.open-modal-btn').length);
+    console.log('- Modal element:', document.getElementById('produtoModal'));
+    console.log('- Últimos produtos carregados:', document.querySelectorAll('.item').length);
+};
