@@ -13,7 +13,14 @@ function initModalListeners() {
         const id = button.getAttribute('data-id');
         const image = button.getAttribute('data-image');
         const specs = button.getAttribute('data-specs');
-        const options = JSON.parse(button.getAttribute('data-options') || '[]');
+        const optionsJson = button.getAttribute('data-options');
+        
+        let options = [];
+        try {
+            options = JSON.parse(optionsJson || '[]');
+        } catch (e) {
+            console.error('❌ Erro ao parsear opções:', e);
+        }
         
         console.log('📦 Dados do produto:', { name, id, image, specs, options });
 
@@ -33,9 +40,13 @@ function initModalListeners() {
                 optionElement.className = 'model-option';
                 if (index === 0) optionElement.classList.add('selected');
                 
+                const optionImage = option.imagem || option.image;
+                const optionName = option.modelo || option.model;
+                const optionPrice = option.preco || option.price;
+                
                 optionElement.innerHTML = `
-                    <img src="${option.imagem || option.image}" alt="${option.modelo || option.model}">
-                    <span>${option.modelo || option.model}</span>
+                    <img src="${optionImage}" alt="${optionName}">
+                    <span>${optionName}</span>
                 `;
                 
                 optionElement.addEventListener('click', function() {
@@ -53,7 +64,7 @@ function initModalListeners() {
                         `R$ ${parseFloat(price).toFixed(2).replace('.', ',')}`;
                     
                     // Atualizar imagem principal
-                    document.getElementById('modalImage').src = option.imagem || option.image;
+                    document.getElementById('modalImage').src = optionImage;
                 });
                 
                 modalOptions.appendChild(optionElement);
@@ -95,14 +106,19 @@ function initModalListeners() {
         // Verifica se o clique foi em um botão de abrir modal
         if (event.target.classList.contains('open-modal-btn')) {
             console.log('🎯 Botão de modal clicado!', event.target);
+            event.preventDefault();
+            event.stopPropagation();
             openModal(event.target);
             return;
         }
         
         // Verifica se o clique foi em um elemento dentro do botão
-        if (event.target.closest('.open-modal-btn')) {
+        const button = event.target.closest('.open-modal-btn');
+        if (button) {
             console.log('🎯 Elemento dentro do botão clicado!');
-            openModal(event.target.closest('.open-modal-btn'));
+            event.preventDefault();
+            event.stopPropagation();
+            openModal(button);
             return;
         }
     });
@@ -214,9 +230,7 @@ function initSearch() {
         }
         
         // Mostrar/ocultar mensagem de nenhum produto
-        if (nenhumProduto) {
-            nenhumProduto.style.display = encontrados === 0 ? 'block' : 'none';
-        }
+        nenhumProduto.style.display = encontrados === 0 ? 'block' : 'none';
         
         console.log('📊 Produtos encontrados:', encontrados);
     });
@@ -231,11 +245,11 @@ async function loadProducts() {
         
         const response = await fetch('data/products.json');
         if (!response.ok) {
-            throw new Error('Erro ao carregar JSON');
+            throw new Error('Erro ao carregar JSON: ' + response.status);
         }
 
         const data = await response.json();
-        const galeria = document.getElementById('galeria');
+        const galeria = document.querySelector('.galeria');
         const nenhumProduto = document.getElementById('nenhumProduto');
         
         if (data.produtos && data.produtos.length > 0) {
@@ -249,13 +263,6 @@ async function loadProducts() {
                 // Usar a primeira opção como imagem principal
                 const primeiraOpcao = produto.opcoes && produto.opcoes.length > 0 ? produto.opcoes[0] : {};
                 
-                // Converter opções para o formato esperado pelo modal
-                const opcoesParaModal = produto.opcoes ? produto.opcoes.map(opcao => ({
-                    modelo: opcao.modelo,
-                    preco: opcao.preco,
-                    imagem: opcao.imagem
-                })) : [];
-                
                 item.innerHTML = `
                     <img src="${primeiraOpcao.imagem || ''}" alt="${produto.nome}" loading="lazy">
                     <div class="info">
@@ -267,33 +274,29 @@ async function loadProducts() {
                             data-id="${produto.id}"
                             data-image="${primeiraOpcao.imagem || ''}"
                             data-specs="${produto.especificacoes || ''}"
-                            data-options='${JSON.stringify(opcoesParaModal)}'>Ver Detalhes</button>
+                            data-options='${JSON.stringify(produto.opcoes || [])}'>
+                            Ver Detalhes
+                        </button>
                     </div>
                 `;
                 
                 galeria.appendChild(item);
             });
             
-            if (nenhumProduto) {
-                nenhumProduto.style.display = 'none';
-            }
+            nenhumProduto.style.display = 'none';
             
             console.log(`✅ ${data.produtos.length} produtos carregados do JSON`);
             
         } else {
-            if (nenhumProduto) {
-                nenhumProduto.style.display = 'block';
-            }
+            nenhumProduto.style.display = 'block';
             console.log('📭 Nenhum produto encontrado no JSON');
         }
         
     } catch (error) {
         console.error('❌ Erro ao carregar produtos:', error);
         const nenhumProduto = document.getElementById('nenhumProduto');
-        if (nenhumProduto) {
-            nenhumProduto.style.display = 'block';
-            nenhumProduto.textContent = 'Erro ao carregar produtos 🔧';
-        }
+        nenhumProduto.style.display = 'block';
+        nenhumProduto.textContent = 'Erro ao carregar produtos 🔧';
     }
 }
 
@@ -308,7 +311,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Carregar produtos e depois inicializar modal
     loadProducts().then(() => {
         console.log('🎯 Inicializando modal após carregar produtos...');
-        initModalListeners();
+        // Pequeno delay para garantir que os elementos foram renderizados
+        setTimeout(() => {
+            initModalListeners();
+        }, 100);
     });
     
     console.log('✅ Aplicação inicializada!');
@@ -319,5 +325,15 @@ window.debugModal = function() {
     console.log('🔍 Debug do Modal:');
     console.log('- Botões encontrados:', document.querySelectorAll('.open-modal-btn').length);
     console.log('- Modal element:', document.getElementById('produtoModal'));
-    console.log('- Últimos produtos carregados:', document.querySelectorAll('.item').length);
+    console.log('- Itens na galeria:', document.querySelectorAll('.item').length);
+    
+    // Testa se os botões têm os data attributes
+    const buttons = document.querySelectorAll('.open-modal-btn');
+    buttons.forEach((btn, i) => {
+        console.log(`Botão ${i}:`, {
+            name: btn.getAttribute('data-name'),
+            id: btn.getAttribute('data-id'),
+            hasOptions: btn.getAttribute('data-options')
+        });
+    });
 };
