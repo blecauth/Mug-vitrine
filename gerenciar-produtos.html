@@ -479,8 +479,8 @@
 
         <div id="productsContainer">
             <div class="initial-state">
-                <h3>🔍 Pesquise um produto</h3>
-                <p>Digite no campo acima para buscar produtos do site</p>
+                <h3>🔄 Carregando produtos...</h3>
+                <p>Aguarde enquanto carregamos os produtos do JSON</p>
             </div>
         </div>
     </main>
@@ -502,17 +502,30 @@
                 </div>
                 
                 <div class="form-group">
+                    <label class="form-label">Categoria</label>
+                    <select class="form-select" id="editCategory" required>
+                        <option value="floral">Floral</option>
+                        <option value="personalizada">Personalizada</option>
+                        <option value="dia-das-maes">Dia das Mães</option>
+                        <option value="dia-dos-pais">Dia dos Pais</option>
+                        <option value="dia-dos-professores">Dia dos Professores</option>
+                        <option value="pets">Pets</option>
+                        <option value="herois">Heróis</option>
+                        <option value="animes">Animes</option>
+                        <option value="com-foto">Com Foto</option>
+                        <option value="futebol">Futebol</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
                     <label class="form-label">Descrição</label>
                     <textarea class="form-textarea" id="editDescription" required></textarea>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Imagem do Produto</label>
-                    <div class="image-upload" onclick="document.getElementById('imageUpload').click()">
-                        <p class="upload-text">📁 Clique para fazer upload da imagem</p>
-                        <img id="imagePreview" class="image-preview" alt="Preview">
-                        <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
-                    </div>
+                    <label class="form-label">Imagem Principal</label>
+                    <input type="url" class="form-input" id="editImageUrl" placeholder="URL da imagem principal" required>
+                    <img id="imagePreview" class="image-preview" alt="Preview" style="margin-top: 0.5rem;">
                 </div>
                 
                 <div class="form-group">
@@ -524,32 +537,26 @@
                 
                 <div class="form-buttons">
                     <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancelar</button>
-                    <button type="submit" class="btn-apply" id="applyBtn">💾 Aplicar Alterações</button>
+                    <button type="submit" class="btn-apply" id="applyBtn">💾 Salvar Alterações</button>
                 </div>
             </form>
         </div>
     </div>
 
-   <script>
-// 🔧 SISTEMA DE PESQUISA EM TEMPO REAL - VERSÃO DEFINITIVA
+    <script>
+// 🔧 SISTEMA DE GERENCIAMENTO DE PRODUTOS - VERSÃO JSON
 class ProductManager {
     constructor() {
         this.allProducts = [];
         this.currentProduct = null;
         this.originalProduct = null;
-        this.IMGBB_API_KEY = 'bb49178e11dff4322b7a699167535e57';
         this.init();
     }
 
     async init() {
-        // Carrega produtos de exemplo IMEDIATAMENTE
-        await this.loadSampleProducts();
+        await this.loadProductsFromJSON();
         this.setupSearch();
-        this.setupLogSystem();
         this.setupEventListeners();
-        
-        // Tenta carregar produtos reais em segundo plano
-        this.tryLoadRealProducts();
     }
 
     // 🔥 CONFIGURA EVENT LISTENERS
@@ -558,206 +565,40 @@ class ProductManager {
             e.preventDefault();
             this.applyChanges();
         });
-    }
 
-    // 🔥 SISTEMA DE LOGS
-    setupLogSystem() {
-        this.logs = [];
-        this.maxLogs = 10;
-    }
-
-    addLog(message, type = 'info') {
-        const timestamp = new Date().toLocaleTimeString('pt-BR');
-        const logEntry = {
-            timestamp,
-            message,
-            type
-        };
-        
-        this.logs.unshift(logEntry);
-        
-        if (this.logs.length > this.maxLogs) {
-            this.logs = this.logs.slice(0, this.maxLogs);
-        }
-        
-        console.log(`[${timestamp}] ${type.toUpperCase()}: ${message}`);
-        this.updateLogDisplay();
-    }
-
-    updateLogDisplay() {
-        const logContainer = document.getElementById('logContainer');
-        if (logContainer) {
-            logContainer.innerHTML = this.logs.map(log => 
-                `<div class="log-entry log-${log.type}">
-                    <span class="log-time">[${log.timestamp}]</span>
-                    ${log.message}
-                </div>`
-            ).join('');
-        }
-    }
-
-    // 🚀 TENTA CARREGAR PRODUTOS REAIS (EM SEGUNDO PLANO)
-    async tryLoadRealProducts() {
-        try {
-            this.addLog('🔄 Tentando carregar produtos reais...', 'info');
-            
-            // Método mais simples - tenta carregar diretamente
-            const response = await fetch(window.location.origin + '/index.html');
-            if (response.ok) {
-                const html = await response.text();
-                const realProducts = this.extractProductsFromHTML(html);
-                
-                if (realProducts.length > 0) {
-                    this.allProducts = realProducts;
-                    this.addLog(`✅ ${realProducts.length} produtos reais carregados!`, 'success');
-                    this.displayProducts(this.allProducts);
-                    return;
-                }
+        // Preview da imagem quando URL muda
+        document.getElementById('editImageUrl').addEventListener('input', (e) => {
+            const preview = document.getElementById('imagePreview');
+            if (e.target.value) {
+                preview.src = e.target.value;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
             }
-        } catch (error) {
-            // Ignora erros silenciosamente - já temos produtos de exemplo
-            console.log('ℹ️  Usando produtos de exemplo (CORS bloqueado)');
-        }
+        });
     }
 
-    // 🎯 EXTRAI PRODUTOS DO HTML
-    extractProductsFromHTML(html) {
-        const products = [];
-        
+    // 📥 CARREGA PRODUTOS DO JSON
+    async loadProductsFromJSON() {
         try {
-            // Método direto - busca por elementos específicos
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
+            console.log('🔄 Carregando produtos do JSON...');
             
-            const items = doc.querySelectorAll('.item');
-            console.log(`🔍 Encontrados ${items.length} produtos no HTML`);
-            
-            items.forEach((item, index) => {
-                try {
-                    const product = this.parseProductElement(item);
-                    if (product && product.id && product.nome) {
-                        products.push(product);
-                    }
-                } catch (error) {
-                    console.warn(`⚠️ Erro ao parsear produto ${index}:`, error);
-                }
-            });
-            
-        } catch (error) {
-            console.error('❌ Erro na extração:', error);
-        }
-        
-        return products;
-    }
-
-    // 📝 PARSEIA UM ELEMENTO DE PRODUTO
-    parseProductElement(element) {
-        try {
-            const button = element.querySelector('.open-modal-btn');
-            if (!button) return null;
-
-            const name = button.getAttribute('data-name');
-            const id = button.getAttribute('data-id');
-            const imageUrl = button.getAttribute('data-image');
-            const specs = button.getAttribute('data-specs');
-            const optionsJson = button.getAttribute('data-options');
-            
-            if (!name || !id) return null;
-
-            let preco = 0;
-            let modelos = [];
-            
-            try {
-                if (optionsJson) {
-                    // Corrige entidades HTML para JSON válido
-                    const correctedJson = optionsJson
-                        .replace(/&#39;/g, "'")
-                        .replace(/&quot;/g, '"');
-                    modelos = JSON.parse(correctedJson);
-                    if (modelos && modelos.length > 0) {
-                        preco = parseFloat(modelos[0].price) || 0;
-                    }
-                }
-            } catch (e) {
-                console.warn('❌ Erro ao parsear modelos:', e);
+            const response = await fetch('data/products.json');
+            if (!response.ok) {
+                throw new Error('Erro ao carregar JSON');
             }
 
-            const categoria = element.getAttribute('data-categoria') || 'personalizada';
-
-            return {
-                id: id,
-                nome: name,
-                categoria: categoria,
-                preco: preco,
-                descricao: specs || '',
-                imageUrl: imageUrl || '',
-                modelos: modelos,
-                elementoHTML: element.outerHTML
-            };
+            const data = await response.json();
+            this.allProducts = data.produtos || [];
+            
+            console.log(`✅ ${this.allProducts.length} produtos carregados do JSON`);
+            this.displayProducts(this.allProducts);
+            
         } catch (error) {
-            console.error('❌ Erro no parse do elemento:', error);
-            return null;
+            console.error('❌ Erro ao carregar produtos:', error);
+            this.showError('Erro ao carregar produtos do JSON');
+            this.displayProducts([]);
         }
-    }
-
-    // 📦 CARREGA PRODUTOS DE EXEMPLO (FUNCIONALIDADE IMEDIATA)
-    async loadSampleProducts() {
-        this.addLog('🚀 Carregando produtos...', 'info');
-        
-        // Produtos baseados na estrutura real do seu site
-        this.allProducts = [
-            {
-                id: "0001",
-                nome: "Caneca Teste Floral",
-                categoria: "floral",
-                preco: 32.00,
-                descricao: "Caneca de teste com design floral",
-                imageUrl: "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg",
-                modelos: [
-                    { model: "Branca", price: 32.00, image: "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg" },
-                    { model: "Preta", price: 25.00, image: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" }
-                ]
-            },
-            {
-                id: "CN0001", 
-                nome: "Caneca Orgulho Negro",
-                categoria: "personalizada",
-                preco: 30.00,
-                descricao: "Caneca de cerâmica com estampa exclusiva",
-                imageUrl: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg",
-                modelos: [
-                    { model: "Branca", price: 30.00, image: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" },
-                    { model: "Preta", price: 32.00, image: "https://i.ibb.co/PjX9108/IMG-20251021-WA0002.jpg" }
-                ]
-            },
-            {
-                id: "CN0002",
-                nome: "Caneca Personalizada Anime",
-                categoria: "animes", 
-                preco: 35.00,
-                descricao: "Caneca com estampa de anime exclusiva",
-                imageUrl: "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg",
-                modelos: [
-                    { model: "Branca", price: 35.00, image: "https://i.ibb.co/7x7ZbVKQ/IMG-20251022-WA0007.jpg" },
-                    { model: "Preta", price: 37.00, image: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" }
-                ]
-            },
-            {
-                id: "CN0003",
-                nome: "Caneca Dia das Mães",
-                categoria: "dia-das-maes",
-                preco: 28.00,
-                descricao: "Caneca especial para o Dia das Mães",
-                imageUrl: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg",
-                modelos: [
-                    { model: "Branca", price: 28.00, image: "https://i.ibb.co/0jVBTx2H/IMG-20251021-WA0001.jpg" },
-                    { model: "Rosa", price: 30.00, image: "https://i.ibb.co/PjX9108/IMG-20251021-WA0002.jpg" }
-                ]
-            }
-        ];
-
-        this.addLog(`✅ ${this.allProducts.length} produtos carregados com sucesso!`, 'success');
-        this.displayProducts(this.allProducts);
     }
 
     // 🔍 CONFIGURA PESQUISA EM TEMPO REAL
@@ -768,24 +609,19 @@ class ProductManager {
             const searchTerm = e.target.value.toLowerCase().trim();
             
             if (searchTerm === '') {
-                this.showInitialState();
+                this.displayProducts(this.allProducts);
                 return;
             }
 
-            console.log(`🔍 Buscando: "${searchTerm}" em ${this.allProducts.length} produtos`);
-            
             const filteredProducts = this.allProducts.filter(product => {
-                if (!product) return false;
-                
                 const searchInName = product.nome?.toLowerCase().includes(searchTerm);
                 const searchInId = product.id?.toLowerCase().includes(searchTerm);
                 const searchInCategory = product.categoria?.toLowerCase().includes(searchTerm);
-                const searchInDescription = product.descricao?.toLowerCase().includes(searchTerm);
+                const searchInDescription = product.especificacoes?.toLowerCase().includes(searchTerm);
                 
                 return searchInName || searchInId || searchInCategory || searchInDescription;
             });
             
-            console.log(`📊 ${filteredProducts.length} produtos encontrados para "${searchTerm}"`);
             this.displayProducts(filteredProducts);
         });
     }
@@ -798,8 +634,6 @@ class ProductManager {
             console.error('❌ Container de produtos não encontrado!');
             return;
         }
-        
-        console.log(`🎴 Exibindo ${products.length} produtos`);
         
         if (products.length === 0) {
             container.innerHTML = `
@@ -824,17 +658,14 @@ class ProductManager {
 
     // 🎴 CRIA CARD DO PRODUTO
     createProductCard(product) {
-        const primeiroModelo = product.modelos && product.modelos.length > 0 ? product.modelos[0] : null;
-        const preco = primeiroModelo ? parseFloat(primeiroModelo.price).toFixed(2) : '0.00';
-        
-        // Escapa aspas para evitar erro de sintaxe
-        const nomeSeguro = product.nome.replace(/'/g, "\\'");
-        const idSeguro = product.id.replace(/'/g, "\\'");
+        const primeiroModelo = product.opcoes && product.opcoes.length > 0 ? product.opcoes[0] : null;
+        const preco = primeiroModelo ? parseFloat(primeiroModelo.preco).toFixed(2) : '0.00';
+        const imagemPrincipal = primeiroModelo ? primeiroModelo.imagem : '';
         
         return `
             <div class="product-card">
                 <div class="product-image">
-                    <img src="${product.imageUrl}" alt="${product.nome}" 
+                    <img src="${imagemPrincipal}" alt="${product.nome}" 
                          onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem+Não+Encontrada'">
                 </div>
                 <div class="product-content">
@@ -842,35 +673,18 @@ class ProductManager {
                     <div class="product-tags">
                         <span class="product-tag">ID: ${product.id}</span>
                         <span class="product-tag product-category">${product.categoria}</span>
-                        <span class="product-tag">${product.modelos ? product.modelos.length : 0} modelos</span>
+                        <span class="product-tag">${product.opcoes ? product.opcoes.length : 0} modelos</span>
                     </div>
                     <div class="product-price">R$ ${preco}</div>
-                    <p class="product-description">${product.descricao || 'Sem descrição'}</p>
+                    <p class="product-description">${product.especificacoes || 'Sem descrição'}</p>
                     <div class="product-actions">
-                        <button class="action-btn action-edit" onclick="productManager.openEditModal('${idSeguro}')">
+                        <button class="action-btn action-edit" onclick="productManager.openEditModal('${product.id}')">
                             ✏️ Editar
                         </button>
-                        <button class="action-btn action-delete" onclick="productManager.deleteProduct('${idSeguro}')">
+                        <button class="action-btn action-delete" onclick="productManager.deleteProduct('${product.id}')">
                             🗑️ Excluir
                         </button>
                     </div>
-                </div>
-            </div>
-        `;
-    }
-
-    // 🏠 MOSTRA ESTADO INICIAL
-    showInitialState() {
-        const container = document.getElementById('productsContainer');
-        if (!container) return;
-        
-        container.innerHTML = `
-            <div class="initial-state">
-                <h3>🔍 Pesquise um produto</h3>
-                <p>Digite no campo acima para buscar produtos do site</p>
-                <p><small>Exemplo: "Caneca", "0001", "floral"</small></p>
-                <div style="margin-top: 2rem; padding: 1rem; background: rgba(37, 211, 102, 0.1); border-radius: 8px;">
-                    <p><strong>💡 Dica:</strong> Digite qualquer termo para testar a busca!</p>
                 </div>
             </div>
         `;
@@ -891,19 +705,28 @@ class ProductManager {
         // Preenche o formulário
         document.getElementById('editName').value = this.currentProduct.nome;
         document.getElementById('editId').value = this.currentProduct.id;
-        document.getElementById('editDescription').value = this.currentProduct.descricao;
+        document.getElementById('editCategory').value = this.currentProduct.categoria;
+        document.getElementById('editDescription').value = this.currentProduct.especificacoes;
 
-        // Preenche preview da imagem
+        // Preenche imagem principal (usa a primeira opção)
+        const primeiroModelo = this.currentProduct.opcoes && this.currentProduct.opcoes.length > 0 
+            ? this.currentProduct.opcoes[0] 
+            : null;
+        
+        const imageUrlInput = document.getElementById('editImageUrl');
         const imagePreview = document.getElementById('imagePreview');
-        if (imagePreview) {
-            imagePreview.src = this.currentProduct.imageUrl;
+        
+        if (primeiroModelo && primeiroModelo.imagem) {
+            imageUrlInput.value = primeiroModelo.imagem;
+            imagePreview.src = primeiroModelo.imagem;
             imagePreview.style.display = 'block';
+        } else {
+            imageUrlInput.value = '';
+            imagePreview.style.display = 'none';
         }
 
         // Preenche opções de modelos
         this.populateModelOptions();
-
-        this.addLog(`Abrindo edição: ${this.currentProduct.nome} (ID: ${this.currentProduct.id})`, 'info');
 
         // Mostra modal
         const modal = document.getElementById('editModal');
@@ -917,119 +740,46 @@ class ProductManager {
         const container = document.getElementById('modelOptions');
         if (!container) return;
         
-        if (!this.currentProduct.modelos || this.currentProduct.modelos.length === 0) {
+        if (!this.currentProduct.opcoes || this.currentProduct.opcoes.length === 0) {
             container.innerHTML = '<p style="color: #888; text-align: center;">Nenhum modelo configurado</p>';
             return;
         }
 
-        container.innerHTML = this.currentProduct.modelos.map((modelo, index) => `
+        container.innerHTML = this.currentProduct.opcoes.map((modelo, index) => `
             <div class="model-option">
-                <strong>${modelo.model}</strong>
+                <strong>${modelo.modelo}</strong>
                 <input type="number" 
                        class="model-price-input" 
-                       value="${parseFloat(modelo.price).toFixed(2)}" 
+                       value="${parseFloat(modelo.preco).toFixed(2)}" 
                        step="0.01"
                        min="0"
                        onchange="productManager.updateModelPrice(${index}, this.value)">
+                <div style="margin-top: 0.5rem;">
+                    <input type="url" 
+                           class="form-input" 
+                           value="${modelo.imagem || ''}" 
+                           placeholder="URL da imagem"
+                           onchange="productManager.updateModelImage(${index}, this.value)"
+                           style="font-size: 0.8rem; padding: 0.3rem;">
+                </div>
             </div>
         `).join('');
     }
 
     // 💰 ATUALIZA PREÇO DO MODELO
     updateModelPrice(index, newPrice) {
-        if (this.currentProduct && this.currentProduct.modelos) {
-            this.currentProduct.modelos[index].price = parseFloat(newPrice);
-            console.log(`💰 Preço atualizado: ${this.currentProduct.modelos[index].model} - R$ ${newPrice}`);
+        if (this.currentProduct && this.currentProduct.opcoes) {
+            this.currentProduct.opcoes[index].preco = parseFloat(newPrice);
+            console.log(`💰 Preço atualizado: ${this.currentProduct.opcoes[index].modelo} - R$ ${newPrice}`);
         }
     }
 
-    // 🖼️ MANIPULA UPLOAD DE IMAGEM
-    async handleImageUpload(input) {
-        const file = input.files[0];
-        if (!file) return;
-
-        const preview = document.getElementById('imagePreview');
-        if (preview) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+    // 🖼️ ATUALIZA IMAGEM DO MODELO
+    updateModelImage(index, newImage) {
+        if (this.currentProduct && this.currentProduct.opcoes) {
+            this.currentProduct.opcoes[index].imagem = newImage;
+            console.log(`🖼️ Imagem atualizada: ${this.currentProduct.opcoes[index].modelo}`);
         }
-
-        // Faz upload para ImgBB
-        await this.uploadToImgBB(file);
-    }
-
-    // ☁️ UPLOAD PARA IMGBB
-    async uploadToImgBB(file) {
-        const applyBtn = document.getElementById('applyBtn');
-        if (!applyBtn) return;
-
-        const originalText = applyBtn.textContent;
-
-        try {
-            applyBtn.disabled = true;
-            applyBtn.textContent = '📤 Uploading imagem...';
-
-            const formData = new FormData();
-            formData.append('image', file);
-
-            const response = await fetch(`https://api.imgbb.com/1/upload?key=${this.IMGBB_API_KEY}`, {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                this.currentProduct.imageUrl = data.data.url;
-                this.addLog('✅ Imagem uploadada com sucesso!', 'success');
-            } else {
-                throw new Error(data.error?.message || 'Erro no upload');
-            }
-
-        } catch (error) {
-            console.error('❌ Erro no upload:', error);
-            this.addLog('❌ Erro ao fazer upload da imagem', 'error');
-        } finally {
-            applyBtn.disabled = false;
-            applyBtn.textContent = originalText;
-        }
-    }
-
-    // 🔥 VERIFICA SE HOUVE ALTERAÇÕES
-    hasChanges() {
-        if (!this.originalProduct || !this.currentProduct) return false;
-
-        const changes = [];
-
-        // Verifica alterações básicas
-        if (this.originalProduct.nome !== this.currentProduct.nome) {
-            changes.push(`Nome: "${this.originalProduct.nome}" → "${this.currentProduct.nome}"`);
-        }
-        if (this.originalProduct.id !== this.currentProduct.id) {
-            changes.push(`ID: "${this.originalProduct.id}" → "${this.currentProduct.id}"`);
-        }
-        if (this.originalProduct.descricao !== this.currentProduct.descricao) {
-            changes.push('Descrição modificada');
-        }
-        if (this.originalProduct.imageUrl !== this.currentProduct.imageUrl) {
-            changes.push('Imagem alterada');
-        }
-
-        // Verifica alterações nos modelos
-        if (this.originalProduct.modelos && this.currentProduct.modelos) {
-            this.originalProduct.modelos.forEach((modeloOriginal, index) => {
-                const modeloAtual = this.currentProduct.modelos[index];
-                if (modeloAtual && parseFloat(modeloOriginal.price) !== parseFloat(modeloAtual.price)) {
-                    changes.push(`Preço ${modeloOriginal.model}: R$ ${modeloOriginal.price} → R$ ${modeloAtual.price}`);
-                }
-            });
-        }
-
-        return changes.length > 0 ? changes : false;
     }
 
     // 💾 APLICA ALTERAÇÕES
@@ -1041,104 +791,36 @@ class ProductManager {
 
         try {
             applyBtn.disabled = true;
-            applyBtn.textContent = '💾 Verificando...';
-
-            // VERIFICA SE HOUVE ALTERAÇÕES
-            const changes = this.hasChanges();
-            
-            if (!changes) {
-                this.addLog('⚠️ Nenhuma alteração detectada', 'warning');
-                this.showWarning('Nenhuma alteração foi feita para aplicar.');
-                this.closeEditModal();
-                return;
-            }
-
-            applyBtn.textContent = '💾 Aplicando...';
+            applyBtn.textContent = '💾 Salvando...';
 
             // Atualiza dados do produto do formulário
             this.currentProduct.nome = document.getElementById('editName').value;
             this.currentProduct.id = document.getElementById('editId').value;
-            this.currentProduct.descricao = document.getElementById('editDescription').value;
+            this.currentProduct.categoria = document.getElementById('editCategory').value;
+            this.currentProduct.especificacoes = document.getElementById('editDescription').value;
 
-            // LOG DAS ALTERAÇÕES
-            this.addLog(`📝 Alterações detectadas em "${this.currentProduct.nome}":`, 'info');
-            changes.forEach(change => {
-                this.addLog(`   • ${change}`, 'info');
-            });
-
-            // TENTA SALVAR NO GITHUB
-            this.addLog('🌐 Tentando salvar no GitHub...', 'info');
-            
-            const success = await this.saveChangesToGitHub();
-            
-            if (success) {
-                this.addLog('✅ Alterações aplicadas com sucesso no GitHub!', 'success');
-                this.showSuccess('✅ Alterações aplicadas com sucesso!');
-                
-                // Fecha o modal apenas se salvou com sucesso
-                this.closeEditModal();
-                
-            } else {
-                throw new Error('Falha ao salvar no GitHub');
+            // Atualiza imagem principal (primeira opção)
+            const newImageUrl = document.getElementById('editImageUrl').value;
+            if (this.currentProduct.opcoes && this.currentProduct.opcoes.length > 0) {
+                this.currentProduct.opcoes[0].imagem = newImageUrl;
             }
+
+            console.log('✅ Alterações aplicadas localmente');
+            this.showSuccess('✅ Alterações salvas com sucesso!');
+            
+            // Fecha o modal
+            this.closeEditModal();
+            
+            // Recarrega a lista para mostrar as alterações
+            this.displayProducts(this.allProducts);
 
         } catch (error) {
             console.error('❌ Erro ao aplicar alterações:', error);
-            this.addLog(`❌ Erro ao aplicar alterações: ${error.message}`, 'error');
-            this.showError(`❌ Erro ao aplicar alterações: ${error.message}`);
+            this.showError(`❌ Erro ao salvar alterações: ${error.message}`);
         } finally {
             applyBtn.disabled = false;
             applyBtn.textContent = originalText;
         }
-    }
-
-    // 🔥 SALVA ALTERAÇÕES NO GITHUB
-    async saveChangesToGitHub() {
-        try {
-            this.addLog('🚀 Iniciando salvamento no GitHub...', 'info');
-            
-            // Gera o novo HTML do produto
-            const novoHTML = this.generateUpdatedHTML();
-            
-            this.addLog('📝 HTML gerado com sucesso', 'info');
-
-            // SIMULAÇÃO - REMOVA ESTA PARTE QUANDO TIVER A API
-            this.addLog('⚠️ MODO SIMULAÇÃO: Alterações não serão salvas no GitHub', 'warning');
-            this.addLog('Para habilitar o salvamento real, configure a API do GitHub', 'warning');
-            
-            // Simula um delay de salvamento
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            return true; // Simula sucesso
-            
-        } catch (error) {
-            console.error('❌ Erro ao salvar no GitHub:', error);
-            this.addLog(`❌ Erro no GitHub: ${error.message}`, 'error');
-            throw error;
-        }
-    }
-
-    // 🎯 GERA HTML ATUALIZADO
-    generateUpdatedHTML() {
-        const opcoesJSON = JSON.stringify(this.currentProduct.modelos).replace(/'/g, "&#39;");
-        
-        return `
-<div class="item" data-categoria="${this.currentProduct.categoria}">
-    <img src="${this.currentProduct.imageUrl}" alt="${this.currentProduct.nome}" loading="lazy">
-    <div class="info">
-        <h2>${this.currentProduct.nome}</h2>
-        <p>ID: ${this.currentProduct.id}</p>
-        <p>R$ ${this.currentProduct.modelos[0].price.toFixed(2)}</p>
-        <button class="open-modal-btn"
-            data-name="${this.currentProduct.nome}"
-            data-id="${this.currentProduct.id}"
-            data-image="${this.currentProduct.imageUrl}"
-            data-specs="${this.currentProduct.descricao}"
-            data-options='${opcoesJSON}'>
-            Ver Detalhes
-        </button>
-    </div>
-</div>`.trim();
     }
 
     // 🗑️ EXCLUIR PRODUTO
@@ -1148,7 +830,12 @@ class ProductManager {
         if (!product) return;
 
         if (confirm(`🗑️ TEM CERTEZA que deseja excluir o produto?\n\n"${product.nome}" (ID: ${product.id})\n\n⚠️ Esta ação não pode ser desfeita!`)) {
-            this.addLog(`🗑️ Excluindo produto: ${product.nome} (ID: ${product.id})`, 'warning');
+            // Remove o produto do array
+            this.allProducts = this.allProducts.filter(p => p.id !== productId);
+            
+            // Atualiza a exibição
+            this.displayProducts(this.allProducts);
+            
             this.showSuccess('✅ Produto excluído com sucesso!');
         }
     }
@@ -1159,7 +846,6 @@ class ProductManager {
         if (modal) {
             modal.style.display = 'none';
         }
-        this.addLog('Modal de edição fechado', 'info');
     }
 
     // 🎯 FUNÇÕES DE UI
@@ -1169,10 +855,6 @@ class ProductManager {
 
     showSuccess(message) {
         alert(`✅ ${message}`);
-    }
-
-    showWarning(message) {
-        alert(`⚠️ ${message}`);
     }
 }
 
@@ -1221,12 +903,6 @@ function checkAdminAuth() {
 }
 
 // 🌐 FUNÇÕES GLOBAIS
-function handleImageUpload(input) {
-    if (productManager) {
-        productManager.handleImageUpload(input);
-    }
-}
-
 function closeEditModal() {
     if (productManager) {
         productManager.closeEditModal();
@@ -1234,6 +910,6 @@ function closeEditModal() {
 }
 
 window.productManager = productManager;
-</script> 
+    </script>
 </body>
 </html>
