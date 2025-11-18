@@ -2,15 +2,20 @@
 function initModalListeners() {
     const modal = document.getElementById('produtoModal');
     const closeButton = document.querySelector('.close-button');
-    const openModalButtons = document.querySelectorAll('.open-modal-btn');
+    
+    console.log('Inicializando modal listeners...');
+    console.log('Botões encontrados:', document.querySelectorAll('.open-modal-btn').length);
     
     // Função para abrir o modal
     function openModal(button) {
+        console.log('Abrindo modal...', button);
         const name = button.getAttribute('data-name');
         const id = button.getAttribute('data-id');
         const image = button.getAttribute('data-image');
         const specs = button.getAttribute('data-specs');
         const options = JSON.parse(button.getAttribute('data-options') || '[]');
+        
+        console.log('Dados do produto:', { name, id, image, specs, options });
         
         // Preencher modal com os dados
         document.getElementById('modalImage').src = image;
@@ -29,8 +34,8 @@ function initModalListeners() {
                 if (index === 0) optionElement.classList.add('selected');
                 
                 optionElement.innerHTML = `
-                    <img src="${option.image || option.imagem}" alt="${option.model || option.modelo}">
-                    <span>${option.model || option.modelo}</span>
+                    <img src="${option.imagem}" alt="${option.modelo}">
+                    <span>${option.modelo}</span>
                 `;
                 
                 optionElement.addEventListener('click', function() {
@@ -44,10 +49,10 @@ function initModalListeners() {
                     
                     // Atualizar preço
                     document.getElementById('modalPrice').textContent = 
-                        `R$ ${option.price ? option.price.toFixed(2).replace('.', ',') : option.preco.toFixed(2).replace('.', ',')}`;
+                        `R$ ${option.preco.toFixed(2).replace('.', ',')}`;
                     
                     // Atualizar imagem principal
-                    document.getElementById('modalImage').src = option.image || option.imagem;
+                    document.getElementById('modalImage').src = option.imagem;
                 });
                 
                 modalOptions.appendChild(optionElement);
@@ -56,7 +61,7 @@ function initModalListeners() {
             // Definir preço inicial (primeira opção)
             const firstOption = options[0];
             document.getElementById('modalPrice').textContent = 
-                `R$ ${firstOption.price ? firstOption.price.toFixed(2).replace('.', ',') : firstOption.preco.toFixed(2).replace('.', ',')}`;
+                `R$ ${firstOption.preco.toFixed(2).replace('.', ',')}`;
         }
         
         // Configurar botão do WhatsApp
@@ -81,11 +86,12 @@ function initModalListeners() {
         document.body.style.overflow = 'hidden';
     }
     
-    // Adicionar event listeners aos botões
-    openModalButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            openModal(this);
-        });
+    // Adicionar event listeners aos botões - DELEGAÇÃO DE EVENTOS
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('open-modal-btn')) {
+            console.log('Botão clicado!', event.target);
+            openModal(event.target);
+        }
     });
     
     // Fechar modal
@@ -102,7 +108,6 @@ function initModalListeners() {
         }
     });
 }
-
 // Função para inicializar menu hamburguer
 function initMenu() {
     const menuToggle = document.getElementById('menuToggle');
