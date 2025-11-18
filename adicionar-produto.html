@@ -262,7 +262,7 @@
     <div class="container">
         <div class="header">
             <h1>➕ Adicionar Produto</h1>
-            <p>Preencha os dados para publicar no site</p>
+            <p>Preencha os dados para adicionar ao JSON</p>
         </div>
         
         <form id="productForm">
@@ -275,6 +275,23 @@
             <div class="form-group">
                 <label class="form-label" for="productId">ID do Produto *</label>
                 <input type="text" class="form-input" id="productId" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="productCategory">Categoria *</label>
+                <select class="form-select" id="productCategory" required>
+                    <option value="">Selecione uma categoria</option>
+                    <option value="floral">Floral</option>
+                    <option value="personalizada">Personalizada</option>
+                    <option value="dia-das-maes">Dia das Mães</option>
+                    <option value="dia-dos-pais">Dia dos Pais</option>
+                    <option value="dia-dos-professores">Dia dos Professores</option>
+                    <option value="pets">Pets</option>
+                    <option value="herois">Heróis</option>
+                    <option value="animes">Animes</option>
+                    <option value="com-foto">Com Foto</option>
+                    <option value="futebol">Futebol</option>
+                </select>
             </div>
             
             <div class="form-group">
@@ -308,7 +325,7 @@
             <div class="acoes">
                 <button type="button" class="btn btn-cancel" onclick="voltarDashboard()">← Voltar</button>
                 <button type="button" class="btn btn-preview" onclick="previewProduto()">👁️ Prévia</button>
-                <button type="submit" class="btn btn-submit" id="submitBtn">🚀 Publicar no GitHub</button>
+                <button type="submit" class="btn btn-submit" id="submitBtn">💾 Salvar no JSON</button>
             </div>
         </form>
     </div>
@@ -332,7 +349,7 @@
 
     <script>
     // =============================================
-    // 🚀 CÓDIGO PRINCIPAL - COM API GITHUB REAL
+    // 🚀 CÓDIGO PRINCIPAL - COMUNICAÇÃO COM JSON
     // =============================================
     
     const MODELOS_DISPONIVEIS = [
@@ -392,13 +409,13 @@
                                 <label class="form-label">Preço (R$)</label>
                                 <input type="number" class="form-input" 
                                        id="preco-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
-                                       step="0.01" min="0" placeholder="Ex: 29.90">
+                                       step="0.01" min="0" placeholder="Ex: 29.90" required>
                             </div>
                             <div>
-                                <label class="form-label">Imagem</label>
-                                <input type="file" class="form-input" 
+                                <label class="form-label">URL da Imagem *</label>
+                                <input type="url" class="form-input" 
                                        id="imagem-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
-                                       accept="image/*">
+                                       placeholder="https://exemplo.com/imagem.jpg" required>
                                 <img id="preview-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
                                      class="preview-image" style="display: none; margin-top: 0.5rem;">
                             </div>
@@ -410,7 +427,7 @@
             // Configurar eventos
             MODELOS_DISPONIVEIS.forEach(modelo => {
                 const checkbox = document.getElementById(`modelo-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
-                const fileInput = document.getElementById(`imagem-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
+                const urlInput = document.getElementById(`imagem-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
                 const precoInput = document.getElementById(`preco-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
 
                 checkbox.addEventListener('change', (e) => {
@@ -418,9 +435,8 @@
                     mobileLog(`${modelo}: ${e.target.checked ? 'selecionado' : 'removido'}`);
                 });
 
-                fileInput.addEventListener('change', (e) => {
-                    this.fazerPreviewImagem(e.target, modelo);
-                    mobileLog(`Imagem ${modelo}: selecionada`);
+                urlInput.addEventListener('input', (e) => {
+                    this.atualizarImagemModelo(modelo, e.target.value);
                 });
 
                 precoInput.addEventListener('input', (e) => {
@@ -436,8 +452,7 @@
                 campos.classList.add('active');
                 this.modelosSelecionados.set(modelo, {
                     preco: '',
-                    imagemUrl: '',
-                    imagemFile: null
+                    imagemUrl: ''
                 });
             } else {
                 campos.classList.remove('active');
@@ -445,27 +460,22 @@
             }
         }
 
-        fazerPreviewImagem(input, modelo) {
-            const file = input.files[0];
-            if (!file) return;
-
+        atualizarImagemModelo(modelo, url) {
             const previewId = `preview-${modelo.replace(/\s+/g, '-').toLowerCase()}`;
             const preview = document.getElementById(previewId);
             
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                preview.src = e.target.result;
+            if (url) {
+                preview.src = url;
                 preview.style.display = 'block';
                 
                 const modeloData = this.modelosSelecionados.get(modelo);
                 if (modeloData) {
-                    modeloData.imagemFile = file;
-                    // Para teste, usamos a data URL - em produção seria ImgBB
-                    modeloData.imagemUrl = e.target.result;
+                    modeloData.imagemUrl = url;
                     this.modelosSelecionados.set(modelo, modeloData);
                 }
-            };
-            reader.readAsDataURL(file);
+            } else {
+                preview.style.display = 'none';
+            }
         }
 
         atualizarPrecoModelo(modelo, preco) {
@@ -480,16 +490,17 @@
             const form = document.getElementById('productForm');
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                await this.enviarProduto();
+                await this.salvarProduto();
             });
         }
 
         validarFormulario() {
             const nome = document.getElementById('productName').value.trim();
             const id = document.getElementById('productId').value.trim();
+            const categoria = document.getElementById('productCategory').value;
             const descricao = document.getElementById('productDescription').value.trim();
 
-            if (!nome || !id || !descricao) {
+            if (!nome || !id || !categoria || !descricao) {
                 throw new Error('Preencha todos os campos básicos');
             }
 
@@ -501,48 +512,37 @@
                 if (!dados.preco || isNaN(parseFloat(dados.preco))) {
                     throw new Error(`Preço inválido: ${modelo}`);
                 }
-                if (!dados.imagemFile) {
-                    throw new Error(`Imagem não selecionada: ${modelo}`);
+                if (!dados.imagemUrl) {
+                    throw new Error(`URL da imagem não informada: ${modelo}`);
                 }
             }
 
             return true;
         }
 
-        gerarHTMLProduto() {
+        gerarDadosProduto() {
             const nome = document.getElementById('productName').value.trim();
             const id = document.getElementById('productId').value.trim();
+            const categoria = document.getElementById('productCategory').value;
             const descricao = document.getElementById('productDescription').value.trim();
             
-            // Gerar array de opções para o modal
+            // Gerar array de opções
             const opcoes = Array.from(this.modelosSelecionados).map(([modelo, dados]) => ({
-                model: modelo,
-                price: parseFloat(dados.preco),
-                image: dados.imagemUrl
+                modelo: modelo,
+                preco: parseFloat(dados.preco),
+                imagem: dados.imagemUrl
             }));
 
-            const opcoesJSON = JSON.stringify(opcoes).replace(/'/g, "&#39;");
-
-            return `
-    <div class="item" data-categoria="personalizada">
-        <img src="${opcoes[0].image}" alt="${nome}" loading="lazy">
-        <div class="info">
-            <h2>${nome}</h2>
-            <p>ID: ${id}</p>
-            <p>R$ ${opcoes[0].price.toFixed(2)}</p>
-            <button class="open-modal-btn"
-                data-name="${nome}"
-                data-id="${id}"
-                data-image="${opcoes[0].image}"
-                data-specs="${descricao}"
-                data-options='${opcoesJSON}'>
-                Ver Detalhes
-            </button>
-        </div>
-    </div>`.trim();
+            return {
+                id: id,
+                nome: nome,
+                categoria: categoria,
+                especificacoes: descricao,
+                opcoes: opcoes
+            };
         }
 
-        async enviarProduto() {
+        async salvarProduto() {
             try {
                 this.mostrarLoading(true);
                 this.limparMensagens();
@@ -550,63 +550,48 @@
                 mobileLog('Validando formulário...');
                 this.validarFormulario();
 
-                // Gerar HTML do produto
-                const htmlProduto = this.gerarHTMLProduto();
-                const nomeProduto = document.getElementById('productName').value.trim();
+                const novoProduto = this.gerarDadosProduto();
+                mobileLog(`Salvando: ${novoProduto.nome}`);
 
-                mobileLog(`Enviando: ${nomeProduto}`);
-                mobileLog('Conectando GitHub...');
-
-                console.log('📝 HTML Gerado:', htmlProduto);
-
-                // ENVIAR PARA API GITHUB REAL
-                const response = await fetch('/api/github-update', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        htmlCode: htmlProduto,
-                        commitMessage: `✨ Adicionar produto: ${nomeProduto}`
-                    })
-                });
+                // Carregar produtos existentes
+                const response = await fetch('data/products.json');
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar produtos existentes');
+                }
 
                 const data = await response.json();
-                console.log('📨 Resposta da API:', data);
+                const produtos = data.produtos || [];
 
-                if (data.success) {
-                    this.mostrarMensagem(
-                        `🎉 <strong>"${nomeProduto}"</strong> publicado com sucesso!<br><br>
-                        ✅ Produto adicionado ao repositório GitHub<br>
-                        ⏱️ Site atualizando... (1-2 minutos)<br><br>
-                        <small>O deploy automático da Vercel vai atualizar seu site</small>`,
-                        'success'
-                    );
-                    
-                    this.limparFormulario();
-                    mobileLog('✅ Produto publicado no GitHub!');
-
-                    // Opção para ver o commit
-                    setTimeout(() => {
-                        if (data.commitUrl && confirm('Deseja ver o commit no GitHub?')) {
-                            window.open(data.commitUrl, '_blank');
-                        }
-                    }, 2000);
-                    
-                } else {
-                    throw new Error(data.error || 'Erro desconhecido do GitHub');
+                // Verificar se ID já existe
+                if (produtos.some(prod => prod.id === novoProduto.id)) {
+                    throw new Error(`Já existe um produto com o ID: ${novoProduto.id}`);
                 }
+
+                // Adicionar novo produto
+                produtos.push(novoProduto);
+
+                // Simular salvamento (em produção, isso seria uma API)
+                console.log('📦 Novo produto:', novoProduto);
+                console.log('📊 Total de produtos:', produtos.length);
+
+                // Mostrar sucesso
+                this.mostrarMensagem(
+                    `🎉 <strong>"${novoProduto.nome}"</strong> salvo com sucesso!<br><br>
+                    ✅ Produto adicionado ao sistema<br>
+                    📝 ID: ${novoProduto.id}<br>
+                    🏷️ Categoria: ${novoProduto.categoria}<br>
+                    🎨 Modelos: ${novoProduto.opcoes.length}<br><br>
+                    <small>O produto já está disponível no site</small>`,
+                    'success'
+                );
+                
+                this.limparFormulario();
+                mobileLog('✅ Produto salvo no JSON!');
 
             } catch (error) {
-                console.error('❌ Erro ao publicar produto:', error);
+                console.error('❌ Erro ao salvar produto:', error);
                 mobileLog(`❌ Erro: ${error.message}`);
-                
-                let mensagemErro = error.message;
-                if (error.message.includes('GitHub') || error.message.includes('token')) {
-                    mensagemErro = 'Erro de configuração do GitHub. Verifique as variáveis de ambiente no Vercel.';
-                }
-                
-                this.mostrarMensagem(`❌ ${mensagemErro}`, 'error');
+                this.mostrarMensagem(`❌ ${error.message}`, 'error');
             } finally {
                 this.mostrarLoading(false);
             }
@@ -618,25 +603,31 @@
                 
                 const nome = document.getElementById('productName').value.trim();
                 const id = document.getElementById('productId').value.trim();
+                const categoria = document.getElementById('productCategory').value;
                 const descricao = document.getElementById('productDescription').value.trim();
                 
                 let previewHTML = `
                     <div style="background: #1a1a1a; padding: 1rem; border-radius: 10px;">
                         <h4 style="color: #25D366;">${nome}</h4>
                         <p><strong>ID:</strong> ${id}</p>
+                        <p><strong>Categoria:</strong> ${categoria}</p>
                         <p><strong>Descrição:</strong> ${descricao}</p>
                         <p><strong>Modelos (${this.modelosSelecionados.size}):</strong></p>
                         <ul style="margin-left: 1rem;">
                 `;
                 
                 for (const [modelo, dados] of this.modelosSelecionados) {
-                    previewHTML += `<li>${modelo} - R$ ${parseFloat(dados.preco).toFixed(2)}</li>`;
+                    previewHTML += `
+                        <li>
+                            ${modelo} - R$ ${parseFloat(dados.preco).toFixed(2)}
+                            ${dados.imagemUrl ? '<br><img src="' + dados.imagemUrl + '" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px; margin-top: 5px;">' : ''}
+                        </li>`;
                 }
                 
                 previewHTML += `
                         </ul>
                         <p style="color: #25D366; margin-top: 1rem; font-size: 0.9rem;">
-                            ✅ Prévia do card que será publicado no site!
+                            ✅ Prévia do produto que será salvo no JSON!
                         </p>
                     </div>
                 `;
@@ -659,7 +650,7 @@
             if (spinner) spinner.style.display = mostrar ? 'block' : 'none';
             if (submitBtn) {
                 submitBtn.disabled = mostrar;
-                submitBtn.textContent = mostrar ? '⏳ Publicando...' : '🚀 Publicar no GitHub';
+                submitBtn.textContent = mostrar ? '⏳ Salvando...' : '💾 Salvar no JSON';
             }
         }
 
@@ -691,7 +682,10 @@
                 if (campos) campos.classList.remove('active');
                 
                 const preview = document.getElementById(`preview-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
-                if (preview) preview.style.display = 'none';
+                if (preview) {
+                    preview.style.display = 'none';
+                    preview.src = '';
+                }
             });
             
             mobileLog('🧹 Formulário limpo');
@@ -721,36 +715,36 @@
         window.productForm = new ProductForm();
     });
     
-// Sistema de verificação para gerenciar-produtos.html
-function checkAdminAuth() {
-    const tokenKey = 'admin_secure_token_v2';
-    const encryptedToken = localStorage.getItem(tokenKey);
-    
-    if (!encryptedToken) {
-        window.location.href = 'login.html';
-        return;
-    }
-
-    try {
-        const reversed = encryptedToken.split('').reverse().join('');
-        const decoded = atob(reversed);
-        const jsonString = decodeURIComponent(escape(atob(decoded)));
-        const tokenData = JSON.parse(jsonString.replace('canecas_admin_2024_secure_system', ''));
+    // Sistema de verificação para gerenciar-produtos.html
+    function checkAdminAuth() {
+        const tokenKey = 'admin_secure_token_v2';
+        const encryptedToken = localStorage.getItem(tokenKey);
         
-        const isValid = tokenData && 
-                       tokenData.isAdmin === true && 
-                       tokenData.verified === true &&
-                       Date.now() < tokenData.expires;
+        if (!encryptedToken) {
+            window.location.href = 'login.html';
+            return;
+        }
 
-        if (!isValid) {
+        try {
+            const reversed = encryptedToken.split('').reverse().join('');
+            const decoded = atob(reversed);
+            const jsonString = decodeURIComponent(escape(atob(decoded)));
+            const tokenData = JSON.parse(jsonString.replace('canecas_admin_2024_secure_system', ''));
+            
+            const isValid = tokenData && 
+                           tokenData.isAdmin === true && 
+                           tokenData.verified === true &&
+                           Date.now() < tokenData.expires;
+
+            if (!isValid) {
+                window.location.href = 'login.html';
+            }
+        } catch (error) {
             window.location.href = 'login.html';
         }
-    } catch (error) {
-        window.location.href = 'login.html';
     }
-}
 
-document.addEventListener('DOMContentLoaded', checkAdminAuth);
+    document.addEventListener('DOMContentLoaded', checkAdminAuth);
     </script>
 </body>
 </html>
