@@ -83,12 +83,37 @@
 
 <footer>© 2025 • Canecas Personalizadas — Todos os direitos reservados</footer>
 
-<!-- 🔧 ERUDA - CONSOLE PARA MOBILE -->
+<!-- 🔧 ERUDA - CONSOLE AVANÇADO PARA MOBILE -->
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
 <script>
+    // Configuração avançada do Eruda
     if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        eruda.init();
-        console.log('🛠️ Eruda inicializado!');
+        // Inicializa Eruda
+        eruda.init({
+            tool: ['console', 'elements', 'network', 'resources', 'sources', 'info'],
+            defaults: {
+                displaySize: 50,
+                transparency: 0.9,
+                theme: 'Dark'
+            }
+        });
+        
+        // Adiciona algumas informações úteis
+        const erudaConsole = eruda.get('console');
+        erudaConsole.log('🛠️ Eruda inicializado!');
+        erudaConsole.log('📱 Dispositivo: ' + navigator.userAgent);
+        erudaConsole.log('🌐 URL: ' + window.location.href);
+        
+        console.log('✅ Eruda configurado com sucesso!');
+        
+        // Função global para facilitar o debug
+        window.showDebugInfo = function() {
+            const console = eruda.get('console');
+            console.log('🔍 DEBUG INFO:');
+            console.log('- Modal buttons:', document.querySelectorAll('.open-modal-btn').length);
+            console.log('- Products loaded:', document.querySelectorAll('.item').length);
+            console.log('- JSON status:', window.jsonLoaded || 'Not checked');
+        };
     }
 </script>
 
