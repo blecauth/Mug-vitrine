@@ -79,9 +79,19 @@
       </div>
     </div>
   </div>
+<!-- ... resto do seu código ... -->
 
-  <footer>© 2025 • Canecas Personalizadas — Todos os direitos reservados</footer>
+<footer>© 2025 • Canecas Personalizadas — Todos os direitos reservados</footer>
 
-  <script src="src/script.js" defer></script>
+<!-- 🔧 ERUDA - CONSOLE PARA MOBILE -->
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        eruda.init();
+        console.log('🛠️ Eruda inicializado!');
+    }
+</script>
+
+<script src="src/script.js" defer></script>
 </body>
 </html>
