@@ -23,7 +23,13 @@ function initModalListeners() {
         }
         
         console.log('📦 Dados do produto:', { name, id, image, specs, options });
-
+// Mostrar modal
+if (modal) {
+    modal.style.display = 'block';
+    modal.style.opacity = '1';
+    modal.style.visibility = 'visible';
+    document.body.style.overflow = 'hidden';
+}
         // Preencher modal com os dados
         document.getElementById('modalImage').src = image;
         document.getElementById('modalImage').alt = name;
