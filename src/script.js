@@ -23,13 +23,15 @@ function initModalListeners() {
         }
         
         console.log('📦 Dados do produto:', { name, id, image, specs, options });
-// Mostrar modal
-if (modal) {
-    modal.style.display = 'block';
-    modal.style.opacity = '1';
-    modal.style.visibility = 'visible';
-    document.body.style.overflow = 'hidden';
-}
+
+        // Mostrar modal
+        if (modal) {
+            modal.style.display = 'block';
+            modal.style.opacity = '1';
+            modal.style.visibility = 'visible';
+            document.body.style.overflow = 'hidden';
+        }
+
         // Preencher modal com os dados
         document.getElementById('modalImage').src = image;
         document.getElementById('modalImage').alt = name;
@@ -100,10 +102,6 @@ if (modal) {
             window.open(`https://wa.me/5511999999999?text=${encodedMessage}`, '_blank');
         };
         
-        // Mostrar modal
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-        
         console.log('✅ Modal aberto com sucesso!');
     }
     
@@ -131,7 +129,11 @@ if (modal) {
     
     // Fechar modal
     closeButton.addEventListener('click', function() {
-        modal.style.display = 'none';
+        if (modal) {
+            modal.style.display = 'none';
+            modal.style.opacity = '0';
+            modal.style.visibility = 'hidden';
+        }
         document.body.style.overflow = 'auto';
         console.log('❌ Modal fechado');
     });
@@ -139,7 +141,11 @@ if (modal) {
     // Fechar modal clicando fora
     window.addEventListener('click', function(event) {
         if (event.target === modal) {
-            modal.style.display = 'none';
+            if (modal) {
+                modal.style.display = 'none';
+                modal.style.opacity = '0';
+                modal.style.visibility = 'hidden';
+            }
             document.body.style.overflow = 'auto';
             console.log('❌ Modal fechado (clique fora)');
         }
@@ -236,7 +242,9 @@ function initSearch() {
         }
         
         // Mostrar/ocultar mensagem de nenhum produto
-        nenhumProduto.style.display = encontrados === 0 ? 'block' : 'none';
+        if (nenhumProduto) {
+            nenhumProduto.style.display = encontrados === 0 ? 'block' : 'none';
+        }
         
         console.log('📊 Produtos encontrados:', encontrados);
     });
@@ -289,20 +297,26 @@ async function loadProducts() {
                 galeria.appendChild(item);
             });
             
-            nenhumProduto.style.display = 'none';
+            if (nenhumProduto) {
+                nenhumProduto.style.display = 'none';
+            }
             
             console.log(`✅ ${data.produtos.length} produtos carregados do JSON`);
             
         } else {
-            nenhumProduto.style.display = 'block';
+            if (nenhumProduto) {
+                nenhumProduto.style.display = 'block';
+            }
             console.log('📭 Nenhum produto encontrado no JSON');
         }
         
     } catch (error) {
         console.error('❌ Erro ao carregar produtos:', error);
         const nenhumProduto = document.getElementById('nenhumProduto');
-        nenhumProduto.style.display = 'block';
-        nenhumProduto.textContent = 'Erro ao carregar produtos 🔧';
+        if (nenhumProduto) {
+            nenhumProduto.style.display = 'block';
+            nenhumProduto.textContent = 'Erro ao carregar produtos 🔧';
+        }
     }
 }
 
