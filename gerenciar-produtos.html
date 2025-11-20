@@ -480,16 +480,16 @@
         <section class="export-section">
             <h3 class="export-title">📦 Gerenciar Dados</h3>
             <div class="export-buttons">
-                <button onclick="productManager.exportToJSON()" class="btn btn-export">📤 Exportar JSON</button>
+                <button onclick="productManager.exportProductsJSON()" class="btn btn-export">📥 Baixar products.json</button>
                 <label class="btn btn-import" style="cursor: pointer;">
-                    📥 Importar JSON
+                    📤 Importar JSON
                     <input type="file" id="importFile" class="file-input" accept=".json" 
                            onchange="productManager.importFromJSON(event)">
                 </label>
-                <button onclick="productManager.syncWithServer()" class="btn">🔄 Sincronizar</button>
+                <button onclick="productManager.loadProductsFromJSON()" class="btn">🔄 Recarregar Original</button>
             </div>
             <p style="color: #ccc; margin-top: 1rem; font-size: 0.9rem;">
-                💡 As alterações são salvas automaticamente. Exporte o JSON para atualizar o servidor.
+                💡 As alterações são salvas automaticamente. Baixe o JSON atualizado para substituir no servidor.
             </p>
         </section>
 
@@ -553,14 +553,14 @@
                 
                 <div class="form-buttons">
                     <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancelar</button>
-                    <button type="submit" class="btn-apply" id="applyBtn">💾 Salvar Alterações</button>
+                    <button type="submit" class="btn-apply" id="applyBtn">💾 Salvar e Baixar JSON</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-// 🔧 GERENCIADOR COMPLETO COM SISTEMA HÍBRIDO
+// 🔧 GERENCIADOR COMPLETO - LEITURA DO JSON + DOWNLOAD DO JSON ATUALIZADO
 class ProductManager {
     constructor() {
         this.allProducts = [];
@@ -572,7 +572,7 @@ class ProductManager {
 
     async init() {
         console.log('🚀 Inicializando gerenciador...');
-        await this.loadProducts();
+        await this.loadProductsFromJSON();
         this.setupSearch();
         this.setupEventListeners();
         console.log('✅ Gerenciador pronto!');
@@ -602,21 +602,11 @@ class ProductManager {
         }
     }
 
-    // 📥 CARREGA PRODUTOS - PRIORIDADE: LOCALSTORAGE > JSON
-    async loadProducts() {
+    // 📥 CARREGA PRODUTOS DO JSON ORIGINAL
+    async loadProductsFromJSON() {
         try {
-            console.log('🔄 Carregando produtos...');
+            console.log('🔄 Carregando produtos do JSON...');
             
-            // 1. Tenta carregar do localStorage (dados editados)
-            const localData = this.loadFromLocalStorage();
-            if (localData.length > 0) {
-                this.allProducts = localData;
-                console.log('✅ Produtos carregados do localStorage:', this.allProducts.length);
-                this.displayProducts(this.allProducts);
-                return;
-            }
-
-            // 2. Se não tem dados locais, carrega do JSON original
             const response = await fetch('data/products.json');
             if (!response.ok) throw new Error('Erro ao carregar JSON');
 
@@ -626,21 +616,34 @@ class ProductManager {
             console.log(`✅ ${this.allProducts.length} produtos carregados do JSON`);
             this.displayProducts(this.allProducts);
             
+            // Também salva no localStorage como backup
+            this.saveToLocalStorage();
+            
         } catch (error) {
             console.error('❌ Erro ao carregar produtos:', error);
-            this.showError('Erro ao carregar produtos');
-            this.displayProducts([]);
+            
+            // Tenta carregar do localStorage como fallback
+            const localData = this.loadFromLocalStorage();
+            if (localData.length > 0) {
+                this.allProducts = localData;
+                console.log('✅ Produtos carregados do localStorage:', this.allProducts.length);
+                this.displayProducts(this.allProducts);
+                this.showError('Erro ao carregar do JSON. Usando dados locais.');
+            } else {
+                this.showError('Erro ao carregar produtos do JSON');
+                this.displayProducts([]);
+            }
         }
     }
 
-    // 💾 SALVA NO LOCALSTORAGE
+    // 💾 SALVA NO LOCALSTORAGE (BACKUP)
     saveToLocalStorage() {
         try {
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
                 produtos: this.allProducts,
                 lastUpdate: new Date().toISOString()
             }));
-            console.log('💾 Dados salvos no localStorage');
+            console.log('💾 Backup salvo no localStorage');
             return true;
         } catch (error) {
             console.error('❌ Erro ao salvar no localStorage:', error);
@@ -648,7 +651,7 @@ class ProductManager {
         }
     }
 
-    // 📥 CARREGA DO LOCALSTORAGE
+    // 📥 CARREGA DO LOCALSTORAGE (BACKUP)
     loadFromLocalStorage() {
         try {
             const stored = localStorage.getItem(this.STORAGE_KEY);
@@ -659,34 +662,6 @@ class ProductManager {
         } catch (error) {
             console.error('❌ Erro ao carregar do localStorage:', error);
             return [];
-        }
-    }
-
-    // 🌐 TENTA SALVAR NA API
-    async saveToAPI() {
-        try {
-            console.log('🌐 Tentando salvar na API...');
-            const response = await fetch('/api/update-products', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    produtos: this.allProducts,
-                    action: 'update',
-                    timestamp: new Date().toISOString()
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('✅ Salvo na API:', data);
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.log('🌐 API não disponível, usando localStorage');
-            return false;
         }
     }
 
@@ -837,7 +812,7 @@ class ProductManager {
         }
     }
 
-    // 💾 APLICA ALTERAÇÕES - SISTEMA HÍBRIDO
+    // 💾 APLICA ALTERAÇÕES E GERA JSON PARA DOWNLOAD
     async applyChanges() {
         const applyBtn = document.getElementById('applyBtn');
         if (!applyBtn) return;
@@ -860,21 +835,13 @@ class ProductManager {
                 this.currentProduct.opcoes[0].imagem = newImageUrl;
             }
 
-            // 🎯 SISTEMA HÍBRIDO: Tenta API primeiro, depois localStorage
-            const apiSuccess = await this.saveToAPI();
-            
-            if (apiSuccess) {
-                this.showSuccess('✅ Alterações salvas no servidor!');
-            } else {
-                // 🔄 FALLBACK: Salva no localStorage
-                const localSuccess = this.saveToLocalStorage();
-                if (localSuccess) {
-                    this.showSuccess('✅ Alterações salvas localmente!');
-                    console.log('💡 Dica: Configure uma API para salvar no servidor');
-                } else {
-                    throw new Error('Falha ao salvar em ambos os locais');
-                }
-            }
+            // Salva no localStorage
+            this.saveToLocalStorage();
+
+            // GERA E BAIXA O JSON ATUALIZADO
+            this.exportProductsJSON();
+
+            this.showSuccess('✅ Alterações salvas! JSON baixado automaticamente.');
 
             // Atualiza a exibição
             this.displayProducts(this.allProducts);
@@ -897,7 +864,7 @@ class ProductManager {
         if (confirm(`🗑️ Excluir "${product.nome}" (ID: ${product.id})?`)) {
             this.allProducts = this.allProducts.filter(p => p.id !== productId);
             
-            // SALVA A EXCLUSÃO
+            // Salva a exclusão
             this.saveToLocalStorage();
             
             this.displayProducts(this.allProducts);
@@ -905,19 +872,31 @@ class ProductManager {
         }
     }
 
-    // 📤 EXPORTA JSON PARA DOWNLOAD
-    exportToJSON() {
+    // 📤 EXPORTA products.json ATUALIZADO
+    exportProductsJSON() {
         try {
-            const dataStr = JSON.stringify({ produtos: this.allProducts }, null, 2);
+            const dataStr = JSON.stringify({ 
+                produtos: this.allProducts 
+            }, null, 2);
+            
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
             
             const link = document.createElement('a');
             link.href = URL.createObjectURL(dataBlob);
-            link.download = 'products_updated.json';
+            link.download = 'products.json'; // ⚠️ NOME IDÊNTICO AO ORIGINAL
             link.click();
             
-            this.showSuccess('📥 JSON exportado! Faça upload manual no servidor.');
-            console.log('📤 JSON exportado:', this.allProducts.length, 'produtos');
+            console.log('📤 products.json exportado:', this.allProducts.length, 'produtos');
+            
+            this.showSuccess(`
+                📥 **products.json baixado!**
+                
+                💡 **PARA ATUALIZAR O SITE:**
+                1. Substitua o arquivo data/products.json no GitHub
+                2. Espere o deploy (1-2 minutos)
+                3. Recarregue o site
+            `);
+            
         } catch (error) {
             this.showError('❌ Erro ao exportar JSON');
         }
@@ -945,22 +924,6 @@ class ProductManager {
         
         // Limpa o input para permitir reimportação do mesmo arquivo
         event.target.value = '';
-    }
-
-    // 🔄 SINCRONIZA COM SERVIDOR
-    async syncWithServer() {
-        try {
-            const response = await fetch('data/products.json');
-            if (response.ok) {
-                const data = await response.json();
-                this.allProducts = data.produtos || [];
-                this.saveToLocalStorage();
-                this.displayProducts(this.allProducts);
-                this.showSuccess('✅ Sincronizado com servidor!');
-            }
-        } catch (error) {
-            this.showError('❌ Erro ao sincronizar');
-        }
     }
 
     // 🚪 FECHA MODAL
