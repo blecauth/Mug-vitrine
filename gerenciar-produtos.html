@@ -54,6 +54,14 @@
             background: #666;
         }
         
+        .btn-export {
+            background: #007bff;
+        }
+        
+        .btn-import {
+            background: #28a745;
+        }
+        
         .btn:hover {
             opacity: 0.9;
         }
@@ -104,6 +112,32 @@
             color: #ccc;
             font-size: 0.9rem;
             margin-top: 0.5rem;
+        }
+        
+        .export-section {
+            background: #181818;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid #333;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .export-title {
+            color: #25D366;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .file-input {
+            display: none;
         }
         
         .products-grid {
@@ -416,45 +450,11 @@
             .form-buttons {
                 flex-direction: column;
             }
+            
+            .export-buttons {
+                flex-direction: column;
+            }
         }
-
-        .log-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 400px;
-            max-height: 300px;
-            background: rgba(0,0,0,0.9);
-            border: 1px solid #333;
-            border-radius: 10px;
-            padding: 1rem;
-            overflow-y: auto;
-            z-index: 1000;
-            font-size: 0.8rem;
-        }
-
-        .log-header {
-            color: #25D366;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-        }
-
-        .log-entry {
-            padding: 0.3rem 0;
-            border-bottom: 1px solid #333;
-            font-family: monospace;
-        }
-
-        .log-time {
-            color: #888;
-            font-size: 0.7rem;
-        }
-
-        .log-info { color: #ccc; }
-        .log-success { color: #25D366; }
-        .log-warning { color: #ffa500; }
-        .log-error { color: #ff4444; }
-        
     </style>
 </head>
 <body>
@@ -475,6 +475,22 @@
                 <input type="text" id="searchInput" class="search-input" placeholder="🔍 Digite para buscar produtos...">
             </div>
             <p class="search-info">Digite o nome, ID ou categoria do produto - resultados aparecem automaticamente</p>
+        </section>
+
+        <section class="export-section">
+            <h3 class="export-title">📦 Gerenciar Dados</h3>
+            <div class="export-buttons">
+                <button onclick="productManager.exportToJSON()" class="btn btn-export">📤 Exportar JSON</button>
+                <label class="btn btn-import" style="cursor: pointer;">
+                    📥 Importar JSON
+                    <input type="file" id="importFile" class="file-input" accept=".json" 
+                           onchange="productManager.importFromJSON(event)">
+                </label>
+                <button onclick="productManager.syncWithServer()" class="btn">🔄 Sincronizar</button>
+            </div>
+            <p style="color: #ccc; margin-top: 1rem; font-size: 0.9rem;">
+                💡 As alterações são salvas automaticamente. Exporte o JSON para atualizar o servidor.
+            </p>
         </section>
 
         <div id="productsContainer">
@@ -544,49 +560,65 @@
     </div>
 
     <script>
-// 🔧 SISTEMA DE GERENCIAMENTO DE PRODUTOS - VERSÃO JSON
+// 🔧 GERENCIADOR COMPLETO COM SISTEMA HÍBRIDO
 class ProductManager {
     constructor() {
         this.allProducts = [];
         this.currentProduct = null;
         this.originalProduct = null;
+        this.STORAGE_KEY = 'canecas_products_data';
         this.init();
     }
 
     async init() {
-        await this.loadProductsFromJSON();
+        console.log('🚀 Inicializando gerenciador...');
+        await this.loadProducts();
         this.setupSearch();
         this.setupEventListeners();
+        console.log('✅ Gerenciador pronto!');
+        
+        // 🔧 TORNA GLOBAL
+        window.productManager = this;
     }
 
-    // 🔥 CONFIGURA EVENT LISTENERS
     setupEventListeners() {
-        document.getElementById('editForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.applyChanges();
-        });
+        const editForm = document.getElementById('editForm');
+        if (editForm) {
+            editForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.applyChanges();
+            });
+        }
 
-        // Preview da imagem quando URL muda
-        document.getElementById('editImageUrl').addEventListener('input', (e) => {
-            const preview = document.getElementById('imagePreview');
-            if (e.target.value) {
-                preview.src = e.target.value;
-                preview.style.display = 'block';
-            } else {
-                preview.style.display = 'none';
-            }
-        });
+        const imageUrlInput = document.getElementById('editImageUrl');
+        if (imageUrlInput) {
+            imageUrlInput.addEventListener('input', (e) => {
+                const preview = document.getElementById('imagePreview');
+                if (preview && e.target.value) {
+                    preview.src = e.target.value;
+                    preview.style.display = 'block';
+                }
+            });
+        }
     }
 
-    // 📥 CARREGA PRODUTOS DO JSON
-    async loadProductsFromJSON() {
+    // 📥 CARREGA PRODUTOS - PRIORIDADE: LOCALSTORAGE > JSON
+    async loadProducts() {
         try {
-            console.log('🔄 Carregando produtos do JSON...');
+            console.log('🔄 Carregando produtos...');
             
-            const response = await fetch('data/products.json');
-            if (!response.ok) {
-                throw new Error('Erro ao carregar JSON');
+            // 1. Tenta carregar do localStorage (dados editados)
+            const localData = this.loadFromLocalStorage();
+            if (localData.length > 0) {
+                this.allProducts = localData;
+                console.log('✅ Produtos carregados do localStorage:', this.allProducts.length);
+                this.displayProducts(this.allProducts);
+                return;
             }
+
+            // 2. Se não tem dados locais, carrega do JSON original
+            const response = await fetch('data/products.json');
+            if (!response.ok) throw new Error('Erro ao carregar JSON');
 
             const data = await response.json();
             this.allProducts = data.produtos || [];
@@ -596,84 +628,126 @@ class ProductManager {
             
         } catch (error) {
             console.error('❌ Erro ao carregar produtos:', error);
-            this.showError('Erro ao carregar produtos do JSON');
+            this.showError('Erro ao carregar produtos');
             this.displayProducts([]);
         }
     }
 
-    // 🔍 CONFIGURA PESQUISA EM TEMPO REAL
+    // 💾 SALVA NO LOCALSTORAGE
+    saveToLocalStorage() {
+        try {
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
+                produtos: this.allProducts,
+                lastUpdate: new Date().toISOString()
+            }));
+            console.log('💾 Dados salvos no localStorage');
+            return true;
+        } catch (error) {
+            console.error('❌ Erro ao salvar no localStorage:', error);
+            return false;
+        }
+    }
+
+    // 📥 CARREGA DO LOCALSTORAGE
+    loadFromLocalStorage() {
+        try {
+            const stored = localStorage.getItem(this.STORAGE_KEY);
+            if (!stored) return [];
+            
+            const data = JSON.parse(stored);
+            return data.produtos || [];
+        } catch (error) {
+            console.error('❌ Erro ao carregar do localStorage:', error);
+            return [];
+        }
+    }
+
+    // 🌐 TENTA SALVAR NA API
+    async saveToAPI() {
+        try {
+            console.log('🌐 Tentando salvar na API...');
+            const response = await fetch('/api/update-products', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    produtos: this.allProducts,
+                    action: 'update',
+                    timestamp: new Date().toISOString()
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Salvo na API:', data);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.log('🌐 API não disponível, usando localStorage');
+            return false;
+        }
+    }
+
+    // 🔍 CONFIGURA BUSCA
     setupSearch() {
         const searchInput = document.getElementById('searchInput');
-        
-        searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase().trim();
-            
-            if (searchTerm === '') {
-                this.displayProducts(this.allProducts);
-                return;
-            }
+        if (!searchInput) return;
 
-            const filteredProducts = this.allProducts.filter(product => {
-                const searchInName = product.nome?.toLowerCase().includes(searchTerm);
-                const searchInId = product.id?.toLowerCase().includes(searchTerm);
-                const searchInCategory = product.categoria?.toLowerCase().includes(searchTerm);
-                const searchInDescription = product.especificacoes?.toLowerCase().includes(searchTerm);
-                
-                return searchInName || searchInId || searchInCategory || searchInDescription;
-            });
-            
-            this.displayProducts(filteredProducts);
+        searchInput.addEventListener('input', (e) => {
+            const termo = e.target.value.toLowerCase().trim();
+            this.displayProducts(
+                termo ? this.allProducts.filter(p => 
+                    p.nome?.toLowerCase().includes(termo) ||
+                    p.id?.toLowerCase().includes(termo) ||
+                    p.categoria?.toLowerCase().includes(termo) ||
+                    p.especificacoes?.toLowerCase().includes(termo)
+                ) : this.allProducts
+            );
         });
     }
 
-    // 🎴 EXIBE PRODUTOS NA TELA
+    // 🎴 EXIBE PRODUTOS
     displayProducts(products) {
         const container = document.getElementById('productsContainer');
-        
-        if (!container) {
-            console.error('❌ Container de produtos não encontrado!');
-            return;
-        }
-        
+        if (!container) return;
+
         if (products.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
                     <h3>🔍 Nenhum produto encontrado</h3>
                     <p>Tente buscar por nome, ID ou categoria</p>
-                    <p><small>Exemplo: "Caneca", "0001", "floral"</small></p>
                 </div>
             `;
             return;
         }
 
-        // Ordena produtos por nome
-        const sortedProducts = products.sort((a, b) => a.nome.localeCompare(b.nome));
-        
         container.innerHTML = `
             <div class="products-grid">
-                ${sortedProducts.map(product => this.createProductCard(product)).join('')}
+                ${products.sort((a, b) => a.nome.localeCompare(b.nome))
+                    .map(product => this.createProductCard(product)).join('')}
             </div>
         `;
     }
 
-    // 🎴 CRIA CARD DO PRODUTO
+    // 🎴 CRIA CARD
     createProductCard(product) {
-        const primeiroModelo = product.opcoes && product.opcoes.length > 0 ? product.opcoes[0] : null;
+        const primeiroModelo = product.opcoes?.[0];
         const preco = primeiroModelo ? parseFloat(primeiroModelo.preco).toFixed(2) : '0.00';
-        const imagemPrincipal = primeiroModelo ? primeiroModelo.imagem : '';
         
         return `
             <div class="product-card">
                 <div class="product-image">
-                    <img src="${imagemPrincipal}" alt="${product.nome}" 
-                         onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem+Não+Encontrada'">
+                    <img src="${primeiroModelo?.imagem || ''}" alt="${product.nome}" 
+                         onerror="this.src='https://via.placeholder.com/300x200/1a1a1a/666666?text=Imagem'">
                 </div>
                 <div class="product-content">
                     <h3 class="product-title">${product.nome}</h3>
                     <div class="product-tags">
                         <span class="product-tag">ID: ${product.id}</span>
                         <span class="product-tag product-category">${product.categoria}</span>
-                        <span class="product-tag">${product.opcoes ? product.opcoes.length : 0} modelos</span>
+                        <span class="product-tag">${product.opcoes?.length || 0} modelos</span>
                     </div>
                     <div class="product-price">R$ ${preco}</div>
                     <p class="product-description">${product.especificacoes || 'Sem descrição'}</p>
@@ -690,99 +764,80 @@ class ProductManager {
         `;
     }
 
-    // ✏️ ABRE MODAL DE EDIÇÃO
+    // ✏️ ABRE EDIÇÃO
     openEditModal(productId) {
         this.currentProduct = this.allProducts.find(p => p.id === productId);
-        
         if (!this.currentProduct) {
             this.showError('Produto não encontrado');
             return;
         }
 
-        // GUARDA O ESTADO ORIGINAL PARA COMPARAÇÃO
         this.originalProduct = JSON.parse(JSON.stringify(this.currentProduct));
 
-        // Preenche o formulário
+        // Preenche formulário
         document.getElementById('editName').value = this.currentProduct.nome;
         document.getElementById('editId').value = this.currentProduct.id;
         document.getElementById('editCategory').value = this.currentProduct.categoria;
         document.getElementById('editDescription').value = this.currentProduct.especificacoes;
 
-        // Preenche imagem principal (usa a primeira opção)
-        const primeiroModelo = this.currentProduct.opcoes && this.currentProduct.opcoes.length > 0 
-            ? this.currentProduct.opcoes[0] 
-            : null;
-        
+        // Imagem principal
+        const primeiroModelo = this.currentProduct.opcoes?.[0];
         const imageUrlInput = document.getElementById('editImageUrl');
         const imagePreview = document.getElementById('imagePreview');
         
-        if (primeiroModelo && primeiroModelo.imagem) {
+        if (primeiroModelo?.imagem) {
             imageUrlInput.value = primeiroModelo.imagem;
             imagePreview.src = primeiroModelo.imagem;
             imagePreview.style.display = 'block';
-        } else {
-            imageUrlInput.value = '';
-            imagePreview.style.display = 'none';
         }
 
-        // Preenche opções de modelos
+        // Opções de modelos
         this.populateModelOptions();
 
         // Mostra modal
-        const modal = document.getElementById('editModal');
-        if (modal) {
-            modal.style.display = 'flex';
-        }
+        document.getElementById('editModal').style.display = 'flex';
     }
 
-    // 🎨 PREENCHE OPÇÕES DE MODELOS COM INPUTS DE PREÇO
+    // 🎨 PREENCHE OPÇÕES
     populateModelOptions() {
         const container = document.getElementById('modelOptions');
         if (!container) return;
-        
-        if (!this.currentProduct.opcoes || this.currentProduct.opcoes.length === 0) {
-            container.innerHTML = '<p style="color: #888; text-align: center;">Nenhum modelo configurado</p>';
+
+        if (!this.currentProduct.opcoes?.length) {
+            container.innerHTML = '<p style="color: #888; text-align: center;">Nenhum modelo</p>';
             return;
         }
 
         container.innerHTML = this.currentProduct.opcoes.map((modelo, index) => `
             <div class="model-option">
                 <strong>${modelo.modelo}</strong>
-                <input type="number" 
-                       class="model-price-input" 
-                       value="${parseFloat(modelo.preco).toFixed(2)}" 
-                       step="0.01"
-                       min="0"
+                <input type="number" class="model-price-input" 
+                       value="${parseFloat(modelo.preco).toFixed(2)}" step="0.01" min="0"
                        onchange="productManager.updateModelPrice(${index}, this.value)">
                 <div style="margin-top: 0.5rem;">
-                    <input type="url" 
-                           class="form-input" 
-                           value="${modelo.imagem || ''}" 
-                           placeholder="URL da imagem"
-                           onchange="productManager.updateModelImage(${index}, this.value)"
-                           style="font-size: 0.8rem; padding: 0.3rem;">
+                    <input type="url" class="form-input" value="${modelo.imagem || ''}" 
+                           placeholder="URL da imagem" style="font-size: 0.8rem; padding: 0.3rem;"
+                           onchange="productManager.updateModelImage(${index}, this.value)">
                 </div>
             </div>
         `).join('');
     }
 
-    // 💰 ATUALIZA PREÇO DO MODELO
+    // 💰 ATUALIZA PREÇO
     updateModelPrice(index, newPrice) {
-        if (this.currentProduct && this.currentProduct.opcoes) {
+        if (this.currentProduct?.opcoes) {
             this.currentProduct.opcoes[index].preco = parseFloat(newPrice);
-            console.log(`💰 Preço atualizado: ${this.currentProduct.opcoes[index].modelo} - R$ ${newPrice}`);
         }
     }
 
-    // 🖼️ ATUALIZA IMAGEM DO MODELO
+    // 🖼️ ATUALIZA IMAGEM
     updateModelImage(index, newImage) {
-        if (this.currentProduct && this.currentProduct.opcoes) {
+        if (this.currentProduct?.opcoes) {
             this.currentProduct.opcoes[index].imagem = newImage;
-            console.log(`🖼️ Imagem atualizada: ${this.currentProduct.opcoes[index].modelo}`);
         }
     }
 
-    // 💾 APLICA ALTERAÇÕES
+    // 💾 APLICA ALTERAÇÕES - SISTEMA HÍBRIDO
     async applyChanges() {
         const applyBtn = document.getElementById('applyBtn');
         if (!applyBtn) return;
@@ -793,59 +848,124 @@ class ProductManager {
             applyBtn.disabled = true;
             applyBtn.textContent = '💾 Salvando...';
 
-            // Atualiza dados do produto do formulário
+            // Atualiza dados do formulário
             this.currentProduct.nome = document.getElementById('editName').value;
             this.currentProduct.id = document.getElementById('editId').value;
             this.currentProduct.categoria = document.getElementById('editCategory').value;
             this.currentProduct.especificacoes = document.getElementById('editDescription').value;
 
-            // Atualiza imagem principal (primeira opção)
+            // Atualiza imagem principal
             const newImageUrl = document.getElementById('editImageUrl').value;
-            if (this.currentProduct.opcoes && this.currentProduct.opcoes.length > 0) {
+            if (this.currentProduct.opcoes?.[0]) {
                 this.currentProduct.opcoes[0].imagem = newImageUrl;
             }
 
-            console.log('✅ Alterações aplicadas localmente');
-            this.showSuccess('✅ Alterações salvas com sucesso!');
+            // 🎯 SISTEMA HÍBRIDO: Tenta API primeiro, depois localStorage
+            const apiSuccess = await this.saveToAPI();
             
-            // Fecha o modal
-            this.closeEditModal();
-            
-            // Recarrega a lista para mostrar as alterações
+            if (apiSuccess) {
+                this.showSuccess('✅ Alterações salvas no servidor!');
+            } else {
+                // 🔄 FALLBACK: Salva no localStorage
+                const localSuccess = this.saveToLocalStorage();
+                if (localSuccess) {
+                    this.showSuccess('✅ Alterações salvas localmente!');
+                    console.log('💡 Dica: Configure uma API para salvar no servidor');
+                } else {
+                    throw new Error('Falha ao salvar em ambos os locais');
+                }
+            }
+
+            // Atualiza a exibição
             this.displayProducts(this.allProducts);
+            this.closeEditModal();
 
         } catch (error) {
-            console.error('❌ Erro ao aplicar alterações:', error);
-            this.showError(`❌ Erro ao salvar alterações: ${error.message}`);
+            console.error('❌ Erro ao salvar:', error);
+            this.showError(`❌ Erro ao salvar: ${error.message}`);
         } finally {
             applyBtn.disabled = false;
             applyBtn.textContent = originalText;
         }
     }
 
-    // 🗑️ EXCLUIR PRODUTO
+    // 🗑️ EXCLUI PRODUTO
     deleteProduct(productId) {
         const product = this.allProducts.find(p => p.id === productId);
-        
         if (!product) return;
 
-        if (confirm(`🗑️ TEM CERTEZA que deseja excluir o produto?\n\n"${product.nome}" (ID: ${product.id})\n\n⚠️ Esta ação não pode ser desfeita!`)) {
-            // Remove o produto do array
+        if (confirm(`🗑️ Excluir "${product.nome}" (ID: ${product.id})?`)) {
             this.allProducts = this.allProducts.filter(p => p.id !== productId);
             
-            // Atualiza a exibição
-            this.displayProducts(this.allProducts);
+            // SALVA A EXCLUSÃO
+            this.saveToLocalStorage();
             
-            this.showSuccess('✅ Produto excluído com sucesso!');
+            this.displayProducts(this.allProducts);
+            this.showSuccess('✅ Produto excluído!');
+        }
+    }
+
+    // 📤 EXPORTA JSON PARA DOWNLOAD
+    exportToJSON() {
+        try {
+            const dataStr = JSON.stringify({ produtos: this.allProducts }, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = 'products_updated.json';
+            link.click();
+            
+            this.showSuccess('📥 JSON exportado! Faça upload manual no servidor.');
+            console.log('📤 JSON exportado:', this.allProducts.length, 'produtos');
+        } catch (error) {
+            this.showError('❌ Erro ao exportar JSON');
+        }
+    }
+
+    // 📥 IMPORTA JSON
+    importFromJSON(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                this.allProducts = data.produtos || [];
+                this.saveToLocalStorage();
+                this.displayProducts(this.allProducts);
+                this.showSuccess('✅ JSON importado com sucesso!');
+                console.log('📥 JSON importado:', this.allProducts.length, 'produtos');
+            } catch (error) {
+                this.showError('❌ Erro ao importar JSON - arquivo inválido');
+            }
+        };
+        reader.readAsText(file);
+        
+        // Limpa o input para permitir reimportação do mesmo arquivo
+        event.target.value = '';
+    }
+
+    // 🔄 SINCRONIZA COM SERVIDOR
+    async syncWithServer() {
+        try {
+            const response = await fetch('data/products.json');
+            if (response.ok) {
+                const data = await response.json();
+                this.allProducts = data.produtos || [];
+                this.saveToLocalStorage();
+                this.displayProducts(this.allProducts);
+                this.showSuccess('✅ Sincronizado com servidor!');
+            }
+        } catch (error) {
+            this.showError('❌ Erro ao sincronizar');
         }
     }
 
     // 🚪 FECHA MODAL
     closeEditModal() {
-        const modal = document.getElementById('editModal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
+        document.getElementById('editModal').style.display = 'none';
     }
 
     // 🎯 FUNÇÕES DE UI
@@ -862,14 +982,9 @@ class ProductManager {
 let productManager;
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Inicializando sistema de gerenciamento...');
-    
-    // Verificação de segurança
+    console.log('🚀 Inicializando sistema...');
     checkAdminAuth();
-    
-    // Inicializa gerenciador
     productManager = new ProductManager();
-    console.log('✅ Sistema de gerenciamento inicializado!');
 });
 
 // 🔐 VERIFICAÇÃO DE SEGURANÇA
@@ -904,45 +1019,10 @@ function checkAdminAuth() {
 
 // 🌐 FUNÇÕES GLOBAIS
 function closeEditModal() {
-    if (productManager) {
-        productManager.closeEditModal();
+    if (window.productManager) {
+        window.productManager.closeEditModal();
     }
 }
-
-window.productManager = productManager;
     </script>
-    <!-- 🔧 ERUDA - CONSOLE AVANÇADO PARA MOBILE -->
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>
-    // Configuração avançada do Eruda
-    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        // Inicializa Eruda
-        eruda.init({
-            tool: ['console', 'elements', 'network', 'resources', 'sources', 'info'],
-            defaults: {
-                displaySize: 50,
-                transparency: 0.9,
-                theme: 'Dark'
-            }
-        });
-        
-        // Adiciona algumas informações úteis
-        const erudaConsole = eruda.get('console');
-        erudaConsole.log('🛠️ Eruda inicializado!');
-        erudaConsole.log('📱 Dispositivo: ' + navigator.userAgent);
-        erudaConsole.log('🌐 URL: ' + window.location.href);
-        
-        console.log('✅ Eruda configurado com sucesso!');
-        
-        // Função global para facilitar o debug
-        window.showDebugInfo = function() {
-            const console = eruda.get('console');
-            console.log('🔍 DEBUG INFO:');
-            console.log('- Modal buttons:', document.querySelectorAll('.open-modal-btn').length);
-            console.log('- Products loaded:', document.querySelectorAll('.item').length);
-            console.log('- JSON status:', window.jsonLoaded || 'Not checked');
-        };
-    }
-</script>
 </body>
 </html>
