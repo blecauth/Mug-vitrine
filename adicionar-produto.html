@@ -72,6 +72,37 @@
             min-height: 80px;
         }
         
+        /* Upload Section */
+        .upload-section {
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-end;
+        }
+        
+        .upload-input {
+            flex: 1;
+        }
+        
+        .btn-upload {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        
+        .btn-upload:hover {
+            background: #0056b3;
+        }
+        
+        .btn-upload:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+        
         /* Modelos Section */
         .modelos-section {
             background: #1a1a1a;
@@ -325,7 +356,7 @@
             <div class="acoes">
                 <button type="button" class="btn btn-cancel" onclick="voltarDashboard()">← Voltar</button>
                 <button type="button" class="btn btn-preview" onclick="previewProduto()">👁️ Prévia</button>
-                <button type="submit" class="btn btn-submit" id="submitBtn">💾 Salvar no JSON</button>
+                <button type="submit" class="btn btn-submit" id="submitBtn">💾 Salvar e Baixar JSON</button>
             </div>
         </form>
     </div>
@@ -349,7 +380,7 @@
 
     <script>
     // =============================================
-    // 🚀 CÓDIGO PRINCIPAL - COMUNICAÇÃO COM JSON
+    // 🚀 CÓDIGO PRINCIPAL - COM IMGBB UPLOAD
     // =============================================
     
     const MODELOS_DISPONIVEIS = [
@@ -357,6 +388,9 @@
         'Azul Clara', 'Azul', 'Azul Escura', 'Verde Clara', 'Verde', 
         'Verde Escura', 'Laranja', 'Roxa'
     ];
+
+    // API Key do ImgBB (substitua pela sua)
+    const IMGBB_API_KEY = 'bb49178e11dff4322b7a699167535e57';
 
     // Função para mostrar logs na tela do mobile
     function mobileLog(mensagem) {
@@ -375,14 +409,33 @@
     class ProductForm {
         constructor() {
             this.modelosSelecionados = new Map();
+            this.produtosExistentes = [];
             this.init();
         }
 
-        init() {
+        async init() {
             mobileLog('Iniciando formulário...');
+            await this.carregarProdutosExistentes();
             this.carregarModelos();
             this.configurarFormulario();
             mobileLog('✅ Formulário pronto!');
+        }
+
+        // 📥 CARREGA PRODUTOS EXISTENTES DO JSON
+        async carregarProdutosExistentes() {
+            try {
+                mobileLog('Carregando produtos existentes...');
+                const response = await fetch('data/products.json');
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar produtos existentes');
+                }
+                const data = await response.json();
+                this.produtosExistentes = data.produtos || [];
+                mobileLog(`✅ ${this.produtosExistentes.length} produtos carregados`);
+            } catch (error) {
+                console.error('❌ Erro ao carregar produtos:', error);
+                mobileLog('❌ Erro ao carregar produtos existentes');
+            }
         }
 
         carregarModelos() {
@@ -413,9 +466,17 @@
                             </div>
                             <div>
                                 <label class="form-label">URL da Imagem *</label>
-                                <input type="url" class="form-input" 
-                                       id="imagem-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
-                                       placeholder="https://exemplo.com/imagem.jpg" required>
+                                <div class="upload-section">
+                                    <div class="upload-input">
+                                        <input type="url" class="form-input" 
+                                               id="imagem-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
+                                               placeholder="https://exemplo.com/imagem.jpg" required>
+                                    </div>
+                                    <button type="button" class="btn-upload" 
+                                            onclick="productForm.uploadImagem('${modelo}')">
+                                        📤 Upload
+                                    </button>
+                                </div>
                                 <img id="preview-${modelo.replace(/\s+/g, '-').toLowerCase()}" 
                                      class="preview-image" style="display: none; margin-top: 0.5rem;">
                             </div>
@@ -486,6 +547,58 @@
             }
         }
 
+        // 📤 UPLOAD DE IMAGEM PARA IMGBB
+        async uploadImagem(modelo) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                try {
+                    this.mostrarLoading(true);
+                    mobileLog(`📤 Uploading imagem para ${modelo}...`);
+
+                    const formData = new FormData();
+                    formData.append('image', file);
+
+                    const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const imageUrl = data.data.url;
+                        
+                        // Atualiza o campo de URL
+                        const urlInput = document.getElementById(`imagem-${modelo.replace(/\s+/g, '-').toLowerCase()}`);
+                        urlInput.value = imageUrl;
+                        
+                        // Atualiza o preview
+                        this.atualizarImagemModelo(modelo, imageUrl);
+                        
+                        mobileLog('✅ Imagem uploadada com sucesso!');
+                        this.mostrarMensagem('✅ Imagem uploadada com sucesso!', 'success');
+                    } else {
+                        throw new Error(data.error?.message || 'Erro no upload');
+                    }
+
+                } catch (error) {
+                    console.error('❌ Erro no upload:', error);
+                    mobileLog('❌ Erro ao fazer upload da imagem');
+                    this.mostrarMensagem('❌ Erro ao fazer upload da imagem', 'error');
+                } finally {
+                    this.mostrarLoading(false);
+                }
+            };
+
+            input.click();
+        }
+
         configurarFormulario() {
             const form = document.getElementById('productForm');
             form.addEventListener('submit', async (e) => {
@@ -542,6 +655,29 @@
             };
         }
 
+        // 📥 BAIXAR JSON ATUALIZADO
+        baixarJSON(produtos) {
+            try {
+                const dataStr = JSON.stringify({ 
+                    produtos: produtos 
+                }, null, 2);
+                
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = 'products.json';
+                link.click();
+                
+                mobileLog('📤 products.json baixado!');
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Erro ao exportar JSON:', error);
+                return false;
+            }
+        }
+
         async salvarProduto() {
             try {
                 this.mostrarLoading(true);
@@ -553,40 +689,37 @@
                 const novoProduto = this.gerarDadosProduto();
                 mobileLog(`Salvando: ${novoProduto.nome}`);
 
-                // Carregar produtos existentes
-                const response = await fetch('data/products.json');
-                if (!response.ok) {
-                    throw new Error('Erro ao carregar produtos existentes');
-                }
-
-                const data = await response.json();
-                const produtos = data.produtos || [];
-
                 // Verificar se ID já existe
-                if (produtos.some(prod => prod.id === novoProduto.id)) {
+                if (this.produtosExistentes.some(prod => prod.id === novoProduto.id)) {
                     throw new Error(`Já existe um produto com o ID: ${novoProduto.id}`);
                 }
 
-                // Adicionar novo produto
-                produtos.push(novoProduto);
+                // Adicionar novo produto à lista existente
+                const produtosAtualizados = [...this.produtosExistentes, novoProduto];
 
-                // Simular salvamento (em produção, isso seria uma API)
-                console.log('📦 Novo produto:', novoProduto);
-                console.log('📊 Total de produtos:', produtos.length);
-
-                // Mostrar sucesso
-                this.mostrarMensagem(
-                    `🎉 <strong>"${novoProduto.nome}"</strong> salvo com sucesso!<br><br>
-                    ✅ Produto adicionado ao sistema<br>
-                    📝 ID: ${novoProduto.id}<br>
-                    🏷️ Categoria: ${novoProduto.categoria}<br>
-                    🎨 Modelos: ${novoProduto.opcoes.length}<br><br>
-                    <small>O produto já está disponível no site</small>`,
-                    'success'
-                );
+                // BAIXAR O JSON ATUALIZADO
+                const downloadSuccess = this.baixarJSON(produtosAtualizados);
                 
-                this.limparFormulario();
-                mobileLog('✅ Produto salvo no JSON!');
+                if (downloadSuccess) {
+                    this.mostrarMensagem(
+                        `🎉 <strong>"${novoProduto.nome}"</strong> adicionado com sucesso!<br><br>
+                        ✅ Produto adicionado ao sistema<br>
+                        📝 ID: ${novoProduto.id}<br>
+                        🏷️ Categoria: ${novoProduto.categoria}<br>
+                        🎨 Modelos: ${novoProduto.opcoes.length}<br><br>
+                        📥 <strong>JSON baixado automaticamente!</strong><br>
+                        💡 Substitua o arquivo data/products.json no GitHub`,
+                        'success'
+                    );
+                    
+                    this.limparFormulario();
+                    mobileLog('✅ Produto salvo e JSON baixado!');
+
+                    // Atualiza a lista local
+                    this.produtosExistentes = produtosAtualizados;
+                } else {
+                    throw new Error('Erro ao baixar JSON');
+                }
 
             } catch (error) {
                 console.error('❌ Erro ao salvar produto:', error);
@@ -650,7 +783,7 @@
             if (spinner) spinner.style.display = mostrar ? 'block' : 'none';
             if (submitBtn) {
                 submitBtn.disabled = mostrar;
-                submitBtn.textContent = mostrar ? '⏳ Salvando...' : '💾 Salvar no JSON';
+                submitBtn.textContent = mostrar ? '⏳ Processando...' : '💾 Salvar e Baixar JSON';
             }
         }
 
