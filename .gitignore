@@ -3,14 +3,13 @@ dashboard.html
 login.html
 gerenciar-produtos.html
 adicionar-produto.html
-admin-panel.html
-painel-admin.html
+dashboard.html
 
 # 📁 PASTAS ADMINISTRATIVAS
 /admin/
 /api/
 /data/
-/backoffice/
+/src/
 
 # 🔑 ARQUIVOS DE CONFIGURAÇÃO E CHAVES
 config.json
