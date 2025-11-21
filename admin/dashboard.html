@@ -278,38 +278,6 @@
                 <a href="adicionar-produto.html" class="btn">Criar Produto</a>
             </div>
 
-            <!-- Ver Site -->
-            <div class="card">
-                <div class="card-icon">🌐</div>
-                <h3>Ver Site</h3>
-                <p>Visualize como está o seu site atualmente para os visitantes.</p>
-                <a href="../index.html" class="btn" target="_blank">Abrir Site</a>
-            </div>
-
-            <!-- Estatísticas -->
-            <div class="card">
-                <div class="card-icon">📊</div>
-                <h3>Estatísticas</h3>
-                <p>Acompanhe métricas e visualizações do seu site.</p>
-                <button class="btn" onclick="showStats()">Ver Stats</button>
-            </div>
-
-            <!-- Backup -->
-            <div class="card">
-                <div class="card-icon">💾</div>
-                <h3>Backup</h3>
-                <p>Faça backup dos seus dados ou exporte o catálogo.</p>
-                <button class="btn" onclick="backupData()">Fazer Backup</button>
-            </div>
-
-            <!-- Ajuda -->
-            <div class="card">
-                <div class="card-icon">❓</div>
-                <h3>Ajuda</h3>
-                <p>Tutorial e suporte para usar o sistema.</p>
-                <button class="btn" onclick="showHelp()">Obter Ajuda</button>
-            </div>
-        </div>
 
                <div style="text-align: center; margin-top: 2rem;">
             <button class="logout-btn" onclick="logout()">🚪 Sair do Sistema</button>
@@ -394,19 +362,9 @@
     }
 }
 
-        // Funções do dashboard
-        function showStats() {
-            alert('📊 Estatísticas do Sistema\n\n• Produtos: 12\n• Categorias: 8\n• Status: Online\n• Última atualização: Hoje\n\nEm breve: gráficos detalhados!');
-        }
-
-        function backupData() {
-            alert('💾 Sistema de Backup\n\nBackup automático ativo!\nSeus dados estão seguros no GitHub.\n\nEm breve: export para JSON/CSV');
-        }
-
-        function showHelp() {
-            alert('❓ Central de Ajuda\n\n📞 Suporte: contato@canecas.com\n📚 Tutorial: Use o formulário de adicionar produto\n🔄 Atualizações: Sistema sempre atualizado');
-        }
-
+    
+     
+    
         // Inicialização segura
         document.addEventListener('DOMContentLoaded', function() {
             console.log('✅ Dashboard carregado - verificando autenticação...');
