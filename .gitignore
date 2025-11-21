@@ -1,0 +1,42 @@
+# 🔒 ARQUIVOS ADMINISTRATIVOS (PROTEÇÃO TOTAL)
+dashboard.html
+login.html
+gerenciar-produtos.html
+adicionar-produto.html
+admin-panel.html
+painel-admin.html
+
+# 📁 PASTAS ADMINISTRATIVAS
+/admin/
+/api/
+/data/
+/backoffice/
+
+# 🔑 ARQUIVOS DE CONFIGURAÇÃO E CHAVES
+config.json
+products.json
+.env
+.env.local
+*.key
+*.token
+security.js
+auth-config.js
+
+# 🗄️ BACKUPS E DADOS SENSÍVEIS
+backup/
+database/
+*.sql
+*.db
+data.json
+produtos-backup-*
+
+# 🪵 LOGS E ARQUIVOS TEMPORÁRIOS
+*.log
+logs/
+tmp/
+temp/
+
+# SISTEMA DE SEGURANÇA
+firebase-config.js
+firebase.js
+auth.js
