@@ -607,7 +607,7 @@ class ProductManager {
         try {
             console.log('🔄 Carregando produtos do JSON...');
             
-            const response = await fetch('data/products.json');
+            const response = await fetch('../data/products.json');
             if (!response.ok) throw new Error('Erro ao carregar JSON');
 
             const data = await response.json();
